@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import {
   DEFAULT_SETTINGS,
+  MODEL_OPTIONS,
+  appendSessionLog,
+  clearSessionLog,
   readSessionCounter,
+  readSessionLog,
   saveSettings,
   type MirrorSettings,
+  type SessionLogEntry,
 } from "@/lib/settings";
-import { testConnection } from "@/lib/webrtc";
+import { daydreamHealth } from "@/lib/daydream.functions";
+import { startMirrorSession } from "@/lib/daydream";
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
