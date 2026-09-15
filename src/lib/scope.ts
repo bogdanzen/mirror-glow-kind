@@ -188,6 +188,28 @@ export async function startScopeSession({
     throw error;
   });
 
+  const outputTrack = processedStream.getVideoTracks()[0];
+  if (!outputTrack) {
+    pc.close();
+    throw new Error("GPU-ul nu a trimis o pistă video");
+  }
+  if (outputTrack.muted) {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        outputTrack.removeEventListener("unmute", handleUnmute);
+        reject(new Error("GPU-ul s-a conectat, dar nu a trimis cadre video"));
+      }, 90_000);
+      const handleUnmute = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      outputTrack.addEventListener("unmute", handleUnmute, { once: true });
+    }).catch((error: Error) => {
+      pc.close();
+      throw error;
+    });
+  }
+
   onStatus?.("live");
 
   let stopped = false;

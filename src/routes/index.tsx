@@ -242,15 +242,17 @@ function Kiosk() {
         pending.then((s) => {
           if (fellBack || cancelled) void s.stop();
         }, () => undefined);
+        let startupTimer = 0;
         const session = await Promise.race([
           pending,
           new Promise<never>((_, reject) =>
-            window.setTimeout(() => {
+            (startupTimer = window.setTimeout(() => {
               fellBack = true;
-              reject(new Error("Backendul AI nu a pornit în 15s"));
-            }, 15000),
+              reject(new Error("Backendul AI nu a trimis imagini în 30s"));
+            }, 30000)),
           ),
         ]);
+        window.clearTimeout(startupTimer);
         if (cancelled) {
           void session.stop();
           return;
