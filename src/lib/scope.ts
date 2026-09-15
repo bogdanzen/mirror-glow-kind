@@ -39,14 +39,58 @@ async function waitForServer(onStatus?: (s: MirrorStatus, d?: string) => void) {
   throw new Error("Serverul Scope nu a răspuns (pod pornit?)");
 }
 
+type ModelStatus = {
+  downloaded?: boolean;
+  progress?: {
+    is_downloading?: boolean;
+    percentage?: number;
+    current_artifact?: string;
+  } | null;
+};
+
+async function ensureModels(pipeline: string, onStatus?: (s: MirrorStatus, d?: string) => void) {
+  let status = await call(`/api/v1/models/status?pipeline_id=${encodeURIComponent(pipeline)}`, "GET");
+  let model = status.body as ModelStatus | null;
+  if (status.ok && model?.downloaded) return;
+
+  if (!model?.progress?.is_downloading) {
+    const started = await call("/api/v1/models/download", "POST", { pipeline_id: pipeline });
+    if (!started.ok) {
+      throw new Error(started.error || `Descărcarea modelului a eșuat (${started.status})`);
+    }
+  }
+
+  const deadline = Date.now() + 1_800_000;
+  while (Date.now() < deadline) {
+    await sleep(5000);
+    status = await call(`/api/v1/models/status?pipeline_id=${encodeURIComponent(pipeline)}`, "GET");
+    model = status.body as ModelStatus | null;
+    if (status.ok && model?.downloaded) return;
+    if (!status.ok) {
+      onStatus?.("creating", "GPU-ul repornește; descărcarea va fi reluată");
+      await waitForServer(onStatus);
+      continue;
+    }
+    const percentage = model?.progress?.percentage;
+    const detail = percentage != null ? `model: ${Math.round(percentage)}%` : "model: se descarcă";
+    onStatus?.("creating", detail);
+  }
+  throw new Error("Modelul nu s-a descărcat la timp");
+}
+
 async function loadPipeline(pipeline: string, onStatus?: (s: MirrorStatus, d?: string) => void) {
-  await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
+  await ensureModels(pipeline, onStatus);
+  const load = await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
+  if (!load.ok) throw new Error(load.error || `Pornirea modelului a eșuat (${load.status})`);
   const deadline = Date.now() + 600_000; // first run downloads model weights
   while (Date.now() < deadline) {
     const res = await call("/api/v1/pipeline/status", "GET");
-    const status = (res.body as { status?: string } | null)?.status;
+    const pipelineState = res.body as { status?: string; error?: string | null } | null;
+    const status = pipelineState?.status;
     if (status === "loaded") return;
-    if (status === "error") throw new Error("Pipeline-ul Scope a eșuat la încărcare");
+    if (status === "error") {
+      throw new Error(pipelineState?.error || "Pipeline-ul Scope a eșuat la încărcare");
+    }
     onStatus?.("creating", `model: ${status ?? "se pregătește"}`);
     await sleep(2500);
   }
