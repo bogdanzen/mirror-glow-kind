@@ -100,6 +100,106 @@ export function AdminPanel({
           Sesiuni astăzi: <span className="text-foreground">{readSessionCounter()}</span>
         </p>
 
+        <label className={label}>Sursă AI</label>
+        <select
+          className={field}
+          value={draft.provider}
+          onChange={(e) => set("provider", e.target.value as MirrorSettings["provider"])}
+        >
+          <option value="runpod">GPU propriu (RunPod + Scope)</option>
+          <option value="daydream">Daydream Cloud</option>
+        </select>
+
+        {draft.provider === "runpod" && (
+          <>
+            <label className={label}>GPU RunPod</label>
+            <p className="py-3 text-base text-muted-foreground">
+              {runpod === null
+                ? "se verifică…"
+                : !runpod.configured
+                  ? "cheie RunPod lipsă"
+                  : runpod.pod
+                    ? `${runpod.pod.desiredStatus} · ${runpod.pod.gpu || "GPU"} · ${
+                        runpod.pod.costPerHr != null ? `${runpod.pod.costPerHr} $/h` : ""
+                      }`
+                    : "niciun pod pornit"}
+              {runpod?.error ? ` · ${runpod.error}` : ""}
+              {podMsg ? ` · ${podMsg}` : ""}
+            </p>
+            <div className="flex flex-wrap gap-8 py-2 text-base">
+              <button
+                className="text-primary underline underline-offset-8"
+                onClick={() => {
+                  setPodMsg("se pornește…");
+                  void startRunpodPod({ data: { pipeline: draft.scopePipeline } })
+                    .then((r) => {
+                      setRunpod(r);
+                      setPodMsg(r.error ?? "pornit");
+                    })
+                    .catch((e: Error) => setPodMsg(e.message));
+                }}
+              >
+                Pornește GPU
+              </button>
+              <button
+                className="text-muted-foreground underline underline-offset-8"
+                onClick={() => {
+                  void runpodState()
+                    .then(setRunpod)
+                    .catch(() => undefined);
+                  setPodMsg("");
+                }}
+              >
+                Reîmprospătează
+              </button>
+              <button
+                className="text-muted-foreground underline underline-offset-8"
+                disabled={!runpod?.pod}
+                onClick={() => {
+                  if (!runpod?.pod) return;
+                  setPodMsg("se oprește…");
+                  void stopRunpodPod({ data: { id: runpod.pod.id } }).then((r) => {
+                    setPodMsg(r.error ?? "oprit");
+                    void runpodState().then(setRunpod);
+                  });
+                }}
+              >
+                Oprește
+              </button>
+              <button
+                className="text-muted-foreground underline underline-offset-8"
+                disabled={!runpod?.pod}
+                onClick={() => {
+                  if (!runpod?.pod) return;
+                  setPodMsg("se șterge…");
+                  void stopRunpodPod({ data: { id: runpod.pod.id, terminate: true } }).then((r) => {
+                    setPodMsg(r.error ?? "șters");
+                    void runpodState().then(setRunpod);
+                  });
+                }}
+              >
+                Șterge pod
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              GPU-ul se taxează la oră cât timp rulează. Oprește-l după eveniment.
+            </p>
+
+            <label className={label}>Pipeline Scope</label>
+            <select
+              className={field}
+              value={draft.scopePipeline}
+              onChange={(e) => set("scopePipeline", e.target.value)}
+            >
+              {SCOPE_PIPELINES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
         <label className={label}>Backend (Daydream Cloud)</label>
         <p className="py-3 text-base">
           Cheie API:{" "}
