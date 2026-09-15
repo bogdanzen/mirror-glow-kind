@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   DEFAULT_SETTINGS,
-  MODEL_OPTIONS,
   SCOPE_PIPELINES,
   appendSessionLog,
   clearSessionLog,
@@ -11,7 +10,6 @@ import {
   type MirrorSettings,
   type SessionLogEntry,
 } from "@/lib/settings";
-import { daydreamHealth } from "@/lib/daydream.functions";
 import {
   runpodState,
   startRunpodPod,
@@ -39,7 +37,6 @@ export function AdminPanel({
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [status, setStatus] = useState<string>("");
   const [newPin, setNewPin] = useState("");
-  const [keyConfigured, setKeyConfigured] = useState<boolean | null>(null);
   const [log, setLog] = useState<SessionLogEntry[]>([]);
   const [runpod, setRunpod] = useState<RunpodState | null>(null);
   const [podMsg, setPodMsg] = useState("");
@@ -51,9 +48,6 @@ export function AdminPanel({
       .then((d) => setDevices(d.filter((x) => x.kind === "videoinput")))
       .catch(() => undefined);
     setLog(readSessionLog());
-    void daydreamHealth()
-      .then((r) => setKeyConfigured(r.configured))
-      .catch(() => setKeyConfigured(false));
     void runpodState()
       .then(setRunpod)
       .catch(() => setRunpod({ configured: false, pod: null }));
