@@ -11,6 +11,8 @@ import {
   type MirrorSettings,
 } from "@/lib/settings";
 import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/daydream";
+import fireHorse from "@/assets/fire-horse.jpg";
+import butterfly from "@/assets/butterfly.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,6 +50,7 @@ function Kiosk() {
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
+  const [playbackUrl, setPlaybackUrl] = useState("");
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
