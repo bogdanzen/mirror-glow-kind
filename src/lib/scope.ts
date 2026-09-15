@@ -210,6 +210,32 @@ export async function startScopeSession({
     });
   }
 
+  const probe = document.createElement("video");
+  probe.muted = true;
+  probe.playsInline = true;
+  probe.srcObject = processedStream;
+  await probe.play().catch(() => undefined);
+  await new Promise<void>((resolve, reject) => {
+    const deadline = Date.now() + 90_000;
+    const check = () => {
+      if (probe.videoWidth > 0 && probe.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        resolve();
+        return;
+      }
+      if (Date.now() >= deadline) {
+        reject(new Error("GPU-ul s-a conectat, dar nu a produs cadre video"));
+        return;
+      }
+      setTimeout(check, 250);
+    };
+    check();
+  }).catch((error: Error) => {
+    probe.srcObject = null;
+    pc.close();
+    throw error;
+  });
+  probe.srcObject = null;
+
   onStatus?.("live");
 
   let stopped = false;
