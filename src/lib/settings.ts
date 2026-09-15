@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   captureSeconds: 30,
   thanksSeconds: 15,
   idleTimeoutSeconds: 45,
-  campaignLine: "[LINIA DE CAMPANIE]",
+  campaignLine: "SCHIMBAREA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
   delta: 0.55,
   seed: 42,
