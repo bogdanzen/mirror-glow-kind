@@ -15,7 +15,18 @@ export type MirrorSettings = {
   thanksSeconds: number;
   idleTimeoutSeconds: number;
   campaignLine: string;
+  modelId: string;
+  delta: number;
+  seed: number;
+  steps: number;
 };
+
+export const MODEL_OPTIONS = [
+  "stabilityai/sdxl-turbo",
+  "stabilityai/sd-turbo",
+  "Lykon/dreamshaper-8",
+  "prompthero/openjourney-v4",
+] as const;
 
 export const DEFAULT_PROMPT =
   "photorealistic portrait of the same person with a completely shaved head, chemotherapy patient, natural skin, identical face, same lighting, same background";
@@ -37,6 +48,10 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   thanksSeconds: 15,
   idleTimeoutSeconds: 45,
   campaignLine: "[LINIA DE CAMPANIE]",
+  modelId: "stabilityai/sdxl-turbo",
+  delta: 0.55,
+  seed: 42,
+  steps: 2,
 };
 
 const KEY = "mirror.settings.v1";
