@@ -85,7 +85,7 @@ export async function startMirrorSession({
     }
   }
 
-  const whepUrl = broadcast.whepUrl;
+  const whepUrl = broadcast.whepUrl?.replace(/^http:\/\//i, "https://");
   if (!whepUrl) {
     await broadcast.stop().catch(() => undefined);
     void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
