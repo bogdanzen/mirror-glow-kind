@@ -4,8 +4,13 @@ import { QrCode } from "@/components/QrCode";
 import { AdminPanel } from "@/components/AdminPanel";
 import { saveCapture } from "@/lib/captures";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
-import { bumpSessionCounter, loadSettings, type MirrorSettings } from "@/lib/settings";
-import { createStream, deleteStream, whepPlay, whipPublish } from "@/lib/webrtc";
+import {
+  appendSessionLog,
+  bumpSessionCounter,
+  loadSettings,
+  type MirrorSettings,
+} from "@/lib/settings";
+import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/daydream";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -42,12 +47,12 @@ function Kiosk() {
   const [captureId, setCaptureId] = useState<string>("");
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
+  const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
-  const pcsRef = useRef<RTCPeerConnection[]>([]);
-  const streamIdRef = useRef<string>("");
+  const sessionRef = useRef<MirrorSession | null>(null);
   const idleRef = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -61,13 +66,10 @@ function Kiosk() {
   }, []);
 
   const teardownStream = useCallback(() => {
-    pcsRef.current.forEach((pc) => pc.close());
-    pcsRef.current = [];
-    if (streamIdRef.current) {
-      void deleteStream(settings, streamIdRef.current);
-      streamIdRef.current = "";
-    }
-  }, [settings]);
+    const session = sessionRef.current;
+    sessionRef.current = null;
+    if (session) void session.stop();
+  }, []);
 
   const goAttract = useCallback(() => {
     teardownStream();
@@ -190,7 +192,7 @@ function Kiosk() {
     };
   }, [screen, startCamera]);
 
-  // MIRROR: connect to backend or fall back to demo
+  // MIRROR: live AI stream, with silent fallback to demo mode
   useEffect(() => {
     if (screen !== "mirror") return;
     let cancelled = false;
@@ -199,32 +201,52 @@ function Kiosk() {
       const camera = cameraRef.current ?? (await startCamera().catch(() => null));
       if (!camera || cancelled) return;
       bumpSessionCounter();
+      setMirrorStatus("creating");
 
-      const useBackend = !settings.demoMode && !!settings.backendBaseUrl;
-      if (useBackend) {
-        try {
-          const session = await createStream(settings);
-          if (cancelled) return;
-          streamIdRef.current = session.streamId;
-          const pub = await whipPublish(session.whipUrl, camera, settings.apiKey);
-          const { pc, stream } = await whepPlay(session.whepUrl, settings.apiKey);
-          if (cancelled) return;
-          pcsRef.current = [pub, pc];
-          setDemo(false);
-          if (mirrorRef.current) {
-            mirrorRef.current.srcObject = stream;
-            await mirrorRef.current.play().catch(() => undefined);
-          }
-          return;
-        } catch {
-          teardownStream();
+      const showDemo = async () => {
+        setDemo(true);
+        setMirrorStatus("live");
+        if (mirrorRef.current && !cancelled) {
+          mirrorRef.current.srcObject = camera;
+          await mirrorRef.current.play().catch(() => undefined);
         }
+      };
+
+      if (settings.demoMode) {
+        appendSessionLog({ at: Date.now(), status: "demo" });
+        await showDemo();
+        return;
       }
-      // DEMO fallback: raw camera + placeholder effect
-      setDemo(true);
-      if (mirrorRef.current && !cancelled) {
-        mirrorRef.current.srcObject = camera;
-        await mirrorRef.current.play().catch(() => undefined);
+
+      const started = performance.now();
+      try {
+        const session = await startMirrorSession({
+          settings,
+          cameraStream: camera,
+          onStatus: (status) => {
+            if (!cancelled && status !== "ended") setMirrorStatus(status);
+          },
+        });
+        if (cancelled) {
+          void session.stop();
+          return;
+        }
+        sessionRef.current = session;
+        setDemo(false);
+        appendSessionLog({
+          at: Date.now(),
+          status: "live",
+          latencyMs: Math.round(performance.now() - started),
+        });
+        if (mirrorRef.current) {
+          mirrorRef.current.srcObject = session.processedStream;
+          await mirrorRef.current.play().catch(() => undefined);
+        }
+        setMirrorStatus("live");
+      } catch (e) {
+        appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+        teardownStream();
+        if (!cancelled) await showDemo();
       }
     })();
 
