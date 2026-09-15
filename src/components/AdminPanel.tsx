@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   DEFAULT_SETTINGS,
   MODEL_OPTIONS,
+  SCOPE_PIPELINES,
   appendSessionLog,
   clearSessionLog,
   readSessionCounter,
@@ -11,6 +12,12 @@ import {
   type SessionLogEntry,
 } from "@/lib/settings";
 import { daydreamHealth } from "@/lib/daydream.functions";
+import {
+  runpodState,
+  startRunpodPod,
+  stopRunpodPod,
+  type RunpodState,
+} from "@/lib/runpod.functions";
 import { startMirrorSession } from "@/lib/daydream";
 
 const field =
