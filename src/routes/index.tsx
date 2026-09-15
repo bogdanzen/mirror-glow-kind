@@ -11,8 +11,8 @@ import {
   type MirrorSettings,
 } from "@/lib/settings";
 import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/daydream";
-import fireHorse from "@/assets/fire-horse.jpg";
-import butterfly from "@/assets/butterfly.png";
+import { GildedBackdrop } from "@/components/GildedBackdrop";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
