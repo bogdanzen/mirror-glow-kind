@@ -202,61 +202,23 @@ export function AdminPanel({
           </>
         )}
 
-        <label className={label}>Backend (Daydream Cloud)</label>
-        <p className="py-3 text-base">
-          Cheie API:{" "}
-          <span className={keyConfigured ? "text-primary" : "text-muted-foreground"}>
-            {keyConfigured === null
-              ? "se verifică…"
-              : keyConfigured
-                ? "configurată"
-                : "lipsă — se rulează în DEMO"}
-          </span>
-        </p>
-
-        <label className={label}>Model</label>
-        <select
+        <label className={label}>Pași de denoising (latență)</label>
+        <input
           className={field}
-          value={draft.modelId}
-          onChange={(e) => set("modelId", e.target.value)}
-        >
-          {MODEL_OPTIONS.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <label className={label}>Delta</label>
-            <input
-              className={field}
-              type="number"
-              step="0.05"
-              value={draft.delta}
-              onChange={(e) => set("delta", Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className={label}>Seed</label>
-            <input
-              className={field}
-              type="number"
-              value={draft.seed}
-              onChange={(e) => set("seed", Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className={label}>Pași</label>
-            <input
-              className={field}
-              type="number"
-              value={draft.steps}
-              onChange={(e) => set("steps", Number(e.target.value))}
-            />
-          </div>
-        </div>
+          value={draft.scopeDenoiseSteps.join(", ")}
+          onChange={(e) =>
+            set(
+              "scopeDenoiseSteps",
+              e.target.value
+                .split(",")
+                .map((v) => Number(v.trim()))
+                .filter((v) => Number.isFinite(v) && v > 0),
+            )
+          }
+        />
+        <p className="text-xs text-muted-foreground">
+          Mai puțini pași = latență mai mică. Implicit 700, 500.
+        </p>
 
 
         <label className={label}>Prompt</label>
