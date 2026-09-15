@@ -250,16 +250,21 @@ function Kiosk() {
       }
     })();
 
+    return () => {
+      cancelled = true;
+    };
+  }, [screen, settings, startCamera, teardownStream]);
+
+  // Only start counting the mirror time once the image is actually visible,
+  // so a slow warm-up doesn't eat the whole experience.
+  useEffect(() => {
+    if (screen !== "mirror" || mirrorStatus !== "live") return;
     const id = window.setTimeout(() => {
       if (settings.storageEnabled) setScreen("capture");
       else setScreen("thanks");
     }, settings.mirrorSeconds * 1000);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(id);
-    };
-  }, [screen, settings, startCamera, teardownStream]);
+    return () => window.clearTimeout(id);
+  }, [screen, mirrorStatus, settings.storageEnabled, settings.mirrorSeconds]);
 
   // CAPTURE / THANKS timers
   useEffect(() => {
