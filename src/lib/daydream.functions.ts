@@ -19,14 +19,14 @@ export type CreateStreamResult =
   | { ok: false; status: number; message: string };
 
 const FALLBACK_PROMPT =
-  "photorealistic portrait of the same person with a completely shaved head, chemotherapy patient, natural skin, identical face, same lighting, same background";
+  "photorealistic live portrait of the exact same person, completely bald with a smooth naturally shaved scalp, preserve exact facial identity, eyes, nose, mouth, skin tone, expression, clothing, camera angle, lighting and unchanged background, documentary photography, realistic skin texture";
 
 export const daydreamHealth = createServerFn({ method: "GET" }).handler(async () => {
   return { configured: Boolean(process.env["DAYDREAM_API_KEY"]) };
 });
 
 export const createDaydreamStream = createServerFn({ method: "POST" })
-  .inputValidator((input: CreateInput) => input ?? {})
+  .validator((input: CreateInput) => input ?? {})
   .handler(async ({ data }): Promise<CreateStreamResult> => {
     const apiKey = process.env["DAYDREAM_API_KEY"];
     if (!apiKey) return { ok: false, status: 0, message: "DAYDREAM_API_KEY nu este configurat" };
@@ -46,9 +46,40 @@ export const createDaydreamStream = createServerFn({ method: "POST" })
             negative_prompt: DEFAULT_NEGATIVE_PROMPT,
             width: data.width ?? 512,
             height: data.height ?? 512,
-            delta: data.delta ?? 0.55,
+            delta: data.delta ?? 0.45,
             guidance_scale: 1.0,
-            num_inference_steps: data.steps ?? 2,
+            num_inference_steps: 50,
+            t_index_list: (data.steps ?? 2) <= 1 ? [32] : [15, 32],
+            use_lcm_lora: true,
+            acceleration: "tensorrt",
+            use_denoising_batch: true,
+            do_add_noise: true,
+            enable_similar_image_filter: true,
+            similar_image_filter_threshold: 0.98,
+            similar_image_filter_max_skip_frame: 4,
+            controlnets:
+              (data.modelId || "stabilityai/sdxl-turbo") === "stabilityai/sdxl-turbo"
+                ? [
+                    {
+                      enabled: true,
+                      model_id: "xinsir/controlnet-depth-sdxl-1.0",
+                      preprocessor: "depth_tensorrt",
+                      conditioning_scale: 0.45,
+                      preprocessor_params: {},
+                      control_guidance_start: 0,
+                      control_guidance_end: 1,
+                    },
+                    {
+                      enabled: true,
+                      model_id: "xinsir/controlnet-canny-sdxl-1.0",
+                      preprocessor: "canny",
+                      conditioning_scale: 0.12,
+                      preprocessor_params: {},
+                      control_guidance_start: 0,
+                      control_guidance_end: 1,
+                    },
+                  ]
+                : undefined,
             seed: data.seed ?? 42,
           },
         }),
@@ -82,7 +113,7 @@ export const createDaydreamStream = createServerFn({ method: "POST" })
   });
 
 export const deleteDaydreamStream = createServerFn({ method: "POST" })
-  .inputValidator((input: { id: string }) => input)
+  .validator((input: { id: string }) => input)
   .handler(async ({ data }) => {
     const apiKey = process.env["DAYDREAM_API_KEY"];
     if (!apiKey || !data.id) return { ok: false };

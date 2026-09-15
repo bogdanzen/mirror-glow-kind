@@ -41,6 +41,16 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function proxiedWhepUrl(upstreamUrl: string) {
+  return `${window.location.origin}/api/public/daydream-whep?url=${encodeURIComponent(upstreamUrl)}`;
+}
+
+function errorMessage(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const cause = "cause" in error ? (error as Error & { cause?: unknown }).cause : undefined;
+  return cause ? `${error.message}: ${errorMessage(cause)}` : error.message;
+}
+
 /**
  * Creates a Daydream stream (via the server function that holds the API key),
  * publishes the camera over WHIP and plays the AI-processed result over WHEP.
@@ -76,7 +86,7 @@ export async function startMirrorSession({
 
   const makeBroadcast = () =>
     createBroadcast({
-      whipUrl: result.whipUrl,
+      whipUrl: proxiedWhepUrl(result.whipUrl),
       stream: camera,
       connectionTimeout: 30000,
       video: { bitrate: 1_500_000, maxFramerate: settings.fps },
@@ -92,14 +102,15 @@ export async function startMirrorSession({
     broadcast = makeBroadcast();
     try {
       await broadcast.connect();
-    } catch {
+    } catch (retryError) {
       void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
-      onStatus?.("error", (error as Error).message);
-      throw error;
+      const message = `${errorMessage(error)}; retry: ${errorMessage(retryError)}`;
+      onStatus?.("error", message);
+      throw new Error(message);
     }
   }
 
-  const whepUrl = broadcast.whepUrl?.replace(/^http:\/\//i, "https://") ?? "";
+  const whepUrl = broadcast.whepUrl ?? "";
 
   // The AI worker needs 10-30s to warm up: the WHEP endpoint refuses the
   // connection until the output stream exists. Retry patiently.
@@ -107,28 +118,39 @@ export async function startMirrorSession({
   let player: ReturnType<typeof createPlayer> | null = null;
 
   if (whepUrl) {
-    await sleep(4000);
-    for (let attempt = 0; attempt < 15 && !processedStream; attempt += 1) {
+    await sleep(2500);
+    const deadline = Date.now() + 90000;
+    let attempt = 0;
+    let lastPlaybackError = "";
+    while (!processedStream && Date.now() < deadline) {
+      attempt += 1;
       const p = createPlayer(whepUrl, {
-        connectionTimeout: 15000,
-        reconnect: { enabled: true, maxAttempts: 5, baseDelayMs: 1000 },
+        connectionTimeout: 12000,
+        reconnect: { enabled: false },
       });
       try {
         await p.connect();
-        if (p.stream) {
+        const stream = p.stream;
+        const track = stream?.getVideoTracks()[0];
+        if (stream && track?.readyState === "live") {
           player = p;
-          processedStream = p.stream;
+          processedStream = stream;
           break;
         }
         await p.stop().catch(() => undefined);
-      } catch {
+        lastPlaybackError = "conexiune fără pistă video";
+      } catch (error) {
+        lastPlaybackError = errorMessage(error);
         await p.stop().catch(() => undefined);
       }
-      await sleep(2000);
+      onStatus?.("publishing", `redare ${attempt}: ${lastPlaybackError}`);
+      await sleep(Math.min(1000 + attempt * 500, 4000));
     }
+  } else {
+    onStatus?.("publishing", "lipsește adresa de redare WHEP");
   }
 
-  if (!processedStream && !result.playbackUrl) {
+  if (!processedStream) {
     await broadcast.stop().catch(() => undefined);
     void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
     onStatus?.("error", "Fluxul procesat nu a pornit");

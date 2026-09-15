@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GdprRouteImport } from './routes/gdpr'
 import { Route as RIdRouteImport } from './routes/r.$id'
+import { Route as ApiPublicDaydreamWhepRouteImport } from './routes/api/public/daydream-whep'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const RIdRoute = RIdRouteImport.update({
   path: '/r/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDaydreamWhepRoute = ApiPublicDaydreamWhepRouteImport.update({
+  id: '/api/public/daydream-whep',
+  path: '/api/public/daydream-whep',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/gdpr': typeof GdprRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/daydream-whep': typeof ApiPublicDaydreamWhepRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/gdpr': typeof GdprRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/daydream-whep': typeof ApiPublicDaydreamWhepRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/gdpr': typeof GdprRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/daydream-whep': typeof ApiPublicDaydreamWhepRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/gdpr' | '/r/$id'
+  fullPaths: '/' | '/gdpr' | '/r/$id' | '/api/public/daydream-whep'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/gdpr' | '/r/$id'
-  id: '__root__' | '/' | '/gdpr' | '/r/$id'
+  to: '/' | '/gdpr' | '/r/$id' | '/api/public/daydream-whep'
+  id: '__root__' | '/' | '/gdpr' | '/r/$id' | '/api/public/daydream-whep'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GdprRoute: typeof GdprRoute
   RIdRoute: typeof RIdRoute
+  ApiPublicDaydreamWhepRoute: typeof ApiPublicDaydreamWhepRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/daydream-whep': {
+      id: '/api/public/daydream-whep'
+      path: '/api/public/daydream-whep'
+      fullPath: '/api/public/daydream-whep'
+      preLoaderRoute: typeof ApiPublicDaydreamWhepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GdprRoute: GdprRoute,
   RIdRoute: RIdRoute,
+  ApiPublicDaydreamWhepRoute: ApiPublicDaydreamWhepRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

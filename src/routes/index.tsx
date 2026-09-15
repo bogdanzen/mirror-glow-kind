@@ -50,7 +50,6 @@ function Kiosk() {
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
-  const [playbackUrl, setPlaybackUrl] = useState("");
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
@@ -82,7 +81,6 @@ function Kiosk() {
     setCaptureUrl("");
     setCaptureId("");
     setError("");
-    setPlaybackUrl("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
 
@@ -215,6 +213,7 @@ function Kiosk() {
         setDemo(true);
         setMirrorStatus("live");
         if (mirrorRef.current && !cancelled) {
+          mirrorRef.current.srcObject = null;
           mirrorRef.current.srcObject = camera;
           await mirrorRef.current.play().catch(() => undefined);
         }
@@ -247,10 +246,9 @@ function Kiosk() {
           latencyMs: Math.round(performance.now() - started),
         });
         if (session.processedStream && mirrorRef.current) {
+          mirrorRef.current.srcObject = null;
           mirrorRef.current.srcObject = session.processedStream;
           await mirrorRef.current.play().catch(() => undefined);
-        } else if (session.playbackUrl) {
-          setPlaybackUrl(session.playbackUrl);
         }
         setMirrorStatus("live");
       } catch (e) {
@@ -434,14 +432,6 @@ function Kiosk() {
                   : undefined,
               }}
             />
-            {playbackUrl && (
-              <iframe
-                title="Oglinda"
-                src={playbackUrl}
-                allow="autoplay; fullscreen"
-                className="absolute inset-0 h-full w-full scale-x-[-1] border-0"
-              />
-            )}
             {mirrorStatus !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
