@@ -227,22 +227,28 @@ function Kiosk() {
       }
 
       const started = performance.now();
+      let fellBack = false;
       try {
         // Never let a cold cloud/GPU backend stall the exhibit: if the live
         // mirror is not ready quickly, the visitor still gets the experience.
+        const pending = startMirrorSession({
+          settings,
+          cameraStream: camera,
+          onStatus: (status) => {
+            if (!cancelled && !fellBack && status !== "ended") setMirrorStatus(status);
+          },
+        });
+        // A late-arriving session must not linger (or bill) in the background.
+        pending.then((s) => {
+          if (fellBack || cancelled) void s.stop();
+        }, () => undefined);
         const session = await Promise.race([
-          startMirrorSession({
-            settings,
-            cameraStream: camera,
-            onStatus: (status) => {
-              if (!cancelled && status !== "ended") setMirrorStatus(status);
-            },
-          }),
+          pending,
           new Promise<never>((_, reject) =>
-            window.setTimeout(
-              () => reject(new Error("Backendul AI nu a pornit în 15s")),
-              15000,
-            ),
+            window.setTimeout(() => {
+              fellBack = true;
+              reject(new Error("Backendul AI nu a pornit în 15s"));
+            }, 15000),
           ),
         ]);
         if (cancelled) {
