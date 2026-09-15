@@ -65,6 +65,12 @@ export async function startMirrorSession({
 }: StartOptions): Promise<MirrorSession> {
   onStatus?.("creating");
 
+  if (settings.provider === "runpod") {
+    const { startScopeSession } = await import("./scope");
+    const camera = cameraStream ?? (await getCamera(settings));
+    return startScopeSession({ settings, cameraStream: camera, onStatus });
+  }
+
   const result: CreateStreamResult = await createDaydreamStream({
     data: {
       prompt: settings.prompt,

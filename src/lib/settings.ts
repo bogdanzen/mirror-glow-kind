@@ -16,7 +16,20 @@ export type MirrorSettings = {
   delta: number;
   seed: number;
   steps: number;
+  /** Which inference backend drives the mirror. */
+  provider: "daydream" | "runpod";
+  /** Self-hosted Scope pipeline (RunPod provider). */
+  scopePipeline: string;
+  /** Scope denoising schedule — fewer steps = lower latency. */
+  scopeDenoiseSteps: number[];
 };
+
+export const SCOPE_PIPELINES = [
+  "streamdiffusionv2",
+  "longlive",
+  "krea-realtime-video",
+  "passthrough",
+] as const;
 
 export const MODEL_OPTIONS = [
   "stabilityai/sdxl-turbo",
@@ -46,6 +59,9 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   delta: 0.45,
   seed: 42,
   steps: 2,
+  provider: "runpod",
+  scopePipeline: "streamdiffusionv2",
+  scopeDenoiseSteps: [700, 500],
 };
 
 const KEY = "mirror.settings.v1";
