@@ -117,6 +117,7 @@ export async function startMirrorSession({
   // connection until the output stream exists. Retry patiently.
   let processedStream: MediaStream | null = null;
   let player: ReturnType<typeof createPlayer> | null = null;
+  let startupDetail = "modelul nu a raportat cadre procesate";
 
   if (whepUrl) {
     await sleep(2500);
@@ -128,6 +129,9 @@ export async function startMirrorSession({
       const status = await getDaydreamStreamStatus({ data: { id: result.id } }).catch(() => null);
       if (status?.whepUrl) whepUrl = status.whepUrl;
       if (status?.error) lastPlaybackError = status.error;
+      startupDetail =
+        status?.error ||
+        `intrare ${status?.inputFps?.toFixed(1) ?? "0"} fps, ieșire ${status?.outputFps?.toFixed(1) ?? "0"} fps`;
 
       // A 404 from WHEP is expected until inference emits its first frame.
       // Polling status avoids repeatedly negotiating a player against an output
@@ -170,8 +174,8 @@ export async function startMirrorSession({
   if (!processedStream) {
     await broadcast.stop().catch(() => undefined);
     void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
-    onStatus?.("error", "Fluxul procesat nu a pornit");
-    throw new Error("no processed output");
+    onStatus?.("error", `Fluxul procesat nu a pornit: ${startupDetail}`);
+    throw new Error(`Fluxul procesat nu a pornit: ${startupDetail}`);
   }
 
   onStatus?.("live");
