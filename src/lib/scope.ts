@@ -39,14 +39,58 @@ async function waitForServer(onStatus?: (s: MirrorStatus, d?: string) => void) {
   throw new Error("Serverul Scope nu a răspuns (pod pornit?)");
 }
 
+type ModelStatus = {
+  downloaded?: boolean;
+  progress?: {
+    is_downloading?: boolean;
+    percentage?: number;
+    current_artifact?: string;
+  } | null;
+};
+
+async function ensureModels(pipeline: string, onStatus?: (s: MirrorStatus, d?: string) => void) {
+  let status = await call(`/api/v1/models/status?pipeline_id=${encodeURIComponent(pipeline)}`, "GET");
+  let model = status.body as ModelStatus | null;
+  if (status.ok && model?.downloaded) return;
+
+  if (!model?.progress?.is_downloading) {
+    const started = await call("/api/v1/models/download", "POST", { pipeline_id: pipeline });
+    if (!started.ok) {
+      throw new Error(started.error || `Descărcarea modelului a eșuat (${started.status})`);
+    }
+  }
+
+  const deadline = Date.now() + 1_800_000;
+  while (Date.now() < deadline) {
+    await sleep(5000);
+    status = await call(`/api/v1/models/status?pipeline_id=${encodeURIComponent(pipeline)}`, "GET");
+    model = status.body as ModelStatus | null;
+    if (status.ok && model?.downloaded) return;
+    if (!status.ok) {
+      onStatus?.("creating", "GPU-ul repornește; descărcarea va fi reluată");
+      await waitForServer(onStatus);
+      continue;
+    }
+    const percentage = model?.progress?.percentage;
+    const detail = percentage != null ? `model: ${Math.round(percentage)}%` : "model: se descarcă";
+    onStatus?.("creating", detail);
+  }
+  throw new Error("Modelul nu s-a descărcat la timp");
+}
+
 async function loadPipeline(pipeline: string, onStatus?: (s: MirrorStatus, d?: string) => void) {
-  await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
+  await ensureModels(pipeline, onStatus);
+  const load = await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
+  if (!load.ok) throw new Error(load.error || `Pornirea modelului a eșuat (${load.status})`);
   const deadline = Date.now() + 600_000; // first run downloads model weights
   while (Date.now() < deadline) {
     const res = await call("/api/v1/pipeline/status", "GET");
-    const status = (res.body as { status?: string } | null)?.status;
+    const pipelineState = res.body as { status?: string; error?: string | null } | null;
+    const status = pipelineState?.status;
     if (status === "loaded") return;
-    if (status === "error") throw new Error("Pipeline-ul Scope a eșuat la încărcare");
+    if (status === "error") {
+      throw new Error(pipelineState?.error || "Pipeline-ul Scope a eșuat la încărcare");
+    }
     onStatus?.("creating", `model: ${status ?? "se pregătește"}`);
     await sleep(2500);
   }
@@ -143,6 +187,54 @@ export async function startScopeSession({
     pc.close();
     throw error;
   });
+
+  const outputTrack = processedStream.getVideoTracks()[0];
+  if (!outputTrack) {
+    pc.close();
+    throw new Error("GPU-ul nu a trimis o pistă video");
+  }
+  if (outputTrack.muted) {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        outputTrack.removeEventListener("unmute", handleUnmute);
+        reject(new Error("GPU-ul s-a conectat, dar nu a trimis cadre video"));
+      }, 90_000);
+      const handleUnmute = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      outputTrack.addEventListener("unmute", handleUnmute, { once: true });
+    }).catch((error: Error) => {
+      pc.close();
+      throw error;
+    });
+  }
+
+  const probe = document.createElement("video");
+  probe.muted = true;
+  probe.playsInline = true;
+  probe.srcObject = processedStream;
+  await probe.play().catch(() => undefined);
+  await new Promise<void>((resolve, reject) => {
+    const deadline = Date.now() + 90_000;
+    const check = () => {
+      if (probe.videoWidth > 0 && probe.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        resolve();
+        return;
+      }
+      if (Date.now() >= deadline) {
+        reject(new Error("GPU-ul s-a conectat, dar nu a produs cadre video"));
+        return;
+      }
+      setTimeout(check, 250);
+    };
+    check();
+  }).catch((error: Error) => {
+    probe.srcObject = null;
+    pc.close();
+    throw error;
+  });
+  probe.srcObject = null;
 
   onStatus?.("live");
 
