@@ -10,7 +10,7 @@ import {
   loadSettings,
   type MirrorSettings,
 } from "@/lib/settings";
-import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/daydream";
+import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/mirror";
 import { GildedBackdrop } from "@/components/GildedBackdrop";
 
 

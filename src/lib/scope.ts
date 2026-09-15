@@ -1,6 +1,6 @@
 import { scopeProxy } from "./runpod.functions";
 import type { MirrorSettings } from "./settings";
-import type { MirrorSession, MirrorStatus } from "./daydream";
+import type { MirrorSession, MirrorStatus } from "./mirror";
 
 /**
  * Client for a self-hosted Daydream Scope server running on a RunPod GPU.

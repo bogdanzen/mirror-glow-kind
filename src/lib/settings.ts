@@ -17,7 +17,7 @@ export type MirrorSettings = {
   seed: number;
   steps: number;
   /** Which inference backend drives the mirror. */
-  provider: "daydream" | "runpod";
+  provider: "runpod";
   /** Self-hosted Scope pipeline (RunPod provider). */
   scopePipeline: string;
   /** Scope denoising schedule — fewer steps = lower latency. */

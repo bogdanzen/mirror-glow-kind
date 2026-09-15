@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   DEFAULT_SETTINGS,
-  MODEL_OPTIONS,
   SCOPE_PIPELINES,
   appendSessionLog,
   clearSessionLog,
@@ -11,14 +10,13 @@ import {
   type MirrorSettings,
   type SessionLogEntry,
 } from "@/lib/settings";
-import { daydreamHealth } from "@/lib/daydream.functions";
 import {
   runpodState,
   startRunpodPod,
   stopRunpodPod,
   type RunpodState,
 } from "@/lib/runpod.functions";
-import { startMirrorSession } from "@/lib/daydream";
+import { startMirrorSession } from "@/lib/mirror";
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
@@ -39,7 +37,6 @@ export function AdminPanel({
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [status, setStatus] = useState<string>("");
   const [newPin, setNewPin] = useState("");
-  const [keyConfigured, setKeyConfigured] = useState<boolean | null>(null);
   const [log, setLog] = useState<SessionLogEntry[]>([]);
   const [runpod, setRunpod] = useState<RunpodState | null>(null);
   const [podMsg, setPodMsg] = useState("");
@@ -51,9 +48,6 @@ export function AdminPanel({
       .then((d) => setDevices(d.filter((x) => x.kind === "videoinput")))
       .catch(() => undefined);
     setLog(readSessionLog());
-    void daydreamHealth()
-      .then((r) => setKeyConfigured(r.configured))
-      .catch(() => setKeyConfigured(false));
     void runpodState()
       .then(setRunpod)
       .catch(() => setRunpod({ configured: false, pod: null }));
@@ -112,19 +106,9 @@ export function AdminPanel({
           Sesiuni astăzi: <span className="text-foreground">{readSessionCounter()}</span>
         </p>
 
-        <label className={label}>Sursă AI</label>
-        <select
-          className={field}
-          value={draft.provider}
-          onChange={(e) => set("provider", e.target.value as MirrorSettings["provider"])}
-        >
-          <option value="runpod">GPU propriu (RunPod + Scope)</option>
-          <option value="daydream">Daydream Cloud</option>
-        </select>
-
-        {draft.provider === "runpod" && (
+        {(
           <>
-            <label className={label}>GPU RunPod</label>
+            <label className={label}>GPU RunPod (Scope)</label>
             <p className="py-3 text-base text-muted-foreground">
               {runpod === null
                 ? "se verifică…"
@@ -212,61 +196,23 @@ export function AdminPanel({
           </>
         )}
 
-        <label className={label}>Backend (Daydream Cloud)</label>
-        <p className="py-3 text-base">
-          Cheie API:{" "}
-          <span className={keyConfigured ? "text-primary" : "text-muted-foreground"}>
-            {keyConfigured === null
-              ? "se verifică…"
-              : keyConfigured
-                ? "configurată"
-                : "lipsă — se rulează în DEMO"}
-          </span>
-        </p>
-
-        <label className={label}>Model</label>
-        <select
+        <label className={label}>Pași de denoising (latență)</label>
+        <input
           className={field}
-          value={draft.modelId}
-          onChange={(e) => set("modelId", e.target.value)}
-        >
-          {MODEL_OPTIONS.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <label className={label}>Delta</label>
-            <input
-              className={field}
-              type="number"
-              step="0.05"
-              value={draft.delta}
-              onChange={(e) => set("delta", Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className={label}>Seed</label>
-            <input
-              className={field}
-              type="number"
-              value={draft.seed}
-              onChange={(e) => set("seed", Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className={label}>Pași</label>
-            <input
-              className={field}
-              type="number"
-              value={draft.steps}
-              onChange={(e) => set("steps", Number(e.target.value))}
-            />
-          </div>
-        </div>
+          value={draft.scopeDenoiseSteps.join(", ")}
+          onChange={(e) =>
+            set(
+              "scopeDenoiseSteps",
+              e.target.value
+                .split(",")
+                .map((v) => Number(v.trim()))
+                .filter((v) => Number.isFinite(v) && v > 0),
+            )
+          }
+        />
+        <p className="text-xs text-muted-foreground">
+          Mai puțini pași = latență mai mică. Implicit 700, 500.
+        </p>
 
 
         <label className={label}>Prompt</label>
