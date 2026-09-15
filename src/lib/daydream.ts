@@ -85,7 +85,7 @@ export async function startMirrorSession({
     }
   }
 
-  const whepUrl = broadcast.whepUrl;
+  const whepUrl = broadcast.whepUrl?.replace(/^http:\/\//i, "https://");
   if (!whepUrl) {
     await broadcast.stop().catch(() => undefined);
     void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
@@ -93,15 +93,29 @@ export async function startMirrorSession({
     throw new Error("missing whep url");
   }
 
-  const player = createPlayer(whepUrl);
-  try {
-    await player.connect();
-  } catch (error) {
+  // The AI worker needs time to warm up: the WHEP endpoint 404s / refuses the
+  // connection until the output stream exists. Retry patiently before failing.
+  let player = createPlayer(whepUrl);
+  let connected = false;
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 20 && !connected; attempt += 1) {
+    try {
+      await player.connect();
+      connected = true;
+    } catch (error) {
+      lastError = error;
+      await player.stop().catch(() => undefined);
+      await sleep(1500);
+      player = createPlayer(whepUrl);
+    }
+  }
+
+  if (!connected) {
     await player.stop().catch(() => undefined);
     await broadcast.stop().catch(() => undefined);
     void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
-    onStatus?.("error", (error as Error).message);
-    throw error;
+    onStatus?.("error", (lastError as Error)?.message ?? "WHEP indisponibil");
+    throw lastError instanceof Error ? lastError : new Error("whep connect failed");
   }
 
   const processedStream = player.stream;

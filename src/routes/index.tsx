@@ -88,13 +88,17 @@ function Kiosk() {
     window.addEventListener("pointerdown", touch);
     const id = window.setInterval(() => {
       if (screen === "attract" || admin) return;
+      if (screen === "mirror" && mirrorStatus !== "live") {
+        idleRef.current = Date.now();
+        return;
+      }
       if (Date.now() - idleRef.current > settings.idleTimeoutSeconds * 1000) goAttract();
     }, 1000);
     return () => {
       window.removeEventListener("pointerdown", touch);
       window.clearInterval(id);
     };
-  }, [screen, admin, settings.idleTimeoutSeconds, goAttract]);
+  }, [screen, admin, mirrorStatus, settings.idleTimeoutSeconds, goAttract]);
 
   // Hidden admin: 5 rapid taps top-left
   const tapsRef = useRef<number[]>([]);
@@ -250,16 +254,21 @@ function Kiosk() {
       }
     })();
 
+    return () => {
+      cancelled = true;
+    };
+  }, [screen, settings, startCamera, teardownStream]);
+
+  // Only start counting the mirror time once the image is actually visible,
+  // so a slow warm-up doesn't eat the whole experience.
+  useEffect(() => {
+    if (screen !== "mirror" || mirrorStatus !== "live") return;
     const id = window.setTimeout(() => {
       if (settings.storageEnabled) setScreen("capture");
       else setScreen("thanks");
     }, settings.mirrorSeconds * 1000);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(id);
-    };
-  }, [screen, settings, startCamera, teardownStream]);
+    return () => window.clearTimeout(id);
+  }, [screen, mirrorStatus, settings.storageEnabled, settings.mirrorSeconds]);
 
   // CAPTURE / THANKS timers
   useEffect(() => {
