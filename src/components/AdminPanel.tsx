@@ -18,7 +18,7 @@ import {
   stopRunpodPod,
   type RunpodState,
 } from "@/lib/runpod.functions";
-import { startMirrorSession } from "@/lib/daydream";
+import { startMirrorSession } from "@/lib/mirror";
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
