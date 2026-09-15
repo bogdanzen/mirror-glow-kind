@@ -50,11 +50,11 @@ function Kiosk() {
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
-  const [playbackUrl, setPlaybackUrl] = useState("");
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
+  const demoCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const sessionRef = useRef<MirrorSession | null>(null);
   const idleRef = useRef<number>(Date.now());
 
@@ -82,7 +82,6 @@ function Kiosk() {
     setCaptureUrl("");
     setCaptureId("");
     setError("");
-    setPlaybackUrl("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
 
@@ -215,6 +214,7 @@ function Kiosk() {
         setDemo(true);
         setMirrorStatus("live");
         if (mirrorRef.current && !cancelled) {
+          mirrorRef.current.srcObject = null;
           mirrorRef.current.srcObject = camera;
           await mirrorRef.current.play().catch(() => undefined);
         }
@@ -247,10 +247,9 @@ function Kiosk() {
           latencyMs: Math.round(performance.now() - started),
         });
         if (session.processedStream && mirrorRef.current) {
+          mirrorRef.current.srcObject = null;
           mirrorRef.current.srcObject = session.processedStream;
           await mirrorRef.current.play().catch(() => undefined);
-        } else if (session.playbackUrl) {
-          setPlaybackUrl(session.playbackUrl);
         }
         setMirrorStatus("live");
       } catch (e) {
@@ -264,6 +263,64 @@ function Kiosk() {
       cancelled = true;
     };
   }, [screen, settings, startCamera, teardownStream]);
+
+  // Offline exhibit fallback: keep the live visitor and paint a softly blended,
+  // skin-toned shaved scalp over the framed head area. This is intentionally a
+  // lightweight canvas effect so the complete experience remains demonstrable
+  // when the cloud has no GPU orchestrator.
+  useEffect(() => {
+    if (screen !== "mirror" || !demo || mirrorStatus !== "live") return;
+    let raf = 0;
+    const render = () => {
+      const video = mirrorRef.current;
+      const canvas = demoCanvasRef.current;
+      if (!video || !canvas || !video.videoWidth) {
+        raf = requestAnimationFrame(render);
+        return;
+      }
+      const size = 512;
+      if (canvas.width !== size) canvas.width = size;
+      if (canvas.height !== size) canvas.height = size;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      const sourceRatio = video.videoWidth / video.videoHeight;
+      const sourceSize = sourceRatio > 1 ? video.videoHeight : video.videoWidth;
+      const sx = (video.videoWidth - sourceSize) / 2;
+      const sy = (video.videoHeight - sourceSize) / 2;
+      ctx.drawImage(video, sx, sy, sourceSize, sourceSize, 0, 0, size, size);
+
+      // Sample the forehead to match each visitor's complexion and lighting.
+      const sample = ctx.getImageData(226, 190, 60, 34).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < sample.length; i += 16) {
+        r += sample[i] ?? 0;
+        g += sample[i + 1] ?? 0;
+        b += sample[i + 2] ?? 0;
+        count += 1;
+      }
+      r = Math.min(245, r / count + 7);
+      g = Math.min(230, g / count + 4);
+      b = Math.min(220, b / count + 2);
+      const scalp = ctx.createRadialGradient(235, 160, 15, 256, 214, 142);
+      scalp.addColorStop(0, `rgba(${r + 12},${g + 10},${b + 8},.95)`);
+      scalp.addColorStop(.68, `rgba(${r},${g},${b},.94)`);
+      scalp.addColorStop(1, `rgba(${r - 16},${g - 13},${b - 12},0)`);
+      ctx.save();
+      ctx.filter = "blur(1.5px)";
+      ctx.fillStyle = scalp;
+      ctx.beginPath();
+      ctx.ellipse(256, 199, 119, 142, 0, Math.PI, Math.PI * 2);
+      ctx.lineTo(375, 224);
+      ctx.quadraticCurveTo(340, 278, 256, 268);
+      ctx.quadraticCurveTo(172, 278, 137, 224);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      raf = requestAnimationFrame(render);
+    };
+    raf = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(raf);
+  }, [screen, demo, mirrorStatus]);
 
   // Only start counting the mirror time once the image is actually visible,
   // so a slow warm-up doesn't eat the whole experience.
@@ -293,13 +350,13 @@ function Kiosk() {
   useEffect(() => {
     if (screen !== "capture") return;
     const v = mirrorRef.current;
+    const demoCanvas = demoCanvasRef.current;
     if (!v || !v.videoWidth) return;
     const canvas = document.createElement("canvas");
-    canvas.width = v.videoWidth;
-    canvas.height = v.videoHeight;
+    canvas.width = demo && demoCanvas?.width ? demoCanvas.width : v.videoWidth;
+    canvas.height = demo && demoCanvas?.height ? demoCanvas.height : v.videoHeight;
     const ctx = canvas.getContext("2d")!;
-    if (demo) ctx.filter = "grayscale(0.55) contrast(1.08)";
-    ctx.drawImage(v, 0, 0);
+    ctx.drawImage(demo && demoCanvas ? demoCanvas : v, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCaptureUrl(dataUrl);
     teardownStream();
@@ -424,24 +481,26 @@ function Kiosk() {
               playsInline
               className="h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms]"
               style={{
-                opacity: mirrorStatus === "live" ? 1 : 0,
+                opacity: mirrorStatus === "live" && !demo ? 1 : 0,
                 maskImage:
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
                 WebkitMaskImage:
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-                filter: demo
-                  ? "grayscale(0.55) contrast(1.08) brightness(0.95)"
-                  : undefined,
               }}
             />
-            {playbackUrl && (
-              <iframe
-                title="Oglinda"
-                src={playbackUrl}
-                allow="autoplay; fullscreen"
-                className="absolute inset-0 h-full w-full scale-x-[-1] border-0"
-              />
-            )}
+            <canvas
+              ref={demoCanvasRef}
+              aria-label="Simulare live a capului ras"
+              className={`absolute inset-0 h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms] ${
+                demo && mirrorStatus === "live" ? "opacity-100" : "opacity-0"
+              }`}
+              style={{
+                maskImage:
+                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+              }}
+            />
             {mirrorStatus !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />

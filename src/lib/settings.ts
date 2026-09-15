@@ -26,7 +26,7 @@ export const MODEL_OPTIONS = [
 ] as const;
 
 export const DEFAULT_PROMPT =
-  "photorealistic portrait of the same person with a completely shaved head, chemotherapy patient, natural skin, identical face, same lighting, same background";
+  "photorealistic live portrait of the exact same person, completely bald with a smooth naturally shaved scalp, preserve exact facial identity, eyes, nose, mouth, skin tone, expression, clothing, camera angle, lighting and unchanged background, documentary photography, realistic skin texture";
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
   prompt: DEFAULT_PROMPT,
@@ -43,7 +43,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   idleTimeoutSeconds: 45,
   campaignLine: "SCHIMBAREA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
-  delta: 0.55,
+  delta: 0.45,
   seed: 42,
   steps: 2,
 };
