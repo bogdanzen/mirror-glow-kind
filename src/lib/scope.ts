@@ -60,7 +60,7 @@ export async function startScopeSession({
 }: {
   settings: MirrorSettings;
   cameraStream: MediaStream;
-  onStatus?: (status: MirrorStatus, detail?: string) => void;
+  onStatus?: ((status: MirrorStatus, detail?: string) => void) | undefined;
 }): Promise<MirrorSession> {
   onStatus?.("creating");
   await waitForServer(onStatus);
