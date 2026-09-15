@@ -394,15 +394,35 @@ function Kiosk() {
       )}
 
       {screen === "mirror" && (
-        <section className="relative h-full w-full bg-black">
-          <video
-            ref={mirrorRef}
-            muted
-            playsInline
-            className="h-full w-full scale-x-[-1] object-cover"
-            style={demo ? { filter: "grayscale(0.55) contrast(1.08) brightness(0.95)" } : undefined}
-          />
-          {demo && (
+        <section className="relative flex h-full w-full flex-col items-center justify-center bg-black">
+          <div className="relative aspect-square w-[88vmin] max-w-[92vw] overflow-hidden">
+            <video
+              ref={mirrorRef}
+              muted
+              playsInline
+              className="h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms]"
+              style={{
+                opacity: mirrorStatus === "live" ? 1 : 0,
+                maskImage:
+                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                filter: demo
+                  ? "grayscale(0.55) contrast(1.08) brightness(0.95)"
+                  : undefined,
+              }}
+            />
+            {mirrorStatus !== "live" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+                <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
+                <p className="absolute text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
+                  Se pregătește oglinda…
+                </p>
+              </div>
+            )}
+          </div>
+
+          {demo && mirrorStatus === "live" && (
             <span className="absolute right-[4vw] top-[4vh] border border-hairline px-4 py-2 text-[clamp(0.7rem,1.2vw,1rem)] tracking-[0.3em] text-muted-foreground">
               DEMO
             </span>
