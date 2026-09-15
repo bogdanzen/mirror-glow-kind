@@ -41,6 +41,8 @@ export function AdminPanel({
   const [newPin, setNewPin] = useState("");
   const [keyConfigured, setKeyConfigured] = useState<boolean | null>(null);
   const [log, setLog] = useState<SessionLogEntry[]>([]);
+  const [runpod, setRunpod] = useState<RunpodState | null>(null);
+  const [podMsg, setPodMsg] = useState("");
 
   useEffect(() => {
     if (!unlocked) return;
@@ -52,6 +54,9 @@ export function AdminPanel({
     void daydreamHealth()
       .then((r) => setKeyConfigured(r.configured))
       .catch(() => setKeyConfigured(false));
+    void runpodState()
+      .then(setRunpod)
+      .catch(() => setRunpod({ configured: false, pod: null }));
   }, [unlocked]);
 
   const set = <K extends keyof MirrorSettings>(k: K, v: MirrorSettings[K]) =>
