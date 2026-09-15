@@ -112,19 +112,9 @@ export function AdminPanel({
           Sesiuni astăzi: <span className="text-foreground">{readSessionCounter()}</span>
         </p>
 
-        <label className={label}>Sursă AI</label>
-        <select
-          className={field}
-          value={draft.provider}
-          onChange={(e) => set("provider", e.target.value as MirrorSettings["provider"])}
-        >
-          <option value="runpod">GPU propriu (RunPod + Scope)</option>
-          <option value="daydream">Daydream Cloud</option>
-        </select>
-
-        {draft.provider === "runpod" && (
+        {(
           <>
-            <label className={label}>GPU RunPod</label>
+            <label className={label}>GPU RunPod (Scope)</label>
             <p className="py-3 text-base text-muted-foreground">
               {runpod === null
                 ? "se verifică…"
