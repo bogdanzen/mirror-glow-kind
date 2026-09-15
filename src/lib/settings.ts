@@ -16,7 +16,20 @@ export type MirrorSettings = {
   delta: number;
   seed: number;
   steps: number;
+  /** Which inference backend drives the mirror. */
+  provider: "daydream" | "runpod";
+  /** Self-hosted Scope pipeline (RunPod provider). */
+  scopePipeline: string;
+  /** Scope denoising schedule — fewer steps = lower latency. */
+  scopeDenoiseSteps: number[];
 };
+
+export const SCOPE_PIPELINES = [
+  "streamdiffusionv2",
+  "longlive",
+  "krea-realtime-video",
+  "passthrough",
+] as const;
 
 export const MODEL_OPTIONS = [
   "stabilityai/sdxl-turbo",

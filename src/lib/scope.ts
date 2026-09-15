@@ -9,10 +9,19 @@ import type { MirrorSession, MirrorStatus } from "./daydream";
  * connection between the kiosk and the pod.
  */
 
-type ScopeCall = { ok: boolean; status: number; body: unknown; error?: string };
+type ScopeCall = { ok: boolean; status: number; body: unknown; error: string };
 
 async function call(path: string, method: string, body?: unknown): Promise<ScopeCall> {
-  return scopeProxy({ data: { path, method, ...(body !== undefined ? { body } : {}) } });
+  const res = await scopeProxy({
+    data: { path, method, ...(body !== undefined ? { body } : {}) },
+  });
+  let parsed: unknown = res.text;
+  try {
+    parsed = JSON.parse(res.text);
+  } catch {
+    /* plain text */
+  }
+  return { ok: res.ok, status: res.status, body: parsed, error: res.error };
 }
 
 function sleep(ms: number) {
