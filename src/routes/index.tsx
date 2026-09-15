@@ -325,12 +325,36 @@ function Kiosk() {
           className="flex h-full w-full flex-col items-center justify-center px-[8vw] text-center"
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <img
+              src={fireHorse}
+              alt=""
+              aria-hidden
+              className="drift absolute inset-0 h-full w-full object-cover opacity-35"
+            />
+            <div className="absolute inset-0 bg-background/55" />
             <div className="drift absolute left-1/2 top-1/2 h-[80vh] w-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]" />
+            <img
+              src={butterfly}
+              alt=""
+              aria-hidden
+              className="flutter absolute left-[8vw] top-[16vh] w-[18vmin]"
+            />
+            <img
+              src={butterfly}
+              alt=""
+              aria-hidden
+              className="flutter absolute right-[12vw] top-[34vh] w-[11vmin] [animation-delay:-6s]"
+            />
           </div>
-          <h1 className="fade-in-slow relative text-[clamp(2.5rem,7vw,7rem)] leading-tight">
-            Privește-te în oglindă.
+          <h1 className="fade-in-slow relative text-[clamp(3rem,10vw,10rem)] leading-none tracking-tight text-primary">
+            TE VEZI?
           </h1>
-          <p className="breathe relative mt-[8vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
+          <p className="fade-in-slow relative mt-[5vh] max-w-[22ch] text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug">
+            Oglinda nu îți arată cine ești astăzi.
+            <br />
+            Îți arată cine ai putea deveni.
+          </p>
+          <p className="breathe relative mt-[7vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
             Atinge ecranul pentru a începe
           </p>
           <p className="absolute bottom-[6vh] left-1/2 -translate-x-1/2 text-[clamp(0.8rem,1.6vw,1.4rem)] text-muted-foreground">
