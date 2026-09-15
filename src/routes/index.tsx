@@ -245,9 +245,11 @@ function Kiosk() {
           status: "live",
           latencyMs: Math.round(performance.now() - started),
         });
-        if (mirrorRef.current) {
+        if (session.processedStream && mirrorRef.current) {
           mirrorRef.current.srcObject = session.processedStream;
           await mirrorRef.current.play().catch(() => undefined);
+        } else if (session.playbackUrl) {
+          setPlaybackUrl(session.playbackUrl);
         }
         setMirrorStatus("live");
       } catch (e) {
