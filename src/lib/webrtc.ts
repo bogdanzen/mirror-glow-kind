@@ -20,7 +20,7 @@ export async function createStream(
 ): Promise<StreamSession> {
   const res = await fetch(`${settings.backendBaseUrl.replace(/\/$/, "")}/v1/streams`, {
     method: "POST",
-    signal,
+    signal: signal ?? null,
     headers: { "Content-Type": "application/json", ...authHeaders(settings) },
     body: JSON.stringify({
       pipeline: settings.pipelineId,
