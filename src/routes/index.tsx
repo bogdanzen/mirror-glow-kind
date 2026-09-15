@@ -88,6 +88,10 @@ function Kiosk() {
     window.addEventListener("pointerdown", touch);
     const id = window.setInterval(() => {
       if (screen === "attract" || admin) return;
+      if (screen === "mirror" && mirrorStatus !== "live") {
+        idleRef.current = Date.now();
+        return;
+      }
       if (Date.now() - idleRef.current > settings.idleTimeoutSeconds * 1000) goAttract();
     }, 1000);
     return () => {
