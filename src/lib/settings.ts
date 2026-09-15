@@ -59,6 +59,9 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   delta: 0.45,
   seed: 42,
   steps: 2,
+  provider: "runpod",
+  scopePipeline: "streamdiffusionv2",
+  scopeDenoiseSteps: [700, 500],
 };
 
 const KEY = "mirror.settings.v1";
