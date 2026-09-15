@@ -1,7 +1,4 @@
 export type MirrorSettings = {
-  backendBaseUrl: string;
-  apiKey: string;
-  pipelineId: string;
   prompt: string;
   width: number;
   height: number;
@@ -32,9 +29,6 @@ export const DEFAULT_PROMPT =
   "photorealistic portrait of the same person with a completely shaved head, chemotherapy patient, natural skin, identical face, same lighting, same background";
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
-  backendBaseUrl: "",
-  apiKey: "",
-  pipelineId: "",
   prompt: DEFAULT_PROMPT,
   width: 512,
   height: 512,
