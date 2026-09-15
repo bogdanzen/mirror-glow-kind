@@ -514,13 +514,35 @@ function Kiosk() {
       )}
 
       {screen === "thanks" && (
-        <section className="fade-in-slow flex h-full flex-col items-center justify-center px-[8vw] text-center">
-          <h2 className="text-[clamp(2.5rem,7vw,7rem)]">Mulțumim.</h2>
-          <p className="mt-[6vh] text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
+        <section className="fade-in-slow relative flex h-full flex-col items-center justify-center px-[8vw] text-center">
+          <img
+            src={fireHorse}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-background/60" />
+          <h2 className="relative text-[clamp(2.5rem,8vw,8rem)] text-primary">TE VEZI?</h2>
+          <p className="relative mt-[5vh] max-w-[24ch] text-[clamp(1.1rem,2.6vw,2.4rem)] leading-snug">
+            Oglinda nu îți arată cine ești astăzi.
+            <br />
+            Îți arată cine ai putea deveni.
+          </p>
+          <span className="relative mt-[5vh] block h-px w-[14vmin] bg-primary/70" />
+          <p className="relative mt-[5vh] text-[clamp(1rem,2.4vw,2.2rem)] tracking-[0.1em] text-primary">
             {campaign}
           </p>
-          <p className="mt-[4vh] max-w-[40ch] text-[clamp(0.95rem,1.8vw,1.6rem)] text-muted-foreground/80">
-            [INFORMAȚII DESPRE SCREENING] — controlul periodic salvează vieți.
+          <p className="relative mt-[4vh] max-w-[30ch] text-[clamp(0.95rem,2vw,1.8rem)] uppercase tracking-[0.06em] text-foreground/80">
+            Tu ce alegi să faci după ce te-ai văzut?
+          </p>
+          <img
+            src={butterfly}
+            alt=""
+            aria-hidden
+            className="breathe relative mt-[6vh] w-[16vmin]"
+          />
+          <p className="relative mt-[4vh] text-[clamp(0.8rem,1.5vw,1.2rem)] tracking-[0.3em] text-muted-foreground">
+            PENTRU VIAȚĂ
           </p>
         </section>
       )}
