@@ -414,8 +414,10 @@ function Kiosk() {
       )}
 
       {screen === "mirror" && (
-        <section className="relative flex h-full w-full flex-col items-center justify-center bg-black">
-          <div className="relative aspect-square w-[88vmin] max-w-[92vw] overflow-hidden">
+        <section className="relative flex h-full w-full flex-col items-center justify-center bg-background">
+          <GildedBackdrop />
+          <div className="relative aspect-square w-[88vmin] max-w-[92vw] overflow-hidden shadow-[0_0_120px_color-mix(in_oklab,var(--gold-2)_28%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--gold-2)_45%,transparent)]">
+
             <video
               ref={mirrorRef}
               muted
