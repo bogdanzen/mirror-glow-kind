@@ -10,7 +10,10 @@ export type MirrorStatus = "creating" | "publishing" | "live" | "error" | "ended
 
 export type MirrorSession = {
   streamId: string;
-  processedStream: MediaStream;
+  /** WebRTC stream with the AI output, when WHEP playback succeeded. */
+  processedStream: MediaStream | null;
+  /** Hosted player URL (lvpr.tv) — used as fallback when WHEP is unavailable. */
+  playbackUrl: string;
   cameraStream: MediaStream;
   stop: () => Promise<void>;
 };
@@ -41,6 +44,8 @@ function sleep(ms: number) {
 /**
  * Creates a Daydream stream (via the server function that holds the API key),
  * publishes the camera over WHIP and plays the AI-processed result over WHEP.
+ * If WHEP never comes up, the session still resolves with the hosted playback
+ * URL so the visitor sees the real AI output instead of falling back to demo.
  */
 export async function startMirrorSession({
   settings,
@@ -69,13 +74,22 @@ export async function startMirrorSession({
   const camera = cameraStream ?? (await getCamera(settings));
   onStatus?.("publishing");
 
-  let broadcast = createBroadcast({ whipUrl: result.whipUrl, stream: camera });
+  const makeBroadcast = () =>
+    createBroadcast({
+      whipUrl: result.whipUrl,
+      stream: camera,
+      connectionTimeout: 30000,
+      video: { bitrate: 1_500_000, maxFramerate: settings.fps },
+      reconnect: { enabled: true, maxAttempts: 5, baseDelayMs: 1000 },
+    });
+
+  let broadcast = makeBroadcast();
   try {
     await broadcast.connect();
   } catch (error) {
     await broadcast.stop().catch(() => undefined);
     await sleep(2000);
-    broadcast = createBroadcast({ whipUrl: result.whipUrl, stream: camera });
+    broadcast = makeBroadcast();
     try {
       await broadcast.connect();
     } catch {
@@ -85,46 +99,40 @@ export async function startMirrorSession({
     }
   }
 
-  const whepUrl = broadcast.whepUrl?.replace(/^http:\/\//i, "https://");
-  if (!whepUrl) {
-    await broadcast.stop().catch(() => undefined);
-    void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
-    onStatus?.("error", "Lipsă URL de redare");
-    throw new Error("missing whep url");
-  }
+  const whepUrl = broadcast.whepUrl?.replace(/^http:\/\//i, "https://") ?? "";
 
-  // The AI worker needs time to warm up: the WHEP endpoint 404s / refuses the
-  // connection until the output stream exists. Retry patiently before failing.
-  let player = createPlayer(whepUrl);
-  let connected = false;
-  let lastError: unknown = null;
-  for (let attempt = 0; attempt < 20 && !connected; attempt += 1) {
-    try {
-      await player.connect();
-      connected = true;
-    } catch (error) {
-      lastError = error;
-      await player.stop().catch(() => undefined);
-      await sleep(1500);
-      player = createPlayer(whepUrl);
+  // The AI worker needs 10-30s to warm up: the WHEP endpoint refuses the
+  // connection until the output stream exists. Retry patiently.
+  let processedStream: MediaStream | null = null;
+  let player: ReturnType<typeof createPlayer> | null = null;
+
+  if (whepUrl) {
+    await sleep(4000);
+    for (let attempt = 0; attempt < 15 && !processedStream; attempt += 1) {
+      const p = createPlayer(whepUrl, {
+        connectionTimeout: 15000,
+        reconnect: { enabled: true, maxAttempts: 5, baseDelayMs: 1000 },
+      });
+      try {
+        await p.connect();
+        if (p.stream) {
+          player = p;
+          processedStream = p.stream;
+          break;
+        }
+        await p.stop().catch(() => undefined);
+      } catch {
+        await p.stop().catch(() => undefined);
+      }
+      await sleep(2000);
     }
   }
 
-  if (!connected) {
-    await player.stop().catch(() => undefined);
+  if (!processedStream && !result.playbackUrl) {
     await broadcast.stop().catch(() => undefined);
     void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
-    onStatus?.("error", (lastError as Error)?.message ?? "WHEP indisponibil");
-    throw lastError instanceof Error ? lastError : new Error("whep connect failed");
-  }
-
-  const processedStream = player.stream;
-  if (!processedStream) {
-    await player.stop().catch(() => undefined);
-    await broadcast.stop().catch(() => undefined);
-    void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
-    onStatus?.("error", "Fără flux procesat");
-    throw new Error("missing processed stream");
+    onStatus?.("error", "Fluxul procesat nu a pornit");
+    throw new Error("no processed output");
   }
 
   onStatus?.("live");
@@ -133,11 +141,17 @@ export async function startMirrorSession({
   const stop = async () => {
     if (stopped) return;
     stopped = true;
-    await player.stop().catch(() => undefined);
+    await player?.stop().catch(() => undefined);
     await broadcast.stop().catch(() => undefined);
     void deleteDaydreamStream({ data: { id: result.id } }).catch(() => undefined);
     onStatus?.("ended");
   };
 
-  return { streamId: result.id, processedStream, cameraStream: camera, stop };
+  return {
+    streamId: result.id,
+    processedStream,
+    playbackUrl: result.playbackUrl,
+    cameraStream: camera,
+    stop,
+  };
 }

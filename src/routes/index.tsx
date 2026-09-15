@@ -11,6 +11,8 @@ import {
   type MirrorSettings,
 } from "@/lib/settings";
 import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/daydream";
+import fireHorse from "@/assets/fire-horse.jpg";
+import butterfly from "@/assets/butterfly.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,6 +50,7 @@ function Kiosk() {
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
+  const [playbackUrl, setPlaybackUrl] = useState("");
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
@@ -79,6 +82,7 @@ function Kiosk() {
     setCaptureUrl("");
     setCaptureId("");
     setError("");
+    setPlaybackUrl("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
 
@@ -242,9 +246,11 @@ function Kiosk() {
           status: "live",
           latencyMs: Math.round(performance.now() - started),
         });
-        if (mirrorRef.current) {
+        if (session.processedStream && mirrorRef.current) {
           mirrorRef.current.srcObject = session.processedStream;
           await mirrorRef.current.play().catch(() => undefined);
+        } else if (session.playbackUrl) {
+          setPlaybackUrl(session.playbackUrl);
         }
         setMirrorStatus("live");
       } catch (e) {
@@ -319,12 +325,36 @@ function Kiosk() {
           className="flex h-full w-full flex-col items-center justify-center px-[8vw] text-center"
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <img
+              src={fireHorse}
+              alt=""
+              aria-hidden
+              className="drift absolute inset-0 h-full w-full object-cover opacity-35"
+            />
+            <div className="absolute inset-0 bg-background/55" />
             <div className="drift absolute left-1/2 top-1/2 h-[80vh] w-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]" />
+            <img
+              src={butterfly}
+              alt=""
+              aria-hidden
+              className="flutter absolute left-[8vw] top-[16vh] w-[18vmin]"
+            />
+            <img
+              src={butterfly}
+              alt=""
+              aria-hidden
+              className="flutter absolute right-[12vw] top-[34vh] w-[11vmin] [animation-delay:-6s]"
+            />
           </div>
-          <h1 className="fade-in-slow relative text-[clamp(2.5rem,7vw,7rem)] leading-tight">
-            Privește-te în oglindă.
+          <h1 className="fade-in-slow relative text-[clamp(3rem,10vw,10rem)] leading-none tracking-tight text-primary">
+            TE VEZI?
           </h1>
-          <p className="breathe relative mt-[8vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
+          <p className="fade-in-slow relative mt-[5vh] max-w-[22ch] text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug">
+            Oglinda nu îți arată cine ești astăzi.
+            <br />
+            Îți arată cine ai putea deveni.
+          </p>
+          <p className="breathe relative mt-[7vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
             Atinge ecranul pentru a începe
           </p>
           <p className="absolute bottom-[6vh] left-1/2 -translate-x-1/2 text-[clamp(0.8rem,1.6vw,1.4rem)] text-muted-foreground">
@@ -421,6 +451,14 @@ function Kiosk() {
                   : undefined,
               }}
             />
+            {playbackUrl && (
+              <iframe
+                title="Oglinda"
+                src={playbackUrl}
+                allow="autoplay; fullscreen"
+                className="absolute inset-0 h-full w-full scale-x-[-1] border-0"
+              />
+            )}
             {mirrorStatus !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
@@ -476,13 +514,35 @@ function Kiosk() {
       )}
 
       {screen === "thanks" && (
-        <section className="fade-in-slow flex h-full flex-col items-center justify-center px-[8vw] text-center">
-          <h2 className="text-[clamp(2.5rem,7vw,7rem)]">Mulțumim.</h2>
-          <p className="mt-[6vh] text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
+        <section className="fade-in-slow relative flex h-full flex-col items-center justify-center px-[8vw] text-center">
+          <img
+            src={fireHorse}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-background/60" />
+          <h2 className="relative text-[clamp(2.5rem,8vw,8rem)] text-primary">TE VEZI?</h2>
+          <p className="relative mt-[5vh] max-w-[24ch] text-[clamp(1.1rem,2.6vw,2.4rem)] leading-snug">
+            Oglinda nu îți arată cine ești astăzi.
+            <br />
+            Îți arată cine ai putea deveni.
+          </p>
+          <span className="relative mt-[5vh] block h-px w-[14vmin] bg-primary/70" />
+          <p className="relative mt-[5vh] text-[clamp(1rem,2.4vw,2.2rem)] tracking-[0.1em] text-primary">
             {campaign}
           </p>
-          <p className="mt-[4vh] max-w-[40ch] text-[clamp(0.95rem,1.8vw,1.6rem)] text-muted-foreground/80">
-            [INFORMAȚII DESPRE SCREENING] — controlul periodic salvează vieți.
+          <p className="relative mt-[4vh] max-w-[30ch] text-[clamp(0.95rem,2vw,1.8rem)] uppercase tracking-[0.06em] text-foreground/80">
+            Tu ce alegi să faci după ce te-ai văzut?
+          </p>
+          <img
+            src={butterfly}
+            alt=""
+            aria-hidden
+            className="breathe relative mt-[6vh] w-[16vmin]"
+          />
+          <p className="relative mt-[4vh] text-[clamp(0.8rem,1.5vw,1.2rem)] tracking-[0.3em] text-muted-foreground">
+            PENTRU VIAȚĂ
           </p>
         </section>
       )}
