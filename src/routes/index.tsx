@@ -98,7 +98,7 @@ function Kiosk() {
       window.removeEventListener("pointerdown", touch);
       window.clearInterval(id);
     };
-  }, [screen, admin, settings.idleTimeoutSeconds, goAttract]);
+  }, [screen, admin, mirrorStatus, settings.idleTimeoutSeconds, goAttract]);
 
   // Hidden admin: 5 rapid taps top-left
   const tapsRef = useRef<number[]>([]);
