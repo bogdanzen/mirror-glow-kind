@@ -20,10 +20,10 @@ export type CreateStreamResult =
 
 export type StreamStatusResult = {
   ready: boolean;
-  whepUrl?: string;
-  inputFps?: number;
-  outputFps?: number;
-  error?: string;
+  whepUrl?: string | undefined;
+  inputFps?: number | undefined;
+  outputFps?: number | undefined;
+  error?: string | undefined;
 };
 
 const FALLBACK_PROMPT =
