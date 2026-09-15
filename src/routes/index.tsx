@@ -438,8 +438,8 @@ function Kiosk() {
             {mirrorStatus !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
-                <p className="absolute text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
-                  Se pregătește oglinda…
+                <p className="absolute px-[6vw] text-center text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
+                  {mirrorStatus === "error" && error ? error : "Se pregătește oglinda…"}
                 </p>
               </div>
             )}
