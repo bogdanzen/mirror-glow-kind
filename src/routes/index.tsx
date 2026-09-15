@@ -4,8 +4,13 @@ import { QrCode } from "@/components/QrCode";
 import { AdminPanel } from "@/components/AdminPanel";
 import { saveCapture } from "@/lib/captures";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
-import { bumpSessionCounter, loadSettings, type MirrorSettings } from "@/lib/settings";
-import { createStream, deleteStream, whepPlay, whipPublish } from "@/lib/webrtc";
+import {
+  appendSessionLog,
+  bumpSessionCounter,
+  loadSettings,
+  type MirrorSettings,
+} from "@/lib/settings";
+import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/daydream";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -42,12 +47,12 @@ function Kiosk() {
   const [captureId, setCaptureId] = useState<string>("");
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
+  const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
-  const pcsRef = useRef<RTCPeerConnection[]>([]);
-  const streamIdRef = useRef<string>("");
+  const sessionRef = useRef<MirrorSession | null>(null);
   const idleRef = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -61,13 +66,10 @@ function Kiosk() {
   }, []);
 
   const teardownStream = useCallback(() => {
-    pcsRef.current.forEach((pc) => pc.close());
-    pcsRef.current = [];
-    if (streamIdRef.current) {
-      void deleteStream(settings, streamIdRef.current);
-      streamIdRef.current = "";
-    }
-  }, [settings]);
+    const session = sessionRef.current;
+    sessionRef.current = null;
+    if (session) void session.stop();
+  }, []);
 
   const goAttract = useCallback(() => {
     teardownStream();
@@ -190,7 +192,7 @@ function Kiosk() {
     };
   }, [screen, startCamera]);
 
-  // MIRROR: connect to backend or fall back to demo
+  // MIRROR: live AI stream, with silent fallback to demo mode
   useEffect(() => {
     if (screen !== "mirror") return;
     let cancelled = false;
@@ -199,32 +201,52 @@ function Kiosk() {
       const camera = cameraRef.current ?? (await startCamera().catch(() => null));
       if (!camera || cancelled) return;
       bumpSessionCounter();
+      setMirrorStatus("creating");
 
-      const useBackend = !settings.demoMode && !!settings.backendBaseUrl;
-      if (useBackend) {
-        try {
-          const session = await createStream(settings);
-          if (cancelled) return;
-          streamIdRef.current = session.streamId;
-          const pub = await whipPublish(session.whipUrl, camera, settings.apiKey);
-          const { pc, stream } = await whepPlay(session.whepUrl, settings.apiKey);
-          if (cancelled) return;
-          pcsRef.current = [pub, pc];
-          setDemo(false);
-          if (mirrorRef.current) {
-            mirrorRef.current.srcObject = stream;
-            await mirrorRef.current.play().catch(() => undefined);
-          }
-          return;
-        } catch {
-          teardownStream();
+      const showDemo = async () => {
+        setDemo(true);
+        setMirrorStatus("live");
+        if (mirrorRef.current && !cancelled) {
+          mirrorRef.current.srcObject = camera;
+          await mirrorRef.current.play().catch(() => undefined);
         }
+      };
+
+      if (settings.demoMode) {
+        appendSessionLog({ at: Date.now(), status: "demo" });
+        await showDemo();
+        return;
       }
-      // DEMO fallback: raw camera + placeholder effect
-      setDemo(true);
-      if (mirrorRef.current && !cancelled) {
-        mirrorRef.current.srcObject = camera;
-        await mirrorRef.current.play().catch(() => undefined);
+
+      const started = performance.now();
+      try {
+        const session = await startMirrorSession({
+          settings,
+          cameraStream: camera,
+          onStatus: (status) => {
+            if (!cancelled && status !== "ended") setMirrorStatus(status);
+          },
+        });
+        if (cancelled) {
+          void session.stop();
+          return;
+        }
+        sessionRef.current = session;
+        setDemo(false);
+        appendSessionLog({
+          at: Date.now(),
+          status: "live",
+          latencyMs: Math.round(performance.now() - started),
+        });
+        if (mirrorRef.current) {
+          mirrorRef.current.srcObject = session.processedStream;
+          await mirrorRef.current.play().catch(() => undefined);
+        }
+        setMirrorStatus("live");
+      } catch (e) {
+        appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+        teardownStream();
+        if (!cancelled) await showDemo();
       }
     })();
 
@@ -372,15 +394,35 @@ function Kiosk() {
       )}
 
       {screen === "mirror" && (
-        <section className="relative h-full w-full bg-black">
-          <video
-            ref={mirrorRef}
-            muted
-            playsInline
-            className="h-full w-full scale-x-[-1] object-cover"
-            style={demo ? { filter: "grayscale(0.55) contrast(1.08) brightness(0.95)" } : undefined}
-          />
-          {demo && (
+        <section className="relative flex h-full w-full flex-col items-center justify-center bg-black">
+          <div className="relative aspect-square w-[88vmin] max-w-[92vw] overflow-hidden">
+            <video
+              ref={mirrorRef}
+              muted
+              playsInline
+              className="h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms]"
+              style={{
+                opacity: mirrorStatus === "live" ? 1 : 0,
+                maskImage:
+                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                filter: demo
+                  ? "grayscale(0.55) contrast(1.08) brightness(0.95)"
+                  : undefined,
+              }}
+            />
+            {mirrorStatus !== "live" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+                <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
+                <p className="absolute text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
+                  Se pregătește oglinda…
+                </p>
+              </div>
+            )}
+          </div>
+
+          {demo && mirrorStatus === "live" && (
             <span className="absolute right-[4vw] top-[4vh] border border-hairline px-4 py-2 text-[clamp(0.7rem,1.2vw,1rem)] tracking-[0.3em] text-muted-foreground">
               DEMO
             </span>

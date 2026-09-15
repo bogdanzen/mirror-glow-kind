@@ -1,7 +1,4 @@
 export type MirrorSettings = {
-  backendBaseUrl: string;
-  apiKey: string;
-  pipelineId: string;
   prompt: string;
   width: number;
   height: number;
@@ -15,15 +12,23 @@ export type MirrorSettings = {
   thanksSeconds: number;
   idleTimeoutSeconds: number;
   campaignLine: string;
+  modelId: string;
+  delta: number;
+  seed: number;
+  steps: number;
 };
+
+export const MODEL_OPTIONS = [
+  "stabilityai/sdxl-turbo",
+  "stabilityai/sd-turbo",
+  "Lykon/dreamshaper-8",
+  "prompthero/openjourney-v4",
+] as const;
 
 export const DEFAULT_PROMPT =
   "photorealistic portrait of the same person with a completely shaved head, chemotherapy patient, natural skin, identical face, same lighting, same background";
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
-  backendBaseUrl: "",
-  apiKey: "",
-  pipelineId: "",
   prompt: DEFAULT_PROMPT,
   width: 512,
   height: 512,
@@ -37,6 +42,10 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   thanksSeconds: 15,
   idleTimeoutSeconds: 45,
   campaignLine: "[LINIA DE CAMPANIE]",
+  modelId: "stabilityai/sdxl-turbo",
+  delta: 0.55,
+  seed: 42,
+  steps: 2,
 };
 
 const KEY = "mirror.settings.v1";
@@ -86,4 +95,38 @@ export function readSessionCounter(): number {
   } catch {
     return 0;
   }
+}
+
+/* ---------- Session log (local, last 50) ---------- */
+
+export type SessionLogEntry = {
+  at: number;
+  status: "live" | "demo" | "error" | "test";
+  latencyMs?: number;
+  error?: string;
+};
+
+const LOG_KEY = "mirror.log.v1";
+
+export function readSessionLog(): SessionLogEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(LOG_KEY) ?? "[]") as SessionLogEntry[];
+  } catch {
+    return [];
+  }
+}
+
+export function appendSessionLog(entry: SessionLogEntry) {
+  if (typeof window === "undefined") return;
+  const list = [...readSessionLog(), entry].slice(-50);
+  try {
+    window.localStorage.setItem(LOG_KEY, JSON.stringify(list));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearSessionLog() {
+  if (typeof window !== "undefined") window.localStorage.removeItem(LOG_KEY);
 }

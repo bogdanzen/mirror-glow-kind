@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import {
   DEFAULT_SETTINGS,
+  MODEL_OPTIONS,
+  appendSessionLog,
+  clearSessionLog,
   readSessionCounter,
+  readSessionLog,
   saveSettings,
   type MirrorSettings,
+  type SessionLogEntry,
 } from "@/lib/settings";
-import { testConnection } from "@/lib/webrtc";
+import { daydreamHealth } from "@/lib/daydream.functions";
+import { startMirrorSession } from "@/lib/daydream";
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
@@ -26,6 +32,8 @@ export function AdminPanel({
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [status, setStatus] = useState<string>("");
   const [newPin, setNewPin] = useState("");
+  const [keyConfigured, setKeyConfigured] = useState<boolean | null>(null);
+  const [log, setLog] = useState<SessionLogEntry[]>([]);
 
   useEffect(() => {
     if (!unlocked) return;
@@ -33,6 +41,10 @@ export function AdminPanel({
       ?.enumerateDevices()
       .then((d) => setDevices(d.filter((x) => x.kind === "videoinput")))
       .catch(() => undefined);
+    setLog(readSessionLog());
+    void daydreamHealth()
+      .then((r) => setKeyConfigured(r.configured))
+      .catch(() => setKeyConfigured(false));
   }, [unlocked]);
 
   const set = <K extends keyof MirrorSettings>(k: K, v: MirrorSettings[K]) =>
@@ -88,28 +100,62 @@ export function AdminPanel({
           Sesiuni astăzi: <span className="text-foreground">{readSessionCounter()}</span>
         </p>
 
-        <label className={label}>Backend base URL</label>
-        <input
-          className={field}
-          value={draft.backendBaseUrl}
-          onChange={(e) => set("backendBaseUrl", e.target.value)}
-          placeholder="https://api.daydream.live"
-        />
+        <label className={label}>Backend (Daydream Cloud)</label>
+        <p className="py-3 text-base">
+          Cheie API:{" "}
+          <span className={keyConfigured ? "text-primary" : "text-muted-foreground"}>
+            {keyConfigured === null
+              ? "se verifică…"
+              : keyConfigured
+                ? "configurată"
+                : "lipsă — se rulează în DEMO"}
+          </span>
+        </p>
 
-        <label className={label}>API key</label>
-        <input
+        <label className={label}>Model</label>
+        <select
           className={field}
-          type="password"
-          value={draft.apiKey}
-          onChange={(e) => set("apiKey", e.target.value)}
-        />
+          value={draft.modelId}
+          onChange={(e) => set("modelId", e.target.value)}
+        >
+          {MODEL_OPTIONS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
 
-        <label className={label}>Pipeline ID</label>
-        <input
-          className={field}
-          value={draft.pipelineId}
-          onChange={(e) => set("pipelineId", e.target.value)}
-        />
+        <div className="grid grid-cols-3 gap-6">
+          <div>
+            <label className={label}>Delta</label>
+            <input
+              className={field}
+              type="number"
+              step="0.05"
+              value={draft.delta}
+              onChange={(e) => set("delta", Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className={label}>Seed</label>
+            <input
+              className={field}
+              type="number"
+              value={draft.seed}
+              onChange={(e) => set("seed", Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className={label}>Pași</label>
+            <input
+              className={field}
+              type="number"
+              value={draft.steps}
+              onChange={(e) => set("steps", Number(e.target.value))}
+            />
+          </div>
+        </div>
+
 
         <label className={label}>Prompt</label>
         <textarea
@@ -243,11 +289,41 @@ export function AdminPanel({
             className="underline underline-offset-8"
             onClick={async () => {
               setStatus("Se testează…");
-              if (!draft.backendBaseUrl) return setStatus("Fără backend — rulează în DEMO.");
+              const started = performance.now();
               try {
-                const { latency } = await testConnection(draft);
-                setStatus(`Conexiune OK — ${latency} ms, stream creat și închis.`);
+                const session = await startMirrorSession({
+                  settings: draft,
+                  onStatus: (s) => setStatus(`Stare: ${s}`),
+                });
+                const video = document.createElement("video");
+                video.muted = true;
+                video.playsInline = true;
+                video.srcObject = session.processedStream;
+                await video.play().catch(() => undefined);
+                await new Promise<void>((resolve) => {
+                  const t = window.setTimeout(resolve, 15000);
+                  const check = () => {
+                    if (video.videoWidth) {
+                      window.clearTimeout(t);
+                      resolve();
+                    } else requestAnimationFrame(check);
+                  };
+                  check();
+                });
+                const latency = Math.round(performance.now() - started);
+                await new Promise((r) => setTimeout(r, 3000));
+                await session.stop();
+                session.cameraStream.getTracks().forEach((t) => t.stop());
+                appendSessionLog({ at: Date.now(), status: "test", latencyMs: latency });
+                setLog(readSessionLog());
+                setStatus(`Conexiune OK — primul cadru procesat în ${latency} ms. Stream închis.`);
               } catch (e) {
+                appendSessionLog({
+                  at: Date.now(),
+                  status: "error",
+                  error: (e as Error).message,
+                });
+                setLog(readSessionLog());
                 setStatus(`Eroare: ${(e as Error).message} — se va folosi DEMO.`);
               }
             }}
@@ -272,6 +348,34 @@ export function AdminPanel({
         </div>
 
         {status && <p className="mt-8 text-sm text-muted-foreground">{status}</p>}
+
+        <div className="mt-12 hairline-t pt-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg">Jurnal sesiuni (ultimele 50)</h2>
+            <button
+              className="text-sm text-muted-foreground underline underline-offset-8"
+              onClick={() => {
+                clearSessionLog();
+                setLog([]);
+              }}
+            >
+              Golește
+            </button>
+          </div>
+          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+            {log.length === 0 && <li>Nicio înregistrare.</li>}
+            {[...log].reverse().map((e, i) => (
+              <li key={`${e.at}-${i}`} className="flex gap-4">
+                <span>{new Date(e.at).toLocaleTimeString("ro-RO")}</span>
+                <span className={e.status === "error" ? "text-primary" : "text-foreground"}>
+                  {e.status}
+                </span>
+                {e.latencyMs != null && <span>{e.latencyMs} ms</span>}
+                {e.error && <span className="truncate">{e.error}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
