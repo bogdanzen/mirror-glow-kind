@@ -18,6 +18,14 @@ export type CreateStreamResult =
   | { ok: true; id: string; whipUrl: string; playbackUrl: string }
   | { ok: false; status: number; message: string };
 
+export type StreamStatusResult = {
+  ready: boolean;
+  whepUrl?: string;
+  inputFps?: number;
+  outputFps?: number;
+  error?: string;
+};
+
 const FALLBACK_PROMPT =
   "photorealistic live portrait of the exact same person, completely bald with a smooth naturally shaved scalp, preserve exact facial identity, eyes, nose, mouth, skin tone, expression, clothing, camera angle, lighting and unchanged background, documentary photography, realistic skin texture";
 
@@ -126,5 +134,49 @@ export const deleteDaydreamStream = createServerFn({ method: "POST" })
       return { ok: res.ok };
     } catch {
       return { ok: false };
+    }
+  });
+
+export const getDaydreamStreamStatus = createServerFn({ method: "POST" })
+  .validator((input: { id: string }) => input)
+  .handler(async ({ data }): Promise<StreamStatusResult> => {
+    const apiKey = process.env["DAYDREAM_API_KEY"];
+    if (!apiKey || !data.id) return { ready: false, error: "Stream neconfigurat" };
+    try {
+      const res = await fetch(`${API_BASE}/v1/streams/${encodeURIComponent(data.id)}/status`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!res.ok) return { ready: false, error: `Status Daydream ${res.status}` };
+      const body = (await res.json()) as {
+        data?: {
+          inference_status?: {
+            input_fps?: number;
+            output_fps?: number;
+            last_output_time?: number;
+            last_error?: string | null;
+            last_restart_logs?: string[];
+          };
+          gateway_status?: {
+            whep_url?: string;
+            error?: { error_message?: string };
+          };
+        };
+      };
+      const inference = body.data?.inference_status;
+      const gateway = body.data?.gateway_status;
+      const error =
+        inference?.last_error ||
+        gateway?.error?.error_message ||
+        inference?.last_restart_logs?.slice(-1)[0] ||
+        undefined;
+      return {
+        ready: Boolean(inference?.last_output_time || (inference?.output_fps ?? 0) > 0),
+        whepUrl: gateway?.whep_url,
+        inputFps: inference?.input_fps,
+        outputFps: inference?.output_fps,
+        error,
+      };
+    } catch (error) {
+      return { ready: false, error: (error as Error).message };
     }
   });

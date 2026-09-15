@@ -2,6 +2,7 @@ import { createBroadcast, createPlayer } from "@daydreamlive/browser";
 import {
   createDaydreamStream,
   deleteDaydreamStream,
+  getDaydreamStreamStatus,
   type CreateStreamResult,
 } from "./daydream.functions";
 import type { MirrorSettings } from "./settings";
@@ -110,7 +111,7 @@ export async function startMirrorSession({
     }
   }
 
-  const whepUrl = broadcast.whepUrl ?? "";
+  let whepUrl = broadcast.whepUrl ?? "";
 
   // The AI worker needs 10-30s to warm up: the WHEP endpoint refuses the
   // connection until the output stream exists. Retry patiently.
@@ -119,11 +120,27 @@ export async function startMirrorSession({
 
   if (whepUrl) {
     await sleep(2500);
-    const deadline = Date.now() + 90000;
+    const deadline = Date.now() + 120000;
     let attempt = 0;
     let lastPlaybackError = "";
     while (!processedStream && Date.now() < deadline) {
       attempt += 1;
+      const status = await getDaydreamStreamStatus({ data: { id: result.id } }).catch(() => null);
+      if (status?.whepUrl) whepUrl = status.whepUrl;
+      if (status?.error) lastPlaybackError = status.error;
+
+      // A 404 from WHEP is expected until inference emits its first frame.
+      // Polling status avoids repeatedly negotiating a player against an output
+      // that does not exist yet and surfaces genuine model startup failures.
+      if (!status?.ready) {
+        onStatus?.(
+          "publishing",
+          status?.error || `model în pregătire (intrare ${status?.inputFps?.toFixed(1) ?? "0"} fps)`,
+        );
+        await sleep(2000);
+        continue;
+      }
+
       const p = createPlayer(whepUrl, {
         connectionTimeout: 12000,
         reconnect: { enabled: false },
