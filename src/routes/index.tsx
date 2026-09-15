@@ -281,6 +281,8 @@ function Kiosk() {
   useEffect(() => {
     if (screen !== "mirror" || !demo || mirrorStatus !== "live") return;
     let raf = 0;
+    // Smoothed head estimate (canvas coordinates).
+    let head = { cx: 256, cy: 210, w: 150, h: 190 };
     const render = () => {
       const video = mirrorRef.current;
       const canvas = demoCanvasRef.current;
@@ -299,30 +301,87 @@ function Kiosk() {
       const sy = (video.videoHeight - sourceSize) / 2;
       ctx.drawImage(video, sx, sy, sourceSize, sourceSize, 0, 0, size, size);
 
-      // Sample the forehead to match each visitor's complexion and lighting.
-      const sample = ctx.getImageData(226, 190, 60, 34).data;
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < sample.length; i += 16) {
-        r += sample[i] ?? 0;
-        g += sample[i + 1] ?? 0;
-        b += sample[i + 2] ?? 0;
-        count += 1;
+      // Locate the visitor's face by skin tone so the shaved scalp follows them.
+      const frame = ctx.getImageData(0, 0, size, size).data;
+      let minX = size, maxX = 0, minY = size, maxY = 0;
+      let sr = 0, sg = 0, sb = 0, skin = 0;
+      const step = 8;
+      for (let y = 0; y < size; y += step) {
+        for (let x = 0; x < size; x += step) {
+          const i = (y * size + x) * 4;
+          const r0 = frame[i] ?? 0;
+          const g0 = frame[i + 1] ?? 0;
+          const b0 = frame[i + 2] ?? 0;
+          const max = Math.max(r0, g0, b0);
+          const min = Math.min(r0, g0, b0);
+          const isSkin =
+            r0 > 70 && g0 > 40 && b0 > 25 && r0 > g0 && g0 > b0 && r0 - b0 > 12 && max - min > 12;
+          if (!isSkin) continue;
+          skin += 1;
+          sr += r0;
+          sg += g0;
+          sb += b0;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
       }
-      r = Math.min(245, r / count + 7);
-      g = Math.min(230, g / count + 4);
-      b = Math.min(220, b / count + 2);
-      const scalp = ctx.createRadialGradient(235, 160, 15, 256, 214, 142);
-      scalp.addColorStop(0, `rgba(${r + 12},${g + 10},${b + 8},.95)`);
-      scalp.addColorStop(.68, `rgba(${r},${g},${b},.94)`);
-      scalp.addColorStop(1, `rgba(${r - 16},${g - 13},${b - 12},0)`);
+
+      let r = 205, g = 170, b = 150;
+      if (skin > 40) {
+        r = sr / skin;
+        g = sg / skin;
+        b = sb / skin;
+        const faceW = Math.max(70, Math.min(320, maxX - minX));
+        const target = {
+          cx: (minX + maxX) / 2,
+          cy: minY + faceW * 0.55,
+          w: faceW * 0.62,
+          h: faceW * 0.78,
+        };
+        const k = 0.15;
+        head = {
+          cx: head.cx + (target.cx - head.cx) * k,
+          cy: head.cy + (target.cy - head.cy) * k,
+          w: head.w + (target.w - head.w) * k,
+          h: head.h + (target.h - head.h) * k,
+        };
+      }
+      r = Math.min(245, r + 8);
+      g = Math.min(232, g + 5);
+      b = Math.min(222, b + 3);
+
+      const topY = head.cy - head.h * 0.35;
+      const scalp = ctx.createRadialGradient(
+        head.cx - head.w * 0.2,
+        topY - head.h * 0.35,
+        head.w * 0.1,
+        head.cx,
+        topY,
+        head.h * 1.05,
+      );
+      scalp.addColorStop(0, `rgba(${r + 14},${g + 12},${b + 10},.96)`);
+      scalp.addColorStop(0.68, `rgba(${r},${g},${b},.95)`);
+      scalp.addColorStop(1, `rgba(${r - 18},${g - 15},${b - 13},0)`);
       ctx.save();
-      ctx.filter = "blur(1.5px)";
+      ctx.filter = "blur(2px)";
       ctx.fillStyle = scalp;
       ctx.beginPath();
-      ctx.ellipse(256, 199, 119, 142, 0, Math.PI, Math.PI * 2);
-      ctx.lineTo(375, 224);
-      ctx.quadraticCurveTo(340, 278, 256, 268);
-      ctx.quadraticCurveTo(172, 278, 137, 224);
+      ctx.ellipse(head.cx, topY, head.w, head.h, 0, Math.PI, Math.PI * 2);
+      ctx.lineTo(head.cx + head.w, topY + head.h * 0.2);
+      ctx.quadraticCurveTo(
+        head.cx + head.w * 0.75,
+        topY + head.h * 0.58,
+        head.cx,
+        topY + head.h * 0.5,
+      );
+      ctx.quadraticCurveTo(
+        head.cx - head.w * 0.75,
+        topY + head.h * 0.58,
+        head.cx - head.w,
+        topY + head.h * 0.2,
+      );
       ctx.closePath();
       ctx.fill();
       ctx.restore();
