@@ -451,6 +451,14 @@ function Kiosk() {
                   : undefined,
               }}
             />
+            {playbackUrl && (
+              <iframe
+                title="Oglinda"
+                src={playbackUrl}
+                allow="autoplay; fullscreen"
+                className="absolute inset-0 h-full w-full scale-x-[-1] border-0"
+              />
+            )}
             {mirrorStatus !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
