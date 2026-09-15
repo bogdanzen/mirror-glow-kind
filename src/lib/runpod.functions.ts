@@ -183,31 +183,26 @@ export const scopeProxy = createServerFn({ method: "POST" })
   .handler(
     async ({
       data,
-    }): Promise<{ ok: boolean; status: number; body: unknown; error?: string }> => {
+    }): Promise<{ ok: boolean; status: number; text: string; error: string }> => {
       let base = data.baseUrl || (data.podId ? podUrl(data.podId) : "");
       if (!base) {
         const apiKey = key();
-        if (!apiKey) return { ok: false, status: 0, body: null, error: "RUNPOD_API_KEY lipsește" };
+        if (!apiKey) return { ok: false, status: 0, text: "", error: "RUNPOD_API_KEY lipsește" };
         const pod = await findPod(apiKey).catch(() => null);
-        if (!pod) return { ok: false, status: 0, body: null, error: "Niciun pod RunPod activ" };
+        if (!pod) return { ok: false, status: 0, text: "", error: "Niciun pod RunPod activ" };
         base = podUrl(pod.id);
       }
       try {
-        const res = await fetch(`${base}${data.path}`, {
-          method: data.method ?? "GET",
-          headers: data.body ? { "Content-Type": "application/json" } : undefined,
-          body: data.body ? JSON.stringify(data.body) : undefined,
-        });
-        const text = await res.text();
-        let parsed: unknown = text;
-        try {
-          parsed = JSON.parse(text);
-        } catch {
-          /* plain text */
+        const init: RequestInit = { method: data.method ?? "GET" };
+        if (data.body !== undefined) {
+          init.headers = { "Content-Type": "application/json" };
+          init.body = JSON.stringify(data.body);
         }
-        return { ok: res.ok, status: res.status, body: parsed };
+        const res = await fetch(`${base}${data.path}`, init);
+        const text = await res.text();
+        return { ok: res.ok, status: res.status, text: text.slice(0, 200000), error: "" };
       } catch (error) {
-        return { ok: false, status: 0, body: null, error: (error as Error).message };
+        return { ok: false, status: 0, text: "", error: (error as Error).message };
       }
     },
   );
