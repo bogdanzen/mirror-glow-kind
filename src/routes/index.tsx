@@ -54,7 +54,7 @@ function Kiosk() {
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
-  const demoCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  
   const sessionRef = useRef<MirrorSession | null>(null);
   const idleRef = useRef<number>(Date.now());
 
@@ -227,32 +227,16 @@ function Kiosk() {
       }
 
       const started = performance.now();
-      let fellBack = false;
       try {
-        // Never let a cold cloud/GPU backend stall the exhibit: if the live
-        // mirror is not ready quickly, the visitor still gets the experience.
-        const pending = startMirrorSession({
+        // No artificial deadline: a cold GPU may need several minutes to
+        // download weights and load the pipeline the first time.
+        const session = await startMirrorSession({
           settings,
           cameraStream: camera,
           onStatus: (status) => {
-            if (!cancelled && !fellBack && status !== "ended") setMirrorStatus(status);
+            if (!cancelled && status !== "ended") setMirrorStatus(status);
           },
         });
-        // A late-arriving session must not linger (or bill) in the background.
-        pending.then((s) => {
-          if (fellBack || cancelled) void s.stop();
-        }, () => undefined);
-        let startupTimer = 0;
-        const session = await Promise.race([
-          pending,
-          new Promise<never>((_, reject) =>
-            (startupTimer = window.setTimeout(() => {
-              fellBack = true;
-              reject(new Error("Backendul AI nu a trimis imagini în 30s"));
-            }, 30000)),
-          ),
-        ]);
-        window.clearTimeout(startupTimer);
         if (cancelled) {
           void session.stop();
           return;
@@ -273,7 +257,10 @@ function Kiosk() {
       } catch (e) {
         appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
         teardownStream();
-        if (!cancelled) await showDemo();
+        if (!cancelled) {
+          setError((e as Error).message);
+          setMirrorStatus("error");
+        }
       }
     })();
 
@@ -282,122 +269,6 @@ function Kiosk() {
     };
   }, [screen, settings, startCamera, teardownStream]);
 
-  // Offline exhibit fallback: keep the live visitor and paint a softly blended,
-  // skin-toned shaved scalp over the framed head area. This is intentionally a
-  // lightweight canvas effect so the complete experience remains demonstrable
-  // when the cloud has no GPU orchestrator.
-  useEffect(() => {
-    if (screen !== "mirror" || !demo || mirrorStatus !== "live") return;
-    let raf = 0;
-    // Smoothed head estimate (canvas coordinates).
-    let head = { cx: 256, cy: 210, w: 150, h: 190 };
-    const render = () => {
-      const video = mirrorRef.current;
-      const canvas = demoCanvasRef.current;
-      if (!video || !canvas || !video.videoWidth) {
-        raf = requestAnimationFrame(render);
-        return;
-      }
-      const size = 512;
-      if (canvas.width !== size) canvas.width = size;
-      if (canvas.height !== size) canvas.height = size;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return;
-      const sourceRatio = video.videoWidth / video.videoHeight;
-      const sourceSize = sourceRatio > 1 ? video.videoHeight : video.videoWidth;
-      const sx = (video.videoWidth - sourceSize) / 2;
-      const sy = (video.videoHeight - sourceSize) / 2;
-      ctx.drawImage(video, sx, sy, sourceSize, sourceSize, 0, 0, size, size);
-
-      // Locate the visitor's face by skin tone so the shaved scalp follows them.
-      const frame = ctx.getImageData(0, 0, size, size).data;
-      let minX = size, maxX = 0, minY = size, maxY = 0;
-      let sr = 0, sg = 0, sb = 0, skin = 0;
-      const step = 8;
-      for (let y = 0; y < size; y += step) {
-        for (let x = 0; x < size; x += step) {
-          const i = (y * size + x) * 4;
-          const r0 = frame[i] ?? 0;
-          const g0 = frame[i + 1] ?? 0;
-          const b0 = frame[i + 2] ?? 0;
-          const max = Math.max(r0, g0, b0);
-          const min = Math.min(r0, g0, b0);
-          const isSkin =
-            r0 > 70 && g0 > 40 && b0 > 25 && r0 > g0 && g0 > b0 && r0 - b0 > 12 && max - min > 12;
-          if (!isSkin) continue;
-          skin += 1;
-          sr += r0;
-          sg += g0;
-          sb += b0;
-          if (x < minX) minX = x;
-          if (x > maxX) maxX = x;
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
-        }
-      }
-
-      let r = 205, g = 170, b = 150;
-      if (skin > 40) {
-        r = sr / skin;
-        g = sg / skin;
-        b = sb / skin;
-        const faceW = Math.max(70, Math.min(320, maxX - minX));
-        const target = {
-          cx: (minX + maxX) / 2,
-          cy: minY + faceW * 0.55,
-          w: faceW * 0.62,
-          h: faceW * 0.78,
-        };
-        const k = 0.15;
-        head = {
-          cx: head.cx + (target.cx - head.cx) * k,
-          cy: head.cy + (target.cy - head.cy) * k,
-          w: head.w + (target.w - head.w) * k,
-          h: head.h + (target.h - head.h) * k,
-        };
-      }
-      r = Math.min(245, r + 8);
-      g = Math.min(232, g + 5);
-      b = Math.min(222, b + 3);
-
-      const topY = head.cy - head.h * 0.35;
-      const scalp = ctx.createRadialGradient(
-        head.cx - head.w * 0.2,
-        topY - head.h * 0.35,
-        head.w * 0.1,
-        head.cx,
-        topY,
-        head.h * 1.05,
-      );
-      scalp.addColorStop(0, `rgba(${r + 14},${g + 12},${b + 10},.96)`);
-      scalp.addColorStop(0.68, `rgba(${r},${g},${b},.95)`);
-      scalp.addColorStop(1, `rgba(${r - 18},${g - 15},${b - 13},0)`);
-      ctx.save();
-      ctx.filter = "blur(2px)";
-      ctx.fillStyle = scalp;
-      ctx.beginPath();
-      ctx.ellipse(head.cx, topY, head.w, head.h, 0, Math.PI, Math.PI * 2);
-      ctx.lineTo(head.cx + head.w, topY + head.h * 0.2);
-      ctx.quadraticCurveTo(
-        head.cx + head.w * 0.75,
-        topY + head.h * 0.58,
-        head.cx,
-        topY + head.h * 0.5,
-      );
-      ctx.quadraticCurveTo(
-        head.cx - head.w * 0.75,
-        topY + head.h * 0.58,
-        head.cx - head.w,
-        topY + head.h * 0.2,
-      );
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-      raf = requestAnimationFrame(render);
-    };
-    raf = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(raf);
-  }, [screen, demo, mirrorStatus]);
 
   // Only start counting the mirror time once the image is actually visible,
   // so a slow warm-up doesn't eat the whole experience.
@@ -427,18 +298,17 @@ function Kiosk() {
   useEffect(() => {
     if (screen !== "capture") return;
     const v = mirrorRef.current;
-    const demoCanvas = demoCanvasRef.current;
     if (!v || !v.videoWidth) return;
     const canvas = document.createElement("canvas");
-    canvas.width = demo && demoCanvas?.width ? demoCanvas.width : v.videoWidth;
-    canvas.height = demo && demoCanvas?.height ? demoCanvas.height : v.videoHeight;
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
     const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(demo && demoCanvas ? demoCanvas : v, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCaptureUrl(dataUrl);
     teardownStream();
     stopCamera();
-  }, [screen, demo, stopCamera, teardownStream]);
+  }, [screen, stopCamera, teardownStream]);
 
   const campaign = settings.campaignLine;
 
@@ -558,20 +428,7 @@ function Kiosk() {
               playsInline
               className="h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms]"
               style={{
-                opacity: mirrorStatus === "live" && !demo ? 1 : 0,
-                maskImage:
-                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-                WebkitMaskImage:
-                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-              }}
-            />
-            <canvas
-              ref={demoCanvasRef}
-              aria-label="Simulare live a capului ras"
-              className={`absolute inset-0 h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms] ${
-                demo && mirrorStatus === "live" ? "opacity-100" : "opacity-0"
-              }`}
-              style={{
+                opacity: mirrorStatus === "live" ? 1 : 0,
                 maskImage:
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
                 WebkitMaskImage:
@@ -581,8 +438,8 @@ function Kiosk() {
             {mirrorStatus !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
-                <p className="absolute text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
-                  Se pregătește oglinda…
+                <p className="absolute px-[6vw] text-center text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
+                  {mirrorStatus === "error" && error ? error : "Se pregătește oglinda…"}
                 </p>
               </div>
             )}
