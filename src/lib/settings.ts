@@ -102,3 +102,37 @@ export function readSessionCounter(): number {
     return 0;
   }
 }
+
+/* ---------- Session log (local, last 50) ---------- */
+
+export type SessionLogEntry = {
+  at: number;
+  status: "live" | "demo" | "error" | "test";
+  latencyMs?: number;
+  error?: string;
+};
+
+const LOG_KEY = "mirror.log.v1";
+
+export function readSessionLog(): SessionLogEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(LOG_KEY) ?? "[]") as SessionLogEntry[];
+  } catch {
+    return [];
+  }
+}
+
+export function appendSessionLog(entry: SessionLogEntry) {
+  if (typeof window === "undefined") return;
+  const list = [...readSessionLog(), entry].slice(-50);
+  try {
+    window.localStorage.setItem(LOG_KEY, JSON.stringify(list));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearSessionLog() {
+  if (typeof window !== "undefined") window.localStorage.removeItem(LOG_KEY);
+}
