@@ -82,6 +82,7 @@ function Kiosk() {
     setCaptureUrl("");
     setCaptureId("");
     setError("");
+    setPlaybackUrl("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
 
