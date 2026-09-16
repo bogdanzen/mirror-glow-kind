@@ -523,7 +523,20 @@ function Kiosk() {
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
               }}
             />
-            {mirrorStatus !== "live" && (
+            {fallbackUrl && (
+              <img
+                src={fallbackUrl}
+                alt="Portret transformat"
+                className="fade-in-slow absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+                style={{
+                  maskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                }}
+              />
+            )}
+            {mirrorStatus !== "live" && !(settings.fallbackMode && mirrorStatus === "publishing") && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
                 <div className="absolute px-[6vw] text-center">
