@@ -83,7 +83,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   cameraHeight: 2160,
 };
 
-const KEY = "mirror.settings.v1";
+const KEY = "mirror.settings.v2";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
