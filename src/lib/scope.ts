@@ -1,4 +1,5 @@
 import { scopeProxy } from "./runpod.functions";
+import { mirrorTurnCredentials } from "./turn.functions";
 import type { MirrorSettings } from "./settings";
 import type { MirrorSession, MirrorStatus } from "./mirror";
 import { diag } from "./diag";
@@ -358,8 +359,11 @@ async function openSession({
   const timer = stageTimer();
   activeSessions += 1;
 
-  const ice = await call("/api/v1/webrtc/ice-servers", "GET");
-  const iceServers = [
+  const [ice, turn] = await Promise.all([
+    call("/api/v1/webrtc/ice-servers", "GET"),
+    mirrorTurnCredentials({ data: { ttl: 3600 } }).catch(() => null),
+  ]);
+  const iceServers: RTCIceServer[] = [
     ...((ice.body as { iceServers?: RTCIceServer[] } | null)?.iceServers ??
       ([{ urls: "stun:stun.l.google.com:19302" }] as RTCIceServer[])),
   ];
@@ -371,6 +375,9 @@ async function openSession({
       credential: settings.turnCredential,
     });
   }
+  // Short-lived Cloudflare relay credentials, minted server-side.
+  for (const server of turn?.iceServers ?? []) iceServers.push(server as RTCIceServer);
+  if (turn && !turn.ok) diag("webrtc", `releu Cloudflare indisponibil: ${turn.error}`, "warn");
   const hasTurn = iceServers.some((s) =>
     (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => String(u).startsWith("turn")),
   );
