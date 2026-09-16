@@ -455,6 +455,22 @@ export function AdminPanel({
               {draft.demoMode ? "pornit" : "oprit"}
             </span>
           </button>
+          <button className="text-left" onClick={() => set("fallbackMode", !draft.fallbackMode)}>
+            Mod rezervă (portret AI pe server, fără GPU):{" "}
+            <span className={draft.fallbackMode ? "text-primary" : "text-muted-foreground"}>
+              {draft.fallbackMode ? "pornit" : "oprit"}
+            </span>
+          </button>
+          {draft.fallbackMode && (
+            <>
+              <label className={label}>Prompt mod rezervă</label>
+              <textarea
+                className={`${field} min-h-32 resize-none`}
+                value={draft.fallbackPrompt}
+                onChange={(e) => set("fallbackPrompt", e.target.value)}
+              />
+            </>
+          )}
           <button className="text-left" onClick={() => set("diagnostics", !draft.diagnostics)}>
             Mod diagnostic (verbose):{" "}
             <span className={draft.diagnostics ? "text-primary" : "text-muted-foreground"}>
