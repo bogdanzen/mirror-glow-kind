@@ -10,8 +10,15 @@ import {
   loadSettings,
   type MirrorSettings,
 } from "@/lib/settings";
-import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/mirror";
+import {
+  prewarmMirror,
+  startMirrorSession,
+  type MirrorSession,
+  type MirrorStatus,
+} from "@/lib/mirror";
 import { GildedBackdrop } from "@/components/GildedBackdrop";
+import { DiagOverlay } from "@/components/DiagOverlay";
+import { diag } from "@/lib/diag";
 
 
 export const Route = createFileRoute("/")({
