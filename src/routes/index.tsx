@@ -100,7 +100,8 @@ function Kiosk() {
   // settings object — re-running this is what hammered the GPU with
   // concurrent downloads and corrupted the model files.
   const pipeline = settings.scopePipeline;
-  const prewarmOn = settings.prewarm && !settings.demoMode && hydrated;
+  const prewarmOn =
+    settings.prewarm && !settings.demoMode && !settings.fallbackMode && hydrated;
   useEffect(() => {
     if (!prewarmOn) return;
     let cancelled = false;
