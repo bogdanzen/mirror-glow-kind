@@ -15,7 +15,7 @@ The current pod will not recover by waiting longer:
 
 ### 1. Stop the failure loop and rebuild cleanly
 
-- Stop the unhealthy pod immediately so it stops consuming credits.
+- The unhealthy pod is already stopped; confirm it stays stopped so it consumes no credits.
 - Standardize the entire system on one proven pipeline: `streamdiffusionv2` for the live bald-head transformation.
 - Remove the corrupted persistent model data by replacing the failed pod/volume once the concurrency fix is ready.
 - Create one clean RunPod instance with the saved Hugging Face token and the selected pipeline.
