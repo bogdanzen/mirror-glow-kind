@@ -398,7 +398,7 @@ function Kiosk() {
     setCaptureUrl(canvas.toDataURL("image/jpeg", 0.92));
     teardownStream();
     stopCamera();
-  }, [screen, stopCamera, teardownStream]);
+  }, [screen, stopCamera, teardownStream, fallbackUrl]);
 
   const campaign = settings.campaignLine;
 
