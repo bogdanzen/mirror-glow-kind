@@ -73,13 +73,29 @@ async function findPod(apiKey: string): Promise<RawPod | null> {
   return pods.find((p) => p.name === POD_NAME) ?? pods[0] ?? null;
 }
 
+/** RunPod only reports the live region through API v2, and only sometimes. */
+async function liveRegion(apiKey: string, podId: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(`https://api.runpod.io/v2/pods/${podId}`, {
+      headers: headers(apiKey),
+    });
+    if (!res.ok) return undefined;
+    const body = (await res.json()) as { dataCenterId?: string | null };
+    return body.dataCenterId ? `Europa · ${body.dataCenterId}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const runpodState = createServerFn({ method: "GET" }).handler(
   async (): Promise<RunpodState> => {
     const apiKey = key();
     if (!apiKey) return { configured: false, pod: null };
     try {
       const pod = await findPod(apiKey);
-      return { configured: true, pod: pod ? shape(pod) : null };
+      if (!pod) return { configured: true, pod: null };
+      const shaped = shape(pod);
+      return { configured: true, pod: shaped, region: await liveRegion(apiKey, pod.id) };
     } catch (error) {
       return { configured: true, pod: null, error: (error as Error).message };
     }
