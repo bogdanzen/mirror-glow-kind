@@ -310,6 +310,7 @@ let keepAliveId: number | null = null;
 export function prewarmScope(
   pipeline: string,
   onStatus?: ((status: MirrorStatus, detail?: string) => void) | undefined,
+  longEdge = 768,
 ): Promise<void> {
   if (warmPromise && warmPipeline === pipeline) {
     if (onStatus) {
@@ -330,7 +331,7 @@ export function prewarmScope(
   warmPromise = (async () => {
     await waitForServer();
     await ensureModels(pipeline);
-    await loadPipeline(pipeline);
+    await loadPipeline(pipeline, longEdge);
     setStage("probing", "verific un cadru procesat real");
     await probeProcessedFrame(pipeline);
     setStage("ready", "GPU pregătit — sesiunile pornesc instant");
@@ -346,6 +347,29 @@ export function prewarmScope(
 
   return warmPromise;
 }
+
+/**
+ * Re-loads the already-downloaded model at the current viewport resolution.
+ * This never touches the machine — only the pipeline in VRAM.
+ */
+export async function reloadScopeAtViewport(pipeline: string, longEdge = 768): Promise<void> {
+  warmPromise = null;
+  warmPipeline = pipeline;
+  warmPromise = (async () => {
+    await waitForServer();
+    await loadPipeline(pipeline, longEdge, true);
+    setStage("probing", "verific un cadru procesat real");
+    await probeProcessedFrame(pipeline);
+    setStage("ready", "GPU pregătit — sesiunile pornesc instant");
+  })().catch((error: Error) => {
+    setStage("error", error.message, false);
+    warmPromise = null;
+    warmPipeline = null;
+    throw error;
+  });
+  return warmPromise;
+}
+
 
 export function isScopeReady(pipeline: string) {
   return warmPipeline === pipeline && warmState.stage === "ready";
