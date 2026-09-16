@@ -23,9 +23,12 @@ import {
   startMirrorSession,
   subscribeMirrorWarm,
 } from "@/lib/mirror";
+import { reloadMirrorResolution } from "@/lib/mirror";
+import { PinPad } from "@/components/PinPad";
 import type { WarmState } from "@/lib/scope";
 import { clearDiag, subscribeDiag, type DiagEntry } from "@/lib/diag";
 import { mirrorTurnCredentials } from "@/lib/turn.functions";
+
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
@@ -90,17 +93,12 @@ export function AdminPanel({
   if (!unlocked) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-8">
-        <div className="w-full max-w-md text-center">
-          <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Admin</p>
-          <input
-            autoFocus
-            value={pin}
-            inputMode="numeric"
-            type="password"
-            onChange={(e) => setPin(e.target.value)}
-            className="mt-8 w-full border-b border-hairline bg-transparent py-4 text-center text-3xl tracking-[0.6em] outline-none focus:border-primary"
-            placeholder="PIN"
-          />
+        <div className="w-full max-w-md">
+          <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Administrare</p>
+          <div className="mt-6 hairline-b py-6 text-center font-display text-4xl tracking-[0.5em]">
+            {pin ? "•".repeat(pin.length) : <span className="text-muted-foreground">PIN</span>}
+          </div>
+          <PinPad value={pin} onChange={setPin} />
           <div className="mt-10 flex justify-between text-lg">
             <button onClick={onClose} className="text-muted-foreground">
               Închide
@@ -116,6 +114,7 @@ export function AdminPanel({
       </div>
     );
   }
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background p-8">
@@ -319,8 +318,52 @@ export function AdminPanel({
           }
         />
         <p className="text-xs text-muted-foreground">
-          Mai puțini pași = latență mai mică. Implicit 700, 500.
+          Mai puțini pași = latență mai mică. Implicit 650, 500.
         </p>
+
+        <label className={label}>Claritate (latura lungă a imaginii AI)</label>
+        <input
+          className={field}
+          type="number"
+          min={320}
+          max={1280}
+          step={16}
+          value={draft.outputLongEdge}
+          onChange={(e) => set("outputLongEdge", Number(e.target.value))}
+        />
+        <p className="text-xs text-muted-foreground">
+          Latura scurtă se calculează automat din raportul ecranului, deci imaginea nu mai este
+          deformată. Mai mare = mai clar, dar mai lent.
+        </p>
+
+        <label className={label}>Libertate față de chip (noise)</label>
+        <input
+          className={field}
+          type="number"
+          min={0}
+          max={1}
+          step={0.05}
+          value={draft.noiseScale}
+          onChange={(e) => set("noiseScale", Number(e.target.value))}
+        />
+        <p className="text-xs text-muted-foreground">
+          Valori mici = imagine mai stabilă și mai fidelă. Implicit 0.35.
+        </p>
+
+        <button
+          className="mt-6 hairline-t hairline-b w-full py-4 text-left text-primary"
+          onClick={() => {
+            apply(draft);
+            setStatus("Reîncarc modelul la rezoluția ecranului…");
+            void reloadMirrorResolution(draft)
+              .then(() => setStatus("Model reîncărcat la rezoluția ecranului."))
+              .catch((e: Error) => setStatus(`Reîncărcare eșuată: ${e.message}`));
+          }}
+        >
+          Reîncarcă modelul la rezoluția ecranului (fără repornirea mașinii)
+        </button>
+
+
 
 
         <label className={label}>Prompt</label>

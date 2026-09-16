@@ -30,9 +30,14 @@ export type MirrorSettings = {
   diagnostics: boolean;
   /** Load the model on the GPU while the kiosk is idle. */
   prewarm: boolean;
+  /** Long edge of the AI output; the short edge follows the screen ratio. */
+  outputLongEdge: number;
+  /** How far the model may drift from the real face (lower = clearer). */
+  noiseScale: number;
   /** Preferred camera capture size (falls back automatically). */
   cameraWidth: number;
   cameraHeight: number;
+
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
@@ -46,8 +51,7 @@ export const MODEL_OPTIONS = [
 ] as const;
 
 export const DEFAULT_PROMPT =
-  "photorealistic portrait of the exact same person undergoing chemotherapy, completely hairless head: totally bald smooth scalp with no hair and no stubble, clean-shaven face with no beard and no moustache, very thin almost invisible eyebrows, no eyelashes, slightly pale tired skin with soft shadows under the eyes, same face shape, same eyes, same nose, same mouth, same neutral expression, same dark t-shirt, same red chair, same room and background unchanged, same camera angle and soft daylight, natural skin texture, documentary photograph, sharp focus";
-
+  "ultra sharp photorealistic close-up portrait of the exact same person, completely bald: smooth hairless scalp with no hair and no stubble, clean-shaven face, no beard, no moustache, very thin almost invisible eyebrows, no eyelashes, slightly pale skin, undistorted natural facial proportions, identical face shape, identical eyes, nose and mouth, same expression, same clothes, same background and lighting unchanged, crisp fine skin texture and pores, studio-grade clarity, high detail, professional documentary photograph, sharp focus, no warping, no melting, no extra limbs, no blur";
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
   prompt: DEFAULT_PROMPT,
@@ -64,7 +68,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   idleTimeoutSeconds: 45,
   campaignLine: "SCHIMBAREA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
-  delta: 0.6,
+  delta: 0.45,
   seed: 42,
   steps: 2,
   provider: "runpod",
@@ -72,14 +76,18 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   turnUrl: "",
   turnUsername: "",
   turnCredential: "",
-  scopeDenoiseSteps: [800, 650, 500],
+  // Fewer, gentler steps: less drift from the real face, less distortion.
+  scopeDenoiseSteps: [650, 500],
   diagnostics: false,
   prewarm: true,
+  outputLongEdge: 768,
+  noiseScale: 0.35,
   cameraWidth: 3840,
   cameraHeight: 2160,
 };
 
-const KEY = "mirror.settings.v3";
+
+const KEY = "mirror.settings.v4";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -97,8 +105,17 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.scopeDenoiseSteps = steps.length ? steps : DEFAULT_SETTINGS.scopeDenoiseSteps;
   merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
+  const longEdge = Math.round(Number(merged.outputLongEdge));
+  merged.outputLongEdge = Number.isFinite(longEdge)
+    ? Math.min(1280, Math.max(320, longEdge))
+    : DEFAULT_SETTINGS.outputLongEdge;
+  const noise = Number(merged.noiseScale);
+  merged.noiseScale = Number.isFinite(noise)
+    ? Math.min(1, Math.max(0, noise))
+    : DEFAULT_SETTINGS.noiseScale;
   return merged;
 }
+
 
 export function loadSettings(): MirrorSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;

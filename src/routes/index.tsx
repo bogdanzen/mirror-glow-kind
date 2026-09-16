@@ -373,7 +373,7 @@ function Kiosk() {
           className="flex h-full w-full flex-col items-center justify-center px-[8vw] text-center"
         >
           <GildedBackdrop intense />
-          <h1 className="gilded fade-in-slow relative text-[clamp(3rem,10vw,10rem)] leading-none tracking-tight">
+          <h1 className="gilded fade-in-slow relative font-display text-[clamp(3.5rem,12vw,11rem)] leading-[0.92] tracking-[-0.02em]">
             TE VEZI?
           </h1>
           <p className="fade-in-slow relative mt-[5vh] max-w-[22ch] text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug">
@@ -400,7 +400,7 @@ function Kiosk() {
 
       {screen === "consent" && (
         <section className="fade-in-slow flex h-full flex-col justify-center px-[8vw]">
-          <h2 className="text-[clamp(2rem,5vw,5rem)]">Înainte de a începe</h2>
+          <h2 className="font-display text-[clamp(2.4rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.015em]">Înainte de a începe</h2>
           <div className="mt-[5vh] max-w-[46ch] space-y-6 text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-muted-foreground">
             <p>Imaginea ta este procesată live, în cloud, doar în memorie.</p>
             <p>Nu se salvează nimic. Nimic nu te identifică.</p>
@@ -454,7 +454,7 @@ function Kiosk() {
               Stai în fața ecranului, la un pas distanță.
             </p>
             {countdown !== null && (
-              <p className="mt-[4vh] text-[clamp(4rem,14vw,12rem)] text-primary">{countdown}</p>
+              <p className="mt-[4vh] font-display text-[clamp(5rem,16vw,13rem)] leading-none text-primary">{countdown}</p>
             )}
             {error && <p className="mt-6 text-primary">{error}</p>}
           </div>
@@ -543,7 +543,7 @@ function Kiosk() {
       {screen === "thanks" && (
         <section className="fade-in-slow relative flex h-full flex-col items-center justify-center px-[8vw] text-center">
           <GildedBackdrop />
-          <h2 className="gilded relative text-[clamp(2.5rem,8vw,8rem)]">TE VEZI?</h2>
+          <h2 className="gilded relative font-display text-[clamp(3rem,9vw,9rem)] leading-[0.92] tracking-[-0.02em]">TE VEZI?</h2>
           <p className="relative mt-[5vh] max-w-[24ch] text-[clamp(1.1rem,2.6vw,2.4rem)] leading-snug">
             Oglinda nu îți arată cine ești astăzi.
             <br />

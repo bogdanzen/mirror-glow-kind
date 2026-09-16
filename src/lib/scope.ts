@@ -42,6 +42,23 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Output resolution asked of the GPU: the live viewport aspect ratio, scaled
+ * to the requested long edge and snapped to multiples of 16 (model constraint).
+ * Asking for a fixed landscape size on a portrait totem is what produced the
+ * squashed, low-resolution image.
+ */
+export function outputSize(longEdge = 768): { width: number; height: number } {
+  const snap = (v: number) => Math.max(256, Math.round(v / 16) * 16);
+  const vw = typeof window === "undefined" ? 1080 : window.innerWidth;
+  const vh = typeof window === "undefined" ? 1920 : window.innerHeight;
+  const aspect = vw / vh;
+  return aspect >= 1
+    ? { width: snap(longEdge), height: snap(longEdge / aspect) }
+    : { width: snap(longEdge * aspect), height: snap(longEdge) };
+}
+
+
 /* ---------- Warm-up stages ---------- */
 
 export type WarmStage =
@@ -197,10 +214,12 @@ async function ensureModels(pipeline: string) {
 }
 
 /** Loads the pipeline into VRAM. One request, then polling only. */
-async function loadPipeline(pipeline: string) {
+async function loadPipeline(pipeline: string, longEdge = 768, force = false) {
+  const size = outputSize(longEdge);
   const current = await call("/api/v1/pipeline/status", "GET");
   const currentState = current.body as { status?: string; pipeline_id?: string } | null;
   if (
+    !force &&
     current.ok &&
     currentState?.status === "loaded" &&
     currentState.pipeline_id === pipeline
@@ -216,7 +235,7 @@ async function loadPipeline(pipeline: string) {
     );
   }
 
-  setStage("loading", `încarc ${pipeline}`);
+  setStage("loading", `încarc ${pipeline} la ${size.width}×${size.height}`);
   // Krea este un model de 14B: fără cuantizare fp8 și fără modulul VACE nu
   // încape nici pe 48 GB (CUDA out of memory). LightTAE îl face și mai rapid.
   const load = await call("/api/v1/pipeline/load", "POST", {
@@ -227,12 +246,13 @@ async function loadPipeline(pipeline: string) {
             quantization: "fp8_e4m3fn",
             vace_enabled: false,
             vae_type: "lighttae",
-            height: 320,
-            width: 576,
+            height: size.height,
+            width: size.width,
           }
         : undefined,
   });
   if (!load.ok) {
+
     const message = typeof load.body === "string" ? load.body : load.error;
     throw pipelineError(message || `Pornirea modelului a eșuat (${load.status})`);
   }
@@ -290,6 +310,7 @@ let keepAliveId: number | null = null;
 export function prewarmScope(
   pipeline: string,
   onStatus?: ((status: MirrorStatus, detail?: string) => void) | undefined,
+  longEdge = 768,
 ): Promise<void> {
   if (warmPromise && warmPipeline === pipeline) {
     if (onStatus) {
@@ -310,7 +331,7 @@ export function prewarmScope(
   warmPromise = (async () => {
     await waitForServer();
     await ensureModels(pipeline);
-    await loadPipeline(pipeline);
+    await loadPipeline(pipeline, longEdge);
     setStage("probing", "verific un cadru procesat real");
     await probeProcessedFrame(pipeline);
     setStage("ready", "GPU pregătit — sesiunile pornesc instant");
@@ -326,6 +347,29 @@ export function prewarmScope(
 
   return warmPromise;
 }
+
+/**
+ * Re-loads the already-downloaded model at the current viewport resolution.
+ * This never touches the machine — only the pipeline in VRAM.
+ */
+export async function reloadScopeAtViewport(pipeline: string, longEdge = 768): Promise<void> {
+  warmPromise = null;
+  warmPipeline = pipeline;
+  warmPromise = (async () => {
+    await waitForServer();
+    await loadPipeline(pipeline, longEdge, true);
+    setStage("probing", "verific un cadru procesat real");
+    await probeProcessedFrame(pipeline);
+    setStage("ready", "GPU pregătit — sesiunile pornesc instant");
+  })().catch((error: Error) => {
+    setStage("error", error.message, false);
+    warmPromise = null;
+    warmPipeline = null;
+    throw error;
+  });
+  return warmPromise;
+}
+
 
 export function isScopeReady(pipeline: string) {
   return warmPipeline === pipeline && warmState.stage === "ready";
@@ -524,6 +568,11 @@ async function openSession({
     .map((value) => Math.round(Number(value)))
     .filter((value) => Number.isFinite(value) && value > 0);
 
+  const sessionSize = outputSize(settings.outputLongEdge || 768);
+  diag("session", `cer ${sessionSize.width}×${sessionSize.height} (raport ecran)`);
+
+
+
   const answerRes = await call("/api/v1/webrtc/offer", "POST", {
     sdp: localSdp,
     type: pc.localDescription?.type ?? "offer",
@@ -532,12 +581,17 @@ async function openSession({
       pipeline_ids: [settings.scopePipeline || "krea-realtime-video"],
       prompts: [{ text: String(settings.prompt || ""), weight: 1 }],
       ...(steps.length ? { denoising_step_list: steps } : {}),
+      // Ask for exactly the aspect ratio of the screen: any other ratio comes
+      // back stretched on a portrait totem.
+      width: sessionSize.width,
+      height: sessionSize.height,
       manage_cache: true,
       produces_video: true,
       produces_audio: false,
-      noise_scale: 0.7,
+      noise_scale: Number.isFinite(settings.noiseScale) ? settings.noiseScale : 0.35,
       noise_controller: true,
     },
+
   });
 
   const answer = answerRes.body as { sdp?: string; type?: string; sessionId?: string } | null;
