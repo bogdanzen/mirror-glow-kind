@@ -576,12 +576,17 @@ async function openSession({
       pipeline_ids: [settings.scopePipeline || "krea-realtime-video"],
       prompts: [{ text: String(settings.prompt || ""), weight: 1 }],
       ...(steps.length ? { denoising_step_list: steps } : {}),
+      // Ask for exactly the aspect ratio of the screen: any other ratio comes
+      // back stretched on a portrait totem.
+      width: sessionSize.width,
+      height: sessionSize.height,
       manage_cache: true,
       produces_video: true,
       produces_audio: false,
-      noise_scale: 0.7,
+      noise_scale: Number.isFinite(settings.noiseScale) ? settings.noiseScale : 0.35,
       noise_controller: true,
     },
+
   });
 
   const answer = answerRes.body as { sdp?: string; type?: string; sessionId?: string } | null;
