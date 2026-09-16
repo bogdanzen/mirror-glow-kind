@@ -304,6 +304,18 @@ export function AdminPanel({
               {draft.demoMode ? "pornit" : "oprit"}
             </span>
           </button>
+          <button className="text-left" onClick={() => set("diagnostics", !draft.diagnostics)}>
+            Mod diagnostic (verbose):{" "}
+            <span className={draft.diagnostics ? "text-primary" : "text-muted-foreground"}>
+              {draft.diagnostics ? "pornit" : "oprit"}
+            </span>
+          </button>
+          <button className="text-left" onClick={() => set("prewarm", !draft.prewarm)}>
+            Pre-încălzire GPU:{" "}
+            <span className={draft.prewarm ? "text-primary" : "text-muted-foreground"}>
+              {draft.prewarm ? "pornită" : "oprită"}
+            </span>
+          </button>
           <button
             className="text-left"
             onClick={() => set("storageEnabled", !draft.storageEnabled)}
