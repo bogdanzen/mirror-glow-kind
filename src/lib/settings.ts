@@ -1,3 +1,5 @@
+import { FALLBACK_PROMPT } from "./bald";
+
 export type MirrorSettings = {
   prompt: string;
   width: number;
@@ -37,7 +39,10 @@ export type MirrorSettings = {
   /** Preferred camera capture size (falls back automatically). */
   cameraWidth: number;
   cameraHeight: number;
-
+  /** Server fallback: one still portrait rendered by AI, no GPU needed. */
+  fallbackMode: boolean;
+  /** Prompt used by the server fallback. */
+  fallbackPrompt: string;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
@@ -84,6 +89,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   noiseScale: 0.35,
   cameraWidth: 3840,
   cameraHeight: 2160,
+  fallbackMode: false,
+  fallbackPrompt: FALLBACK_PROMPT,
 };
 
 
@@ -104,6 +111,8 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
     .filter((value) => Number.isFinite(value) && value > 0);
   merged.scopeDenoiseSteps = steps.length ? steps : DEFAULT_SETTINGS.scopeDenoiseSteps;
   merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
+  merged.fallbackPrompt = String(merged.fallbackPrompt || FALLBACK_PROMPT);
+  merged.fallbackMode = Boolean(merged.fallbackMode);
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)

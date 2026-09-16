@@ -65,6 +65,7 @@ function Kiosk() {
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
   const [statusDetail, setStatusDetail] = useState("");
+  const [fallbackUrl, setFallbackUrl] = useState("");
   const [warm, setWarm] = useState<WarmState>({
     stage: "idle",
     detail: "",
@@ -99,7 +100,8 @@ function Kiosk() {
   // settings object — re-running this is what hammered the GPU with
   // concurrent downloads and corrupted the model files.
   const pipeline = settings.scopePipeline;
-  const prewarmOn = settings.prewarm && !settings.demoMode && hydrated;
+  const prewarmOn =
+    settings.prewarm && !settings.demoMode && !settings.fallbackMode && hydrated;
   useEffect(() => {
     if (!prewarmOn) return;
     let cancelled = false;
@@ -132,6 +134,7 @@ function Kiosk() {
     setCountdown(null);
     setCaptureUrl("");
     setCaptureId("");
+    setFallbackUrl("");
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
@@ -268,6 +271,45 @@ function Kiosk() {
         return;
       }
 
+      // FALLBACK: no GPU. One frame is re-rendered on the server as a
+      // photorealistic bald portrait and held on screen.
+      if (current.fallbackMode) {
+        setDemo(false);
+        setFallbackUrl("");
+        setStatusDetail("Se transformă imaginea…");
+        setMirrorStatus("publishing");
+        if (mirrorRef.current) {
+          mirrorRef.current.srcObject = camera;
+          await mirrorRef.current.play().catch(() => undefined);
+        }
+        try {
+          const { frameToFile, baldifyFrame } = await import("@/lib/bald");
+          // Let the camera settle and auto-expose before grabbing the frame.
+          await new Promise((r) => setTimeout(r, 1200));
+          const v = mirrorRef.current;
+          const file = v ? frameToFile(v) : null;
+          if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
+          const t0 = performance.now();
+          await baldifyFrame(file, current.fallbackPrompt, (url) => {
+            if (cancelled) return;
+            setFallbackUrl(url);
+            setMirrorStatus("live");
+          });
+          appendSessionLog({
+            at: Date.now(),
+            status: "demo",
+            latencyMs: Math.round(performance.now() - t0),
+          });
+        } catch (e) {
+          if (!cancelled) {
+            appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+            setError((e as Error).message);
+            setMirrorStatus("error");
+          }
+        }
+        return;
+      }
+
       const started = performance.now();
       try {
         const session = await startMirrorSession({
@@ -338,6 +380,12 @@ function Kiosk() {
   // Freeze a frame when entering capture, upscaled for the 4K presentation.
   useEffect(() => {
     if (screen !== "capture") return;
+    if (fallbackUrl) {
+      setCaptureUrl(fallbackUrl);
+      teardownStream();
+      stopCamera();
+      return;
+    }
     const v = mirrorRef.current;
     if (!v || !v.videoWidth) return;
     const target = 2048;
@@ -352,7 +400,7 @@ function Kiosk() {
     setCaptureUrl(canvas.toDataURL("image/jpeg", 0.92));
     teardownStream();
     stopCamera();
-  }, [screen, stopCamera, teardownStream]);
+  }, [screen, stopCamera, teardownStream, fallbackUrl]);
 
   const campaign = settings.campaignLine;
 
@@ -472,14 +520,36 @@ function Kiosk() {
               playsInline
               className="h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms]"
               style={{
-                opacity: mirrorStatus === "live" ? 1 : 0,
+                opacity:
+                  mirrorStatus === "live" ||
+                  (settings.fallbackMode && mirrorStatus === "publishing")
+                    ? 1
+                    : 0,
                 maskImage:
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
                 WebkitMaskImage:
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
               }}
             />
-            {mirrorStatus !== "live" && (
+            {fallbackUrl && (
+              <img
+                src={fallbackUrl}
+                alt="Portret transformat"
+                className="fade-in-slow absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+                style={{
+                  maskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                }}
+              />
+            )}
+            {settings.fallbackMode && mirrorStatus === "publishing" && (
+              <p className="absolute bottom-[4%] left-0 w-full text-center text-[clamp(0.9rem,1.8vw,1.5rem)] text-foreground/80">
+                Se transformă imaginea…
+              </p>
+            )}
+            {mirrorStatus !== "live" && !(settings.fallbackMode && mirrorStatus === "publishing") && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
                 <div className="absolute px-[6vw] text-center">
