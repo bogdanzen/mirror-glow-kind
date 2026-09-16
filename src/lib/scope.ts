@@ -94,6 +94,16 @@ function isCorruption(message: string) {
   return CORRUPT_HINTS.some((h) => lower.includes(h.toLowerCase()));
 }
 
+function pipelineError(message: string) {
+  if (/cuda out of memory|out of memory/i.test(message)) {
+    return new Error(
+      "GPU-ul nu are suficientă memorie pentru Krea (necesar: minimum 48 GB). Recreează pod-ul din panoul de administrare; va fi ales automat un GPU compatibil din Europa.",
+    );
+  }
+  if (isCorruption(message)) return new ModelCorruptError(message);
+  return new Error(message);
+}
+
 /* ---------- Server / model / pipeline steps ---------- */
 
 async function waitForServer(deadlineMs = 600_000) {
@@ -190,33 +200,52 @@ async function ensureModels(pipeline: string) {
 async function loadPipeline(pipeline: string) {
   const current = await call("/api/v1/pipeline/status", "GET");
   const currentState = current.body as { status?: string; pipeline_id?: string } | null;
-  if (current.ok && currentState?.status === "loaded") {
+  if (
+    current.ok &&
+    currentState?.status === "loaded" &&
+    currentState.pipeline_id === pipeline
+  ) {
     setStage("loading", `${pipeline} deja în VRAM`);
     return;
+  }
+
+  if (current.ok && currentState?.status === "loaded" && currentState.pipeline_id !== pipeline) {
+    diag(
+      "pipeline",
+      `schimb ${currentState.pipeline_id ?? "pipeline necunoscut"} → ${pipeline}`,
+    );
   }
 
   setStage("loading", `încarc ${pipeline}`);
   const load = await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
   if (!load.ok) {
     const message = typeof load.body === "string" ? load.body : load.error;
-    if (isCorruption(message || "")) {
-      throw new ModelCorruptError(message || "fișiere de model corupte");
-    }
-    throw new Error(load.error || `Pornirea modelului a eșuat (${load.status})`);
+    throw pipelineError(message || `Pornirea modelului a eșuat (${load.status})`);
   }
 
   const deadline = Date.now() + 900_000;
   while (Date.now() < deadline) {
     const res = await call("/api/v1/pipeline/status", "GET");
-    const state = res.body as { status?: string; error?: string | null } | null;
-    if (state?.status === "loaded") {
+    const state = res.body as {
+      status?: string;
+      pipeline_id?: string;
+      error?: string | null;
+    } | null;
+    if (state?.status === "loaded" && state.pipeline_id === pipeline) {
       setStage("loading", `${pipeline} încărcat în VRAM`);
       return;
     }
+    if (state?.status === "loaded" && state.pipeline_id !== pipeline) {
+      setStage(
+        "loading",
+        `GPU raportează încă ${state.pipeline_id ?? "alt pipeline"}; aștept ${pipeline}`,
+      );
+      await sleep(2500);
+      continue;
+    }
     if (state?.status === "error") {
       const message = state.error || "pipeline-ul a eșuat la încărcare";
-      if (isCorruption(message)) throw new ModelCorruptError(message);
-      throw new Error(message);
+      throw pipelineError(message);
     }
     setStage("loading", `model: ${state?.status ?? "se pregătește"}`);
     await sleep(2500);
@@ -466,7 +495,8 @@ async function openSession({
   );
   if (videoTransceiver && vp8?.length) videoTransceiver.setCodecPreferences(vp8);
   // The outgoing camera transceiver is sendrecv, allowing Scope to attach the
-  // processed track to the same negotiated video m-line.
+  // processed track to the same negotiated video m-line. Scope's own client
+  // forces VP8 here for aiortc compatibility, so mirror that contract.
 
   onStatus?.("publishing", "conectare video");
   const offer = await pc.createOffer();
@@ -489,6 +519,10 @@ async function openSession({
       prompts: [{ text: String(settings.prompt || ""), weight: 1 }],
       ...(steps.length ? { denoising_step_list: steps } : {}),
       manage_cache: true,
+      produces_video: true,
+      produces_audio: false,
+      noise_scale: 0.7,
+      noise_controller: true,
     },
   });
 
@@ -521,9 +555,18 @@ async function openSession({
     if (!stats) return "statistici indisponibile";
     let selected = "nicio rută ICE selectată";
     let inbound = "cadre primite: 0";
+    const candidates = new Map<string, { candidateType?: string }>();
+    stats.forEach((report) => {
+      if (report.type === "local-candidate" || report.type === "remote-candidate") {
+        candidates.set(report.id, report as RTCStats & { candidateType?: string });
+      }
+    });
     stats.forEach((report) => {
       if (report.type === "candidate-pair" && report.state === "succeeded" && report.nominated) {
-        selected = `rută ICE ${report.currentRoundTripTime != null ? `${Math.round(Number(report.currentRoundTripTime) * 1000)} ms` : "activă"}`;
+        const local = candidates.get(String(report.localCandidateId));
+        const remote = candidates.get(String(report.remoteCandidateId));
+        const route = `${String(local?.candidateType ?? "?")}→${String(remote?.candidateType ?? "?")}`;
+        selected = `rută ICE ${route} ${report.currentRoundTripTime != null ? `${Math.round(Number(report.currentRoundTripTime) * 1000)} ms` : "activă"}`;
       }
       if (report.type === "inbound-rtp" && report.kind === "video") {
         inbound = `cadre primite: ${Number(report.framesDecoded ?? report.framesReceived ?? 0)}`;
@@ -549,10 +592,10 @@ async function openSession({
     }).catch(async (error: Error) => {
       const snapshot = await transportSnapshot();
       diag("webrtc", snapshot, "error");
-      const relayHint = hasTurn
-        ? "releul TURN nu transportă video"
+      const transportHint = hasTurn
+        ? "GPU-ul procesează, dar pista video de retur nu ajunge în browser"
         : "lipsește un releu TURN dedicat pe GPU";
-      return fail(`${error.message}; ${relayHint}`);
+      return fail(`${error.message}; ${transportHint}`);
     });
     timer.mark("unmute");
   }

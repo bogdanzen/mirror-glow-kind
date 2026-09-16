@@ -112,6 +112,20 @@ export const GPU_PREFERENCE = [
   "NVIDIA A100 80GB PCIe",
 ] as const;
 
+const KREA_GPU_PREFERENCE = [
+  "NVIDIA L40S",
+  "NVIDIA RTX 6000 Ada Generation",
+  "NVIDIA A100 80GB PCIe",
+] as const;
+
+function gpuPreference(pipeline?: string): string[] {
+  // Krea declares ~32 GB VRAM before runtime overhead. Never place it on a
+  // 24/32 GB consumer GPU: it can download successfully but fails during load.
+  return pipeline === "krea-realtime-video"
+    ? [...KREA_GPU_PREFERENCE]
+    : [...GPU_PREFERENCE];
+}
+
 /**
  * Data centres, Romania first. Model weights are tens of gigabytes and US
  * data centres download them far too slowly for a live event, so machines are
@@ -186,7 +200,7 @@ async function createPod(
   const body: Record<string, unknown> = {
     name: POD_NAME,
     imageName: data.imageName || "daydreamlive/scope:latest",
-    gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : [...GPU_PREFERENCE],
+    gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : gpuPreference(data.pipeline),
     gpuCount: 1,
     cloudType: "SECURE",
     computeType: "GPU",
