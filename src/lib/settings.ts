@@ -94,7 +94,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v4";
+const KEY = "mirror.settings.v5";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
