@@ -89,7 +89,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   noiseScale: 0.35,
   cameraWidth: 3840,
   cameraHeight: 2160,
-  fallbackMode: false,
+  fallbackMode: true,
   fallbackPrompt: FALLBACK_PROMPT,
 };
 
