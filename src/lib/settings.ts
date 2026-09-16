@@ -52,8 +52,6 @@ export const MODEL_OPTIONS = [
 export const DEFAULT_PROMPT =
   "photorealistic portrait of the exact same person undergoing chemotherapy, completely hairless head: totally bald smooth scalp with no hair and no stubble, clean-shaven face with no beard and no moustache, very thin almost invisible eyebrows, no eyelashes, slightly pale tired skin with soft shadows under the eyes, same face shape, same eyes, same nose, same mouth, same neutral expression, same dark t-shirt, same red chair, same room and background unchanged, same camera angle and soft daylight, natural skin texture, documentary photograph, sharp focus";
 
-export const DEFAULT_NEGATIVE_PROMPT =
-  "hair, curly hair, hairline, beard, stubble, moustache, facial hair, wig, hat, cap, different person, distorted face, deformed, cartoon, painting, blurry, changed background";
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
   prompt: DEFAULT_PROMPT,
