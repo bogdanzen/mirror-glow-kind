@@ -25,6 +25,7 @@ import {
 } from "@/lib/mirror";
 import type { WarmState } from "@/lib/scope";
 import { clearDiag, subscribeDiag, type DiagEntry } from "@/lib/diag";
+import { mirrorTurnCredentials } from "@/lib/turn.functions";
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
@@ -48,6 +49,7 @@ export function AdminPanel({
   const [log, setLog] = useState<SessionLogEntry[]>([]);
   const [runpod, setRunpod] = useState<RunpodState | null>(null);
   const [podMsg, setPodMsg] = useState("");
+  const [turnMsg, setTurnMsg] = useState("");
   const [diagEntries, setDiagEntries] = useState<DiagEntry[]>([]);
   const [warm, setWarm] = useState<WarmState>({
     stage: "idle",
@@ -256,7 +258,29 @@ export function AdminPanel({
               ))}
             </select>
 
-            <label className={label}>Releu TURN (dacă GPU-ul nu are IP public)</label>
+            <label className={label}>Releu video Cloudflare (automat)</label>
+            <div className="flex items-center gap-6">
+              <button
+                className="border border-hairline px-6 py-3 text-xs uppercase tracking-[0.2em]"
+                onClick={() => {
+                  setTurnMsg("verific releul…");
+                  void mirrorTurnCredentials({ data: { ttl: 600 } })
+                    .then((r) =>
+                      setTurnMsg(
+                        r.ok
+                          ? `releu activ · ${r.iceServers.length} servere ICE · valabil ${Math.round(r.ttl / 60)} min`
+                          : `releu indisponibil: ${r.error}`,
+                      ),
+                    )
+                    .catch((e: Error) => setTurnMsg(`releu indisponibil: ${e.message}`));
+                }}
+              >
+                Testează releul
+              </button>
+              <span className="text-xs text-muted-foreground">{turnMsg}</span>
+            </div>
+
+            <label className={label}>Releu TURN manual (opțional)</label>
             <input
               className={field}
               placeholder="turn:host:3478"
