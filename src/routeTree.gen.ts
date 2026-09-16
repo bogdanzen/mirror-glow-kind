@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GdprRouteImport } from './routes/gdpr'
+import { Route as ApiBaldRouteImport } from './routes/api/bald'
 import { Route as RIdRouteImport } from './routes/r.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const GdprRoute = GdprRouteImport.update({
   path: '/gdpr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBaldRoute = ApiBaldRouteImport.update({
+  id: '/api/bald',
+  path: '/api/bald',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RIdRoute = RIdRouteImport.update({
   id: '/r/$id',
   path: '/r/$id',
@@ -32,30 +38,34 @@ const RIdRoute = RIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/gdpr': typeof GdprRoute
+  '/api/bald': typeof ApiBaldRoute
   '/r/$id': typeof RIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/gdpr': typeof GdprRoute
+  '/api/bald': typeof ApiBaldRoute
   '/r/$id': typeof RIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/gdpr': typeof GdprRoute
+  '/api/bald': typeof ApiBaldRoute
   '/r/$id': typeof RIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/gdpr' | '/r/$id'
+  fullPaths: '/' | '/gdpr' | '/api/bald' | '/r/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/gdpr' | '/r/$id'
-  id: '__root__' | '/' | '/gdpr' | '/r/$id'
+  to: '/' | '/gdpr' | '/api/bald' | '/r/$id'
+  id: '__root__' | '/' | '/gdpr' | '/api/bald' | '/r/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GdprRoute: typeof GdprRoute
+  ApiBaldRoute: typeof ApiBaldRoute
   RIdRoute: typeof RIdRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GdprRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bald': {
+      id: '/api/bald'
+      path: '/api/bald'
+      fullPath: '/api/bald'
+      preLoaderRoute: typeof ApiBaldRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$id': {
       id: '/r/$id'
       path: '/r/$id'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GdprRoute: GdprRoute,
+  ApiBaldRoute: ApiBaldRoute,
   RIdRoute: RIdRoute,
 }
 export const routeTree = rootRouteImport

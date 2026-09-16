@@ -37,7 +37,10 @@ export type MirrorSettings = {
   /** Preferred camera capture size (falls back automatically). */
   cameraWidth: number;
   cameraHeight: number;
-
+  /** Server fallback: one still portrait rendered by AI, no GPU needed. */
+  fallbackMode: boolean;
+  /** Prompt used by the server fallback. */
+  fallbackPrompt: string;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
@@ -84,6 +87,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   noiseScale: 0.35,
   cameraWidth: 3840,
   cameraHeight: 2160,
+  fallbackMode: false,
+  fallbackPrompt: FALLBACK_PROMPT,
 };
 
 
