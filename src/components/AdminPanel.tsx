@@ -41,6 +41,9 @@ export function AdminPanel({
   const [log, setLog] = useState<SessionLogEntry[]>([]);
   const [runpod, setRunpod] = useState<RunpodState | null>(null);
   const [podMsg, setPodMsg] = useState("");
+  const [diagEntries, setDiagEntries] = useState<DiagEntry[]>([]);
+
+  useEffect(() => subscribeDiag(setDiagEntries), []);
 
   useEffect(() => {
     if (!unlocked) return;
