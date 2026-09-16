@@ -416,6 +416,11 @@ async function openSession({
     if (closed) return;
     closed = true;
     activeSessions = Math.max(0, activeSessions - 1);
+    const closingSessionId = sessionId;
+    sessionId = null;
+    if (closingSessionId) {
+      void call(`/api/v1/webrtc/offer/${closingSessionId}`, "DELETE");
+    }
     try {
       dataChannel.close();
     } catch {
