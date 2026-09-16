@@ -143,6 +143,7 @@ export function AdminPanel({
                       }`
                     : "niciun pod pornit"}
               {runpod?.error ? ` · ${runpod.error}` : ""}
+              {runpod?.region ? ` · ${runpod.region}` : ""}
               {podMsg ? ` · ${podMsg}` : ""}
             </p>
             <div className="flex flex-wrap gap-8 py-2 text-base">

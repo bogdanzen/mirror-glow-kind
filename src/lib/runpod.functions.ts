@@ -23,6 +23,8 @@ export type RunpodPodInfo = {
 export type RunpodState = {
   configured: boolean;
   pod: RunpodPodInfo | null;
+  /** Where the machine was rented, e.g. "Europa · România (EU-RO-1)". */
+  region?: string;
   error?: string;
 };
 
@@ -71,13 +73,30 @@ async function findPod(apiKey: string): Promise<RawPod | null> {
   return pods.find((p) => p.name === POD_NAME) ?? pods[0] ?? null;
 }
 
+/** RunPod only reports the live region through API v2, and only sometimes. */
+async function liveRegion(apiKey: string, podId: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(`https://api.runpod.io/v2/pods/${podId}`, {
+      headers: headers(apiKey),
+    });
+    if (!res.ok) return undefined;
+    const body = (await res.json()) as { dataCenterId?: string | null };
+    return body.dataCenterId ? `Europa · ${body.dataCenterId}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const runpodState = createServerFn({ method: "GET" }).handler(
   async (): Promise<RunpodState> => {
     const apiKey = key();
     if (!apiKey) return { configured: false, pod: null };
     try {
       const pod = await findPod(apiKey);
-      return { configured: true, pod: pod ? shape(pod) : null };
+      if (!pod) return { configured: true, pod: null };
+      const shaped = shape(pod);
+      const region = await liveRegion(apiKey, pod.id);
+      return { configured: true, pod: shaped, ...(region ? { region } : {}) };
     } catch (error) {
       return { configured: true, pod: null, error: (error as Error).message };
     }
@@ -92,6 +111,57 @@ export const GPU_PREFERENCE = [
   "NVIDIA RTX 6000 Ada Generation",
   "NVIDIA A100 80GB PCIe",
 ] as const;
+
+/**
+ * Data centres, Romania first. Model weights are tens of gigabytes and US
+ * data centres download them far too slowly for a live event, so machines are
+ * always rented in Europe with Bucharest/Timișoara preferred.
+ * Override with the RUNPOD_DATA_CENTERS secret (comma-separated codes).
+ */
+export const EU_DATA_CENTERS = [
+  "EU-RO-1",
+  "EU-CZ-1",
+  "EU-NL-1",
+  "EU-FR-1",
+  "EU-SE-1",
+  "EUR-IS-1",
+  "EUR-IS-2",
+  "EUR-IS-3",
+  "EUR-NO-1",
+] as const;
+
+function preferredDataCenters(): string[] {
+  const raw = process.env["RUNPOD_DATA_CENTERS"] ?? "";
+  const list = raw
+    .split(",")
+    .map((code) => code.trim().toUpperCase())
+    .filter(Boolean);
+  return list.length ? list : [...EU_DATA_CENTERS];
+}
+
+/** True when the machine simply is not there — worth retrying elsewhere. */
+function isCapacityError(text: string): boolean {
+  return /no instances|not enough|unavailable|capacity|no machines|sold out|exhausted|out of stock/i.test(
+    text,
+  );
+}
+
+function regionLabel(codes: string[]): string {
+  if (codes[0] === "EU-RO-1") return "Europa · România (EU-RO-1)";
+  return `Europa (${codes.join(", ")})`;
+}
+
+async function postPod(
+  apiKey: string,
+  body: Record<string, unknown>,
+): Promise<{ ok: boolean; status: number; text: string }> {
+  const res = await fetch(`${RUNPOD_API}/pods`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify(body),
+  });
+  return { ok: res.ok, status: res.status, text: await res.text() };
+}
 
 async function createPod(
   apiKey: string,
@@ -110,29 +180,44 @@ async function createPod(
     env["CLOUDFLARE_TURN_KEY_API_TOKEN"] = turnToken;
   }
 
-  const res = await fetch(`${RUNPOD_API}/pods`, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify({
-      name: POD_NAME,
-      imageName: data.imageName || "daydreamlive/scope:latest",
-      gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : [...GPU_PREFERENCE],
-      gpuCount: 1,
-      cloudType: "SECURE",
-      computeType: "GPU",
-      containerDiskInGb: 40,
-      volumeInGb: 80,
-      volumeMountPath: "/workspace",
-      ports: [`${SCOPE_PORT}/http`],
-      env,
-      interruptible: false,
-    }),
+  const body: Record<string, unknown> = {
+    name: POD_NAME,
+    imageName: data.imageName || "daydreamlive/scope:latest",
+    gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : [...GPU_PREFERENCE],
+    gpuCount: 1,
+    cloudType: "SECURE",
+    computeType: "GPU",
+    containerDiskInGb: 40,
+    volumeInGb: 80,
+    volumeMountPath: "/workspace",
+    ports: [`${SCOPE_PORT}/http`],
+    env,
+    interruptible: false,
+  };
+
+  // Rent in Europe, Romania first: the model is tens of GB and US machines
+  // take far too long to pull it. "custom" keeps the order we asked for.
+  const centers = preferredDataCenters();
+  let res = await postPod(apiKey, {
+    ...body,
+    dataCenterIds: centers,
+    dataCenterPriority: "custom",
   });
-  const text = await res.text();
-  if (!res.ok) {
-    return { configured: true, pod: null, error: `RunPod ${res.status}: ${text.slice(0, 300)}` };
+  let region = regionLabel(centers);
+
+  // Only when Europe is genuinely full do we accept another region.
+  if (!res.ok && isCapacityError(res.text)) {
+    const retry = await postPod(apiKey, body);
+    if (retry.ok) {
+      res = retry;
+      region = "în afara Europei (Europa fără capacitate)";
+    }
   }
-  return { configured: true, pod: shape(JSON.parse(text) as RawPod) };
+
+  if (!res.ok) {
+    return { configured: true, pod: null, error: `RunPod ${res.status}: ${res.text.slice(0, 300)}` };
+  }
+  return { configured: true, pod: shape(JSON.parse(res.text) as RawPod), region };
 }
 
 export const startRunpodPod = createServerFn({ method: "POST" })
