@@ -36,6 +36,16 @@ async function getCamera(settings: MirrorSettings): Promise<MediaStream> {
   });
 }
 
+/** Loads the model on the GPU ahead of time so sessions start instantly. */
+export async function prewarmMirror(
+  settings: MirrorSettings,
+  onStatus?: ((status: MirrorStatus, detail?: string) => void) | undefined,
+): Promise<void> {
+  const { prewarmScope, startScopeKeepAlive } = await import("./scope");
+  startScopeKeepAlive(settings.scopePipeline);
+  await prewarmScope(settings.scopePipeline, onStatus);
+}
+
 export async function startMirrorSession({
   settings,
   cameraStream,

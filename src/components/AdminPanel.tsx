@@ -16,7 +16,8 @@ import {
   stopRunpodPod,
   type RunpodState,
 } from "@/lib/runpod.functions";
-import { startMirrorSession } from "@/lib/mirror";
+import { prewarmMirror, startMirrorSession } from "@/lib/mirror";
+import { clearDiag, subscribeDiag, type DiagEntry } from "@/lib/diag";
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
@@ -40,6 +41,9 @@ export function AdminPanel({
   const [log, setLog] = useState<SessionLogEntry[]>([]);
   const [runpod, setRunpod] = useState<RunpodState | null>(null);
   const [podMsg, setPodMsg] = useState("");
+  const [diagEntries, setDiagEntries] = useState<DiagEntry[]>([]);
+
+  useEffect(() => subscribeDiag(setDiagEntries), []);
 
   useEffect(() => {
     if (!unlocked) return;
@@ -304,6 +308,18 @@ export function AdminPanel({
               {draft.demoMode ? "pornit" : "oprit"}
             </span>
           </button>
+          <button className="text-left" onClick={() => set("diagnostics", !draft.diagnostics)}>
+            Mod diagnostic (verbose):{" "}
+            <span className={draft.diagnostics ? "text-primary" : "text-muted-foreground"}>
+              {draft.diagnostics ? "pornit" : "oprit"}
+            </span>
+          </button>
+          <button className="text-left" onClick={() => set("prewarm", !draft.prewarm)}>
+            Pre-încălzire GPU:{" "}
+            <span className={draft.prewarm ? "text-primary" : "text-muted-foreground"}>
+              {draft.prewarm ? "pornită" : "oprită"}
+            </span>
+          </button>
           <button
             className="text-left"
             onClick={() => set("storageEnabled", !draft.storageEnabled)}
@@ -399,10 +415,41 @@ export function AdminPanel({
           </button>
           <button
             className="underline underline-offset-8"
+            onClick={() => {
+              setStatus("Se pre-încălzește GPU-ul…");
+              void prewarmMirror(draft, (_s, detail) => detail && setStatus(`Pre-încălzire: ${detail}`))
+                .then(() => setStatus("GPU pregătit — sesiunile pornesc instant."))
+                .catch((e: Error) => setStatus(`Pre-încălzire eșuată: ${e.message}`));
+            }}
+          >
+            Pre-încălzește GPU
+          </button>
+          <button
+            className="underline underline-offset-8"
             onClick={() => window.location.reload()}
           >
             Repornește aplicația
           </button>
+        </div>
+
+        <div className="mt-12 hairline-t pt-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg">Diagnostic live</h2>
+            <button
+              className="text-sm text-muted-foreground underline underline-offset-8"
+              onClick={() => clearDiag()}
+            >
+              Golește
+            </button>
+          </div>
+          <ul className="mt-4 max-h-72 space-y-1 overflow-y-auto font-mono text-[11px] text-muted-foreground">
+            {diagEntries.length === 0 && <li>Fără evenimente încă.</li>}
+            {[...diagEntries].reverse().map((e, i) => (
+              <li key={`${e.at}-${i}`} className={e.level === "error" ? "text-primary" : ""}>
+                {new Date(e.at).toLocaleTimeString("ro-RO")} · {e.scope} · {e.message}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {status && <p className="mt-8 text-sm text-muted-foreground">{status}</p>}

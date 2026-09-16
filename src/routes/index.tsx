@@ -8,10 +8,18 @@ import {
   appendSessionLog,
   bumpSessionCounter,
   loadSettings,
+  saveSettings,
   type MirrorSettings,
 } from "@/lib/settings";
-import { startMirrorSession, type MirrorSession, type MirrorStatus } from "@/lib/mirror";
+import {
+  prewarmMirror,
+  startMirrorSession,
+  type MirrorSession,
+  type MirrorStatus,
+} from "@/lib/mirror";
 import { GildedBackdrop } from "@/components/GildedBackdrop";
+import { DiagOverlay } from "@/components/DiagOverlay";
+import { diag } from "@/lib/diag";
 
 
 export const Route = createFileRoute("/")({
@@ -50,6 +58,9 @@ function Kiosk() {
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
+  const [statusDetail, setStatusDetail] = useState("");
+  const [warm, setWarm] = useState<"idle" | "warming" | "ready" | "failed">("idle");
+
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
@@ -62,6 +73,27 @@ function Kiosk() {
     setOrigin(window.location.origin);
     return installKioskHardening();
   }, []);
+
+  // PRE-WARM: load the model on the GPU while the kiosk is idle, so a
+  // visitor's session starts in real time instead of waiting for a cold GPU.
+  useEffect(() => {
+    if (!settings.prewarm || settings.demoMode) return;
+    let cancelled = false;
+    setWarm("warming");
+    diag("kiosk", "pre-încălzire pornită");
+    void prewarmMirror(settings, (_s, detail) => {
+      if (!cancelled && detail) setStatusDetail(detail);
+    })
+      .then(() => !cancelled && setWarm("ready"))
+      .catch((e: Error) => {
+        if (cancelled) return;
+        setWarm("failed");
+        setStatusDetail(e.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.prewarm, settings.demoMode, settings.scopePipeline, settings]);
 
   const stopCamera = useCallback(() => {
     cameraRef.current?.getTracks().forEach((t) => t.stop());
@@ -233,8 +265,10 @@ function Kiosk() {
         const session = await startMirrorSession({
           settings,
           cameraStream: camera,
-          onStatus: (status) => {
-            if (!cancelled && status !== "ended") setMirrorStatus(status);
+          onStatus: (status, detail) => {
+            if (cancelled) return;
+            if (status !== "ended") setMirrorStatus(status);
+            if (detail) setStatusDetail(detail);
           },
         });
         if (cancelled) {
@@ -438,9 +472,16 @@ function Kiosk() {
             {mirrorStatus !== "live" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
-                <p className="absolute px-[6vw] text-center text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
-                  {mirrorStatus === "error" && error ? error : "Se pregătește oglinda…"}
-                </p>
+                <div className="absolute px-[6vw] text-center">
+                  <p className="text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
+                    {mirrorStatus === "error" && error ? error : "Se pregătește oglinda…"}
+                  </p>
+                  {statusDetail && mirrorStatus !== "error" && (
+                    <p className="mt-4 text-[clamp(0.8rem,1.4vw,1.2rem)] text-muted-foreground/70">
+                      {statusDetail}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -511,6 +552,29 @@ function Kiosk() {
         </section>
       )}
 
+
+      {settings.diagnostics && !admin && (
+        <>
+          <span className="absolute left-[4vw] top-[4vh] z-40 border border-hairline px-3 py-1 font-mono text-[11px] tracking-[0.2em] text-muted-foreground">
+            {`GPU: ${
+              warm === "ready"
+                ? "PREGĂTIT"
+                : warm === "warming"
+                  ? "SE ÎNCĂLZEȘTE"
+                  : warm === "failed"
+                    ? "EȘUAT"
+                    : "INACTIV"
+            } · ${screen} · ${mirrorStatus}`}
+          </span>
+          <DiagOverlay
+            onClose={() => {
+              const next = { ...settings, diagnostics: false };
+              saveSettings(next);
+              setSettings(next);
+            }}
+          />
+        </>
+      )}
 
       {admin && (
         <AdminPanel
