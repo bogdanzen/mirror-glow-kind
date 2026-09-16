@@ -483,9 +483,14 @@ async function openSession({
   });
 
   for (const track of cameraStream.getVideoTracks()) pc.addTrack(track, cameraStream);
+  const videoTransceiver = pc.getTransceivers().find((item) => item.sender.track?.kind === "video");
+  const vp8 = RTCRtpReceiver.getCapabilities("video")?.codecs.filter(
+    (codec) => codec.mimeType.toLowerCase() === "video/vp8",
+  );
+  if (videoTransceiver && vp8?.length) videoTransceiver.setCodecPreferences(vp8);
   // The outgoing camera transceiver is sendrecv, allowing Scope to attach the
-  // processed track to the same negotiated video m-line. Keep the browser's
-  // complete codec list: forcing VP8 can leave aiortc without a usable encoder.
+  // processed track to the same negotiated video m-line. Scope's own client
+  // forces VP8 here for aiortc compatibility, so mirror that contract.
 
   onStatus?.("publishing", "conectare video");
   const offer = await pc.createOffer();
@@ -508,6 +513,10 @@ async function openSession({
       prompts: [{ text: String(settings.prompt || ""), weight: 1 }],
       ...(steps.length ? { denoising_step_list: steps } : {}),
       manage_cache: true,
+      produces_video: true,
+      produces_audio: false,
+      noise_scale: 0.7,
+      noise_controller: true,
     },
   });
 
@@ -540,9 +549,18 @@ async function openSession({
     if (!stats) return "statistici indisponibile";
     let selected = "nicio rută ICE selectată";
     let inbound = "cadre primite: 0";
+    const candidates = new Map<string, RTCStats>();
+    stats.forEach((report) => {
+      if (report.type === "local-candidate" || report.type === "remote-candidate") {
+        candidates.set(report.id, report);
+      }
+    });
     stats.forEach((report) => {
       if (report.type === "candidate-pair" && report.state === "succeeded" && report.nominated) {
-        selected = `rută ICE ${report.currentRoundTripTime != null ? `${Math.round(Number(report.currentRoundTripTime) * 1000)} ms` : "activă"}`;
+        const local = candidates.get(String(report.localCandidateId));
+        const remote = candidates.get(String(report.remoteCandidateId));
+        const route = `${String(local?.candidateType ?? "?")}→${String(remote?.candidateType ?? "?")}`;
+        selected = `rută ICE ${route} ${report.currentRoundTripTime != null ? `${Math.round(Number(report.currentRoundTripTime) * 1000)} ms` : "activă"}`;
       }
       if (report.type === "inbound-rtp" && report.kind === "video") {
         inbound = `cadre primite: ${Number(report.framesDecoded ?? report.framesReceived ?? 0)}`;
