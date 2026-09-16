@@ -23,6 +23,8 @@ export type RunpodPodInfo = {
 export type RunpodState = {
   configured: boolean;
   pod: RunpodPodInfo | null;
+  /** Where the machine was rented, e.g. "Europa · România (EU-RO-1)". */
+  region?: string;
   error?: string;
 };
 
