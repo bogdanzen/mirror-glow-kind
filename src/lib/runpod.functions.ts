@@ -95,7 +95,8 @@ export const runpodState = createServerFn({ method: "GET" }).handler(
       const pod = await findPod(apiKey);
       if (!pod) return { configured: true, pod: null };
       const shaped = shape(pod);
-      return { configured: true, pod: shaped, region: await liveRegion(apiKey, pod.id) };
+      const region = await liveRegion(apiKey, pod.id);
+      return { configured: true, pod: shaped, ...(region ? { region } : {}) };
     } catch (error) {
       return { configured: true, pod: null, error: (error as Error).message };
     }
