@@ -35,7 +35,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --font-sans: "Varela Round", ui-rounded, system-ui, sans-serif;
-  --font-display: "Varela Round", ui-rounded, system-ui, sans-serif;
+  --font-display: "Instrument Serif", "Varela Round", ui-serif, serif;
+
 }
 
 :root {
