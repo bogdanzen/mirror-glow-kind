@@ -195,6 +195,9 @@ async function createPod(
     volumeMountPath: "/workspace",
     ports: [`${SCOPE_PORT}/http`],
     env,
+    // Scope currently caches TURN credentials at process start. A public
+    // media route provides a stable fallback after those credentials expire.
+    globalNetworking: true,
     interruptible: false,
   };
 
