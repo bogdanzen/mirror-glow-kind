@@ -512,7 +512,11 @@ function Kiosk() {
               playsInline
               className="h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms]"
               style={{
-                opacity: mirrorStatus === "live" ? 1 : 0,
+                opacity:
+                  mirrorStatus === "live" ||
+                  (settings.fallbackMode && mirrorStatus === "publishing")
+                    ? 1
+                    : 0,
                 maskImage:
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
                 WebkitMaskImage:
