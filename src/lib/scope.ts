@@ -568,6 +568,11 @@ async function openSession({
     .map((value) => Math.round(Number(value)))
     .filter((value) => Number.isFinite(value) && value > 0);
 
+  const sessionSize = outputSize(settings.outputLongEdge || 768);
+  diag("session", `cer ${sessionSize.width}×${sessionSize.height} (raport ecran)`);
+
+
+
   const answerRes = await call("/api/v1/webrtc/offer", "POST", {
     sdp: localSdp,
     type: pc.localDescription?.type ?? "offer",
