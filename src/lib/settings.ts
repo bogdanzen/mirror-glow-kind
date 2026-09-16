@@ -87,7 +87,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v3";
+const KEY = "mirror.settings.v4";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -105,8 +105,17 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.scopeDenoiseSteps = steps.length ? steps : DEFAULT_SETTINGS.scopeDenoiseSteps;
   merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
+  const longEdge = Math.round(Number(merged.outputLongEdge));
+  merged.outputLongEdge = Number.isFinite(longEdge)
+    ? Math.min(1280, Math.max(320, longEdge))
+    : DEFAULT_SETTINGS.outputLongEdge;
+  const noise = Number(merged.noiseScale);
+  merged.noiseScale = Number.isFinite(noise)
+    ? Math.min(1, Math.max(0, noise))
+    : DEFAULT_SETTINGS.noiseScale;
   return merged;
 }
+
 
 export function loadSettings(): MirrorSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
