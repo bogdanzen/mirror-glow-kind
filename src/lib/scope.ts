@@ -94,6 +94,16 @@ function isCorruption(message: string) {
   return CORRUPT_HINTS.some((h) => lower.includes(h.toLowerCase()));
 }
 
+function pipelineError(message: string) {
+  if (/cuda out of memory|out of memory/i.test(message)) {
+    return new Error(
+      "GPU-ul nu are suficientă memorie pentru Krea (necesar: minimum 48 GB). Recreează pod-ul din panoul de administrare; va fi ales automat un GPU compatibil din Europa.",
+    );
+  }
+  if (isCorruption(message)) return new ModelCorruptError(message);
+  return new Error(message);
+}
+
 /* ---------- Server / model / pipeline steps ---------- */
 
 async function waitForServer(deadlineMs = 600_000) {
@@ -210,10 +220,7 @@ async function loadPipeline(pipeline: string) {
   const load = await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
   if (!load.ok) {
     const message = typeof load.body === "string" ? load.body : load.error;
-    if (isCorruption(message || "")) {
-      throw new ModelCorruptError(message || "fișiere de model corupte");
-    }
-    throw new Error(load.error || `Pornirea modelului a eșuat (${load.status})`);
+    throw pipelineError(message || `Pornirea modelului a eșuat (${load.status})`);
   }
 
   const deadline = Date.now() + 900_000;
@@ -238,8 +245,7 @@ async function loadPipeline(pipeline: string) {
     }
     if (state?.status === "error") {
       const message = state.error || "pipeline-ul a eșuat la încărcare";
-      if (isCorruption(message)) throw new ModelCorruptError(message);
-      throw new Error(message);
+      throw pipelineError(message);
     }
     setStage("loading", `model: ${state?.status ?? "se pregătește"}`);
     await sleep(2500);
