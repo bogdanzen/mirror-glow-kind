@@ -60,8 +60,15 @@ export async function prewarmMirror(
 ): Promise<void> {
   const { prewarmScope, startScopeKeepAlive } = await import("./scope");
   startScopeKeepAlive(settings.scopePipeline);
-  await prewarmScope(settings.scopePipeline, onStatus);
+  await prewarmScope(settings.scopePipeline, onStatus, settings.outputLongEdge);
 }
+
+/** Re-loads the model at the current screen resolution (no machine restart). */
+export async function reloadMirrorResolution(settings: MirrorSettings): Promise<void> {
+  const { reloadScopeAtViewport } = await import("./scope");
+  await reloadScopeAtViewport(settings.scopePipeline, settings.outputLongEdge);
+}
+
 
 /** Live warm-up state for the diagnostics UI. */
 export async function subscribeMirrorWarm(
