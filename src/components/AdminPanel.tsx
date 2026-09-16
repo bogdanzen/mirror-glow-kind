@@ -23,9 +23,12 @@ import {
   startMirrorSession,
   subscribeMirrorWarm,
 } from "@/lib/mirror";
+import { reloadMirrorResolution } from "@/lib/mirror";
+import { PinPad } from "@/components/PinPad";
 import type { WarmState } from "@/lib/scope";
 import { clearDiag, subscribeDiag, type DiagEntry } from "@/lib/diag";
 import { mirrorTurnCredentials } from "@/lib/turn.functions";
+
 
 const field =
   "w-full bg-transparent border-b border-hairline py-3 text-[--color-foreground] outline-none focus:border-primary text-base";
@@ -90,17 +93,12 @@ export function AdminPanel({
   if (!unlocked) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-8">
-        <div className="w-full max-w-md text-center">
-          <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Admin</p>
-          <input
-            autoFocus
-            value={pin}
-            inputMode="numeric"
-            type="password"
-            onChange={(e) => setPin(e.target.value)}
-            className="mt-8 w-full border-b border-hairline bg-transparent py-4 text-center text-3xl tracking-[0.6em] outline-none focus:border-primary"
-            placeholder="PIN"
-          />
+        <div className="w-full max-w-md">
+          <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Administrare</p>
+          <div className="mt-6 hairline-b py-6 text-center font-display text-4xl tracking-[0.5em]">
+            {pin ? "•".repeat(pin.length) : <span className="text-muted-foreground">PIN</span>}
+          </div>
+          <PinPad value={pin} onChange={setPin} />
           <div className="mt-10 flex justify-between text-lg">
             <button onClick={onClose} className="text-muted-foreground">
               Închide
@@ -116,6 +114,7 @@ export function AdminPanel({
       </div>
     );
   }
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background p-8">
