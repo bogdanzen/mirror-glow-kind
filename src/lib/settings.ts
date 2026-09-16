@@ -68,7 +68,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   idleTimeoutSeconds: 45,
   campaignLine: "SCHIMBAREA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
-  delta: 0.45,
+  delta: 0.6,
   seed: 42,
   steps: 2,
   provider: "runpod",
