@@ -549,10 +549,10 @@ async function openSession({
     if (!stats) return "statistici indisponibile";
     let selected = "nicio rută ICE selectată";
     let inbound = "cadre primite: 0";
-    const candidates = new Map<string, RTCStats>();
+    const candidates = new Map<string, { candidateType?: string }>();
     stats.forEach((report) => {
       if (report.type === "local-candidate" || report.type === "remote-candidate") {
-        candidates.set(report.id, report);
+        candidates.set(report.id, report as RTCStats & { candidateType?: string });
       }
     });
     stats.forEach((report) => {
