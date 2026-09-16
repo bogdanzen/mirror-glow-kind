@@ -254,6 +254,28 @@ export function AdminPanel({
                 </option>
               ))}
             </select>
+
+            <label className={label}>Releu TURN (dacă GPU-ul nu are IP public)</label>
+            <input
+              className={field}
+              placeholder="turn:host:3478"
+              value={draft.turnUrl}
+              onChange={(e) => set("turnUrl", e.target.value)}
+            />
+            <div className="grid grid-cols-2 gap-6">
+              <input
+                className={field}
+                placeholder="utilizator"
+                value={draft.turnUsername}
+                onChange={(e) => set("turnUsername", e.target.value)}
+              />
+              <input
+                className={field}
+                placeholder="parolă"
+                value={draft.turnCredential}
+                onChange={(e) => set("turnCredential", e.target.value)}
+              />
+            </div>
           </>
         )}
 
