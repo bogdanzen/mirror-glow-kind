@@ -5,6 +5,7 @@ import { AdminPanel } from "@/components/AdminPanel";
 import { saveCapture } from "@/lib/captures";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import {
+  DEFAULT_SETTINGS,
   appendSessionLog,
   bumpSessionCounter,
   loadSettings,
@@ -12,14 +13,16 @@ import {
   type MirrorSettings,
 } from "@/lib/settings";
 import {
+  getCamera,
   prewarmMirror,
   startMirrorSession,
+  subscribeMirrorWarm,
   type MirrorSession,
   type MirrorStatus,
 } from "@/lib/mirror";
+import type { WarmState } from "@/lib/scope";
 import { GildedBackdrop } from "@/components/GildedBackdrop";
 import { DiagOverlay } from "@/components/DiagOverlay";
-import { diag } from "@/lib/diag";
 
 
 export const Route = createFileRoute("/")({
@@ -47,7 +50,10 @@ export const Route = createFileRoute("/")({
 type Screen = "attract" | "consent" | "framing" | "mirror" | "capture" | "thanks";
 
 function Kiosk() {
-  const [settings, setSettings] = useState<MirrorSettings>(() => loadSettings());
+  // Start from defaults so the server and the first client render agree;
+  // stored settings are applied right after hydration.
+  const [settings, setSettings] = useState<MirrorSettings>(DEFAULT_SETTINGS);
+  const [hydrated, setHydrated] = useState(false);
   const [screen, setScreen] = useState<Screen>("attract");
   const [admin, setAdmin] = useState(false);
   const [demo, setDemo] = useState(true);
@@ -59,41 +65,54 @@ function Kiosk() {
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
   const [statusDetail, setStatusDetail] = useState("");
-  const [warm, setWarm] = useState<"idle" | "warming" | "ready" | "failed">("idle");
-
+  const [warm, setWarm] = useState<WarmState>({
+    stage: "idle",
+    detail: "",
+    fatal: false,
+    since: 0,
+  });
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
-  
+
   const sessionRef = useRef<MirrorSession | null>(null);
   const idleRef = useRef<number>(Date.now());
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   useEffect(() => {
     setOrigin(window.location.origin);
+    setSettings(loadSettings());
+    setHydrated(true);
     return installKioskHardening();
   }, []);
 
-  // PRE-WARM: load the model on the GPU while the kiosk is idle, so a
-  // visitor's session starts in real time instead of waiting for a cold GPU.
+  // Live warm-up state for diagnostics.
   useEffect(() => {
-    if (!settings.prewarm || settings.demoMode) return;
+    let unsub: (() => void) | undefined;
+    void subscribeMirrorWarm(setWarm).then((fn) => (unsub = fn));
+    return () => unsub?.();
+  }, []);
+
+  // PRE-WARM: one owner only. Keyed on the pipeline, never on the whole
+  // settings object — re-running this is what hammered the GPU with
+  // concurrent downloads and corrupted the model files.
+  const pipeline = settings.scopePipeline;
+  const prewarmOn = settings.prewarm && !settings.demoMode && hydrated;
+  useEffect(() => {
+    if (!prewarmOn) return;
     let cancelled = false;
-    setWarm("warming");
-    diag("kiosk", "pre-încălzire pornită");
-    void prewarmMirror(settings, (_s, detail) => {
+    void prewarmMirror(settingsRef.current, (_s, detail) => {
       if (!cancelled && detail) setStatusDetail(detail);
-    })
-      .then(() => !cancelled && setWarm("ready"))
-      .catch((e: Error) => {
-        if (cancelled) return;
-        setWarm("failed");
-        setStatusDetail(e.message);
-      });
+    }).catch((e: Error) => {
+      if (!cancelled) setStatusDetail(e.message);
+    });
     return () => {
       cancelled = true;
     };
-  }, [settings.prewarm, settings.demoMode, settings.scopePipeline, settings]);
+  }, [prewarmOn, pipeline]);
+
 
   const stopCamera = useCallback(() => {
     cameraRef.current?.getTracks().forEach((t) => t.stop());
@@ -148,15 +167,10 @@ function Kiosk() {
 
   const startCamera = useCallback(async () => {
     if (cameraRef.current) return cameraRef.current;
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: settings.cameraDeviceId
-        ? { deviceId: { exact: settings.cameraDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-        : { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: false,
-    });
+    const stream = await getCamera(settingsRef.current);
     cameraRef.current = stream;
     return stream;
-  }, [settings.cameraDeviceId]);
+  }, []);
 
   // FRAMING: preview + presence heuristic + countdown
   useEffect(() => {
@@ -231,39 +245,33 @@ function Kiosk() {
     };
   }, [screen, startCamera]);
 
-  // MIRROR: live AI stream, with silent fallback to demo mode
+  // MIRROR: live AI stream. Never restarts because an unrelated setting changed.
   useEffect(() => {
     if (screen !== "mirror") return;
     let cancelled = false;
 
     void (async () => {
+      const current = settingsRef.current;
       const camera = cameraRef.current ?? (await startCamera().catch(() => null));
       if (!camera || cancelled) return;
       bumpSessionCounter();
       setMirrorStatus("creating");
 
-      const showDemo = async () => {
+      if (current.demoMode) {
+        appendSessionLog({ at: Date.now(), status: "demo" });
         setDemo(true);
         setMirrorStatus("live");
-        if (mirrorRef.current && !cancelled) {
-          mirrorRef.current.srcObject = null;
+        if (mirrorRef.current) {
           mirrorRef.current.srcObject = camera;
           await mirrorRef.current.play().catch(() => undefined);
         }
-      };
-
-      if (settings.demoMode) {
-        appendSessionLog({ at: Date.now(), status: "demo" });
-        await showDemo();
         return;
       }
 
       const started = performance.now();
       try {
-        // No artificial deadline: a cold GPU may need several minutes to
-        // download weights and load the pipeline the first time.
         const session = await startMirrorSession({
-          settings,
+          settings: current,
           cameraStream: camera,
           onStatus: (status, detail) => {
             if (cancelled) return;
@@ -280,10 +288,9 @@ function Kiosk() {
         appendSessionLog({
           at: Date.now(),
           status: "live",
-          latencyMs: Math.round(performance.now() - started),
+          latencyMs: session.startupMs ?? Math.round(performance.now() - started),
         });
         if (session.processedStream && mirrorRef.current) {
-          mirrorRef.current.srcObject = null;
           mirrorRef.current.srcObject = session.processedStream;
           await mirrorRef.current.play().catch(() => undefined);
         }
@@ -301,7 +308,7 @@ function Kiosk() {
     return () => {
       cancelled = true;
     };
-  }, [screen, settings, startCamera, teardownStream]);
+  }, [screen, startCamera, teardownStream]);
 
 
   // Only start counting the mirror time once the image is actually visible,
@@ -328,18 +335,21 @@ function Kiosk() {
     return undefined;
   }, [screen, settings.captureSeconds, settings.thanksSeconds, goAttract]);
 
-  // Freeze a frame when entering capture
+  // Freeze a frame when entering capture, upscaled for the 4K presentation.
   useEffect(() => {
     if (screen !== "capture") return;
     const v = mirrorRef.current;
     if (!v || !v.videoWidth) return;
+    const target = 2048;
+    const scale = Math.min(target / v.videoWidth, target / v.videoHeight);
     const canvas = document.createElement("canvas");
-    canvas.width = v.videoWidth;
-    canvas.height = v.videoHeight;
+    canvas.width = Math.round(v.videoWidth * scale);
+    canvas.height = Math.round(v.videoHeight * scale);
     const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-    setCaptureUrl(dataUrl);
+    setCaptureUrl(canvas.toDataURL("image/jpeg", 0.92));
     teardownStream();
     stopCamera();
   }, [screen, stopCamera, teardownStream]);
@@ -556,15 +566,7 @@ function Kiosk() {
       {settings.diagnostics && !admin && (
         <>
           <span className="absolute left-[4vw] top-[4vh] z-40 border border-hairline px-3 py-1 font-mono text-[11px] tracking-[0.2em] text-muted-foreground">
-            {`GPU: ${
-              warm === "ready"
-                ? "PREGĂTIT"
-                : warm === "warming"
-                  ? "SE ÎNCĂLZEȘTE"
-                  : warm === "failed"
-                    ? "EȘUAT"
-                    : "INACTIV"
-            } · ${screen} · ${mirrorStatus}`}
+            {`GPU: ${warm.stage.toUpperCase()}${warm.detail ? ` (${warm.detail})` : ""} · ${screen} · ${mirrorStatus}`}
           </span>
           <DiagOverlay
             onClose={() => {

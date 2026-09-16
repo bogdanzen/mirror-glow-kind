@@ -11,12 +11,19 @@ import {
   type SessionLogEntry,
 } from "@/lib/settings";
 import {
+  repairRunpodPod,
   runpodState,
   startRunpodPod,
   stopRunpodPod,
   type RunpodState,
 } from "@/lib/runpod.functions";
-import { prewarmMirror, startMirrorSession } from "@/lib/mirror";
+import {
+  prewarmMirror,
+  resetMirrorWarm,
+  startMirrorSession,
+  subscribeMirrorWarm,
+} from "@/lib/mirror";
+import type { WarmState } from "@/lib/scope";
 import { clearDiag, subscribeDiag, type DiagEntry } from "@/lib/diag";
 
 const field =
@@ -42,8 +49,20 @@ export function AdminPanel({
   const [runpod, setRunpod] = useState<RunpodState | null>(null);
   const [podMsg, setPodMsg] = useState("");
   const [diagEntries, setDiagEntries] = useState<DiagEntry[]>([]);
+  const [warm, setWarm] = useState<WarmState>({
+    stage: "idle",
+    detail: "",
+    fatal: false,
+    since: 0,
+  });
 
   useEffect(() => subscribeDiag(setDiagEntries), []);
+
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    void subscribeMirrorWarm(setWarm).then((fn) => (unsub = fn));
+    return () => unsub?.();
+  }, []);
 
   useEffect(() => {
     if (!unlocked) return;
@@ -184,6 +203,44 @@ export function AdminPanel({
             <p className="text-xs text-muted-foreground">
               GPU-ul se taxează la oră cât timp rulează. Oprește-l după eveniment.
             </p>
+
+            <label className={label}>Stare pregătire</label>
+            <p
+              className={`py-3 text-base ${
+                warm.stage === "ready"
+                  ? "text-primary"
+                  : warm.fatal
+                    ? "text-primary"
+                    : "text-muted-foreground"
+              }`}
+            >
+              {warm.stage === "ready"
+                ? "PREGĂTIT — sesiunile pornesc instant"
+                : `${warm.stage.toUpperCase()}${warm.detail ? ` · ${warm.detail}` : ""}`}
+            </p>
+            {warm.fatal && (
+              <p className="text-xs text-primary">
+                Fișierele modelului sunt corupte. Folosește „Repară modelul” — pod-ul și discul sunt
+                recreate curat, iar modelul se descarcă o singură dată.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-8 py-2 text-base">
+              <button
+                className="text-primary underline underline-offset-8"
+                onClick={() => {
+                  setPodMsg("se repară (pod nou + model curat)…");
+                  void resetMirrorWarm();
+                  void repairRunpodPod({ data: { pipeline: draft.scopePipeline } })
+                    .then((r) => {
+                      setRunpod(r);
+                      setPodMsg(r.error ?? "pod nou creat — pornește pre-încălzirea");
+                    })
+                    .catch((e: Error) => setPodMsg(e.message));
+                }}
+              >
+                Repară modelul
+              </button>
+            </div>
 
             <label className={label}>Pipeline Scope</label>
             <select

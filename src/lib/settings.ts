@@ -20,12 +20,19 @@ export type MirrorSettings = {
   provider: "runpod";
   /** Self-hosted Scope pipeline (RunPod provider). */
   scopePipeline: string;
+  /** Optional TURN relay, required when the GPU host has no public IP. */
+  turnUrl: string;
+  turnUsername: string;
+  turnCredential: string;
   /** Scope denoising schedule — fewer steps = lower latency. */
   scopeDenoiseSteps: number[];
   /** Verbose on-screen diagnostics. */
   diagnostics: boolean;
   /** Load the model on the GPU while the kiosk is idle. */
   prewarm: boolean;
+  /** Preferred camera capture size (falls back automatically). */
+  cameraWidth: number;
+  cameraHeight: number;
 };
 
 export const SCOPE_PIPELINES = [
@@ -65,9 +72,14 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   steps: 2,
   provider: "runpod",
   scopePipeline: "streamdiffusionv2",
+  turnUrl: "",
+  turnUsername: "",
+  turnCredential: "",
   scopeDenoiseSteps: [700, 500],
   diagnostics: false,
   prewarm: true,
+  cameraWidth: 3840,
+  cameraHeight: 2160,
 };
 
 const KEY = "mirror.settings.v1";

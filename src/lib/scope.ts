@@ -5,9 +5,12 @@ import { diag } from "./diag";
 
 /**
  * Client for a self-hosted Daydream Scope server running on a RunPod GPU.
- * HTTP signalling goes through the `scopeProxy` server function (no CORS,
- * no pod URL in the browser); the media itself is a direct WebRTC peer
- * connection between the kiosk and the pod.
+ *
+ * Everything model-related goes through ONE warm-up coordinator: a single
+ * download, a single pipeline load, no concurrent retries. Concurrent callers
+ * (kiosk screens, admin panel, keep-alive) observe the same operation instead
+ * of starting another one — overlapping downloads are what corrupted the model
+ * files on the previous pod.
  */
 
 type ScopeCall = { ok: boolean; status: number; body: unknown; error: string };
@@ -38,20 +41,73 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function waitForServer(onStatus?: (s: MirrorStatus, d?: string) => void) {
-  diag("gpu", "aștept serverul Scope (/health)");
-  const deadline = Date.now() + 600_000;
+/* ---------- Warm-up stages ---------- */
+
+export type WarmStage =
+  | "idle"
+  | "pod"
+  | "server"
+  | "downloading"
+  | "verifying"
+  | "loading"
+  | "probing"
+  | "ready"
+  | "error";
+
+export type WarmState = {
+  stage: WarmStage;
+  detail: string;
+  /** Set when the stage is terminal and needs operator action (e.g. corrupt models). */
+  fatal: boolean;
+  since: number;
+};
+
+let warmState: WarmState = { stage: "idle", detail: "", fatal: false, since: Date.now() };
+const warmListeners = new Set<(s: WarmState) => void>();
+
+export function readWarmState(): WarmState {
+  return warmState;
+}
+
+export function subscribeWarm(fn: (s: WarmState) => void): () => void {
+  warmListeners.add(fn);
+  fn(warmState);
+  return () => warmListeners.delete(fn);
+}
+
+function setStage(stage: WarmStage, detail = "", fatal = false) {
+  warmState = { stage, detail, fatal, since: Date.now() };
+  diag("warmup", `${stage}${detail ? ` · ${detail}` : ""}`, fatal ? "error" : "info");
+  for (const fn of warmListeners) fn(warmState);
+}
+
+const CORRUPT_HINTS = [
+  "incomplete metadata",
+  "file not fully covered",
+  "deserializing header",
+  "No such file or directory",
+];
+
+function isCorruption(message: string) {
+  const lower = message.toLowerCase();
+  return CORRUPT_HINTS.some((h) => lower.includes(h.toLowerCase()));
+}
+
+/* ---------- Server / model / pipeline steps ---------- */
+
+async function waitForServer(deadlineMs = 600_000) {
+  setStage("server", "aștept serverul GPU");
+  const deadline = Date.now() + deadlineMs;
   while (Date.now() < deadline) {
     const res = await call("/health", "GET");
     if (res.ok) {
-      diag("gpu", "serverul Scope răspunde");
+      setStage("server", "serverul GPU răspunde");
       return;
     }
-    onStatus?.("creating", res.error ?? `server GPU: ${res.status}`);
+    setStage("server", `serverul GPU: ${res.error || res.status}`);
     await sleep(3000);
   }
-  diag("gpu", "serverul Scope nu a răspuns în 10 minute", "error");
-  throw new Error("Serverul Scope nu a răspuns (pod pornit?)");
+  throw new Error("Serverul GPU nu a răspuns (pod pornit?)");
 }
 
 type ModelStatus = {
@@ -63,104 +119,179 @@ type ModelStatus = {
   } | null;
 };
 
-async function ensureModels(pipeline: string, onStatus?: (s: MirrorStatus, d?: string) => void) {
-  let status = await call(`/api/v1/models/status?pipeline_id=${encodeURIComponent(pipeline)}`, "GET");
-  let model = status.body as ModelStatus | null;
-  if (status.ok && model?.downloaded) {
-    diag("model", `${pipeline}: deja descărcat`);
+async function modelStatus(pipeline: string): Promise<{ ok: boolean; model: ModelStatus | null }> {
+  const res = await call(
+    `/api/v1/models/status?pipeline_id=${encodeURIComponent(pipeline)}`,
+    "GET",
+  );
+  return { ok: res.ok, model: res.ok ? (res.body as ModelStatus | null) : null };
+}
+
+/**
+ * Ensures the weights for `pipeline` are fully on disk. Starts AT MOST one
+ * download and then only polls — it never issues a second download request
+ * while one is in flight.
+ */
+async function ensureModels(pipeline: string) {
+  let { ok, model } = await modelStatus(pipeline);
+  if (ok && model?.downloaded) {
+    setStage("verifying", "model deja descărcat");
     return;
   }
 
   if (!model?.progress?.is_downloading) {
-    diag("model", `${pipeline}: pornesc descărcarea`);
+    setStage("downloading", "pornesc descărcarea (o singură dată)");
     const started = await call("/api/v1/models/download", "POST", { pipeline_id: pipeline });
     if (!started.ok) {
       throw new Error(started.error || `Descărcarea modelului a eșuat (${started.status})`);
     }
+  } else {
+    setStage("downloading", "descărcare deja în curs");
   }
 
   const deadline = Date.now() + 3_600_000;
+  let lastPercentage = -1;
+  let stalledSince = Date.now();
   while (Date.now() < deadline) {
     await sleep(5000);
-    status = await call(`/api/v1/models/status?pipeline_id=${encodeURIComponent(pipeline)}`, "GET");
-    model = status.body as ModelStatus | null;
-    if (status.ok && model?.downloaded) {
-      diag("model", `${pipeline}: descărcare completă`);
+    ({ ok, model } = await modelStatus(pipeline));
+    if (ok && model?.downloaded) {
+      setStage("verifying", "descărcare completă");
       return;
     }
-    if (!status.ok) {
-      diag("model", "GPU indisponibil temporar; reiau descărcarea", "warn");
-      onStatus?.("creating", "GPU-ul repornește; descărcarea va fi reluată");
-      await waitForServer(onStatus);
+    if (!ok) {
+      // Proxy hiccup or container restart: wait for the server, then keep
+      // polling. We deliberately do NOT re-issue the download request.
+      setStage("downloading", "GPU indisponibil temporar; aștept");
+      await waitForServer();
       continue;
     }
     const percentage = model?.progress?.percentage;
     const artifact = model?.progress?.current_artifact;
-    const detail = percentage != null ? `model: ${Math.round(percentage)}%` : "model: se descarcă";
-    diag("model", `${detail}${artifact ? ` · ${artifact}` : ""}`);
-    onStatus?.("creating", detail);
+    if (percentage != null && percentage !== lastPercentage) {
+      lastPercentage = percentage;
+      stalledSince = Date.now();
+    }
+    if (Date.now() - stalledSince > 600_000) {
+      throw new Error("Descărcarea modelului s-a blocat (fără progres 10 minute)");
+    }
+    setStage(
+      "downloading",
+      percentage != null
+        ? `model: ${Math.round(percentage)}%${artifact ? ` · ${artifact}` : ""}`
+        : "model: se descarcă",
+    );
   }
   throw new Error("Modelul nu s-a descărcat la timp");
 }
 
-async function loadPipeline(pipeline: string, onStatus?: (s: MirrorStatus, d?: string) => void) {
-  await ensureModels(pipeline, onStatus);
-  diag("pipeline", `încarc ${pipeline}`);
+/** Loads the pipeline into VRAM. One request, then polling only. */
+async function loadPipeline(pipeline: string) {
+  const current = await call("/api/v1/pipeline/status", "GET");
+  const currentState = current.body as { status?: string; pipeline_id?: string } | null;
+  if (current.ok && currentState?.status === "loaded") {
+    setStage("loading", `${pipeline} deja în VRAM`);
+    return;
+  }
+
+  setStage("loading", `încarc ${pipeline}`);
   const load = await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
-  if (!load.ok) throw new Error(load.error || `Pornirea modelului a eșuat (${load.status})`);
-  const deadline = Date.now() + 900_000; // first run loads weights into VRAM
+  if (!load.ok) {
+    const message = typeof load.body === "string" ? load.body : load.error;
+    if (isCorruption(message || "")) {
+      throw new ModelCorruptError(message || "fișiere de model corupte");
+    }
+    throw new Error(load.error || `Pornirea modelului a eșuat (${load.status})`);
+  }
+
+  const deadline = Date.now() + 900_000;
   while (Date.now() < deadline) {
     const res = await call("/api/v1/pipeline/status", "GET");
-    const pipelineState = res.body as { status?: string; error?: string | null } | null;
-    const status = pipelineState?.status;
-    if (status === "loaded") {
-      diag("pipeline", `${pipeline} încărcat în VRAM`);
+    const state = res.body as { status?: string; error?: string | null } | null;
+    if (state?.status === "loaded") {
+      setStage("loading", `${pipeline} încărcat în VRAM`);
       return;
     }
-    if (status === "error") {
-      diag("pipeline", `eroare: ${pipelineState?.error ?? "necunoscută"}`, "error");
-      throw new Error(pipelineState?.error || "Pipeline-ul Scope a eșuat la încărcare");
+    if (state?.status === "error") {
+      const message = state.error || "pipeline-ul a eșuat la încărcare";
+      if (isCorruption(message)) throw new ModelCorruptError(message);
+      throw new Error(message);
     }
-    diag("pipeline", `stare: ${status ?? "se pregătește"}`);
-    onStatus?.("creating", `model: ${status ?? "se pregătește"}`);
+    setStage("loading", `model: ${state?.status ?? "se pregătește"}`);
     await sleep(2500);
   }
   throw new Error("Modelul nu s-a încărcat la timp");
 }
 
-/* ---------- Pre-warm ---------- */
+export class ModelCorruptError extends Error {
+  constructor(detail: string) {
+    super(
+      `Fișierele modelului sunt corupte pe disc (${detail}). Folosește „Repară modelul” în panoul de administrare.`,
+    );
+    this.name = "ModelCorruptError";
+  }
+}
+
+/* ---------- Single-owner warm-up ---------- */
 
 let warmPipeline: string | null = null;
 let warmPromise: Promise<void> | null = null;
 let keepAliveId: number | null = null;
 
 /**
- * Downloads weights and loads the pipeline ahead of time so a visitor's
- * session starts in real time instead of waiting minutes for a cold GPU.
- * Safe to call repeatedly: the same in-flight promise is reused.
+ * Downloads weights, loads the pipeline and verifies a real processed frame.
+ * Safe to call from anywhere: concurrent callers share the same promise, so
+ * exactly one download and one load ever run at a time.
  */
 export function prewarmScope(
   pipeline: string,
   onStatus?: ((status: MirrorStatus, detail?: string) => void) | undefined,
 ): Promise<void> {
-  if (warmPromise && warmPipeline === pipeline) return warmPromise;
+  if (warmPromise && warmPipeline === pipeline) {
+    if (onStatus) {
+      const unsub = subscribeWarm((s) => onStatus("creating", s.detail || s.stage));
+      void warmPromise.finally(unsub);
+    }
+    return warmPromise;
+  }
+  if (warmState.fatal && warmPipeline === pipeline) {
+    return Promise.reject(new Error(warmState.detail));
+  }
+
   warmPipeline = pipeline;
-  diag("prewarm", `pre-încălzire ${pipeline}`);
+  const unsub = onStatus
+    ? subscribeWarm((s) => onStatus("creating", s.detail || s.stage))
+    : () => undefined;
+
   warmPromise = (async () => {
-    await waitForServer(onStatus);
-    await loadPipeline(pipeline, onStatus);
-    diag("prewarm", "GPU pregătit — sesiunile pornesc instant");
-  })().catch((error: Error) => {
-    diag("prewarm", `eșuat: ${error.message}`, "error");
-    warmPromise = null;
-    warmPipeline = null;
-    throw error;
-  });
+    await waitForServer();
+    await ensureModels(pipeline);
+    await loadPipeline(pipeline);
+    setStage("probing", "verific un cadru procesat real");
+    await probeProcessedFrame(pipeline);
+    setStage("ready", "GPU pregătit — sesiunile pornesc instant");
+  })()
+    .catch((error: Error) => {
+      const fatal = error instanceof ModelCorruptError;
+      setStage("error", error.message, fatal);
+      warmPromise = null;
+      if (!fatal) warmPipeline = null;
+      throw error;
+    })
+    .finally(unsub);
+
   return warmPromise;
 }
 
-export function isScopeWarm(pipeline: string) {
-  return warmPipeline === pipeline && warmPromise !== null;
+export function isScopeReady(pipeline: string) {
+  return warmPipeline === pipeline && warmState.stage === "ready";
+}
+
+/** Clears a terminal warm-up failure so a repair attempt can start fresh. */
+export function resetWarmState() {
+  warmPromise = null;
+  warmPipeline = null;
+  setStage("idle", "");
 }
 
 /** Keeps the pipeline resident between visitors and re-warms if it drops. */
@@ -169,12 +300,13 @@ export function startScopeKeepAlive(pipeline: string) {
   if (keepAliveId !== null) window.clearInterval(keepAliveId);
   keepAliveId = window.setInterval(() => {
     void (async () => {
+      // Never interfere while a warm-up or a session is already in flight.
+      if (warmPromise || activeSessions > 0 || warmState.fatal) return;
       const res = await call("/api/v1/pipeline/status", "GET");
       const state = (res.body as { status?: string } | null)?.status;
       diag("keepalive", `pipeline: ${res.ok ? (state ?? "necunoscut") : `HTTP ${res.status}`}`);
       if (res.ok && state === "loaded") return;
-      warmPromise = null;
-      warmPipeline = null;
+      resetWarmState();
       void prewarmScope(pipeline).catch(() => undefined);
     })();
   }, 60_000);
@@ -185,7 +317,36 @@ export function stopScopeKeepAlive() {
   keepAliveId = null;
 }
 
-export async function startScopeSession({
+/* ---------- WebRTC ---------- */
+
+let activeSessions = 0;
+
+type Stage = { name: string; at: number };
+
+function stageTimer() {
+  const started = performance.now();
+  let last = started;
+  const stages: Stage[] = [];
+  return {
+    mark(name: string) {
+      const now = performance.now();
+      stages.push({ name, at: Math.round(now - started) });
+      diag("stage", `${name} +${Math.round(now - last)} ms (total ${Math.round(now - started)} ms)`);
+      last = now;
+    },
+    total() {
+      return Math.round(performance.now() - started);
+    },
+    stages,
+  };
+}
+
+/**
+ * Opens a WebRTC session against Scope and resolves once a real processed
+ * frame has been decoded. Every step is timed so diagnostics name the exact
+ * failing stage instead of showing an endless spinner.
+ */
+async function openSession({
   settings,
   cameraStream,
   onStatus,
@@ -194,20 +355,33 @@ export async function startScopeSession({
   cameraStream: MediaStream;
   onStatus?: ((status: MirrorStatus, detail?: string) => void) | undefined;
 }): Promise<MirrorSession> {
-  onStatus?.("creating");
-  diag("session", `pornesc sesiunea (${settings.scopePipeline})`);
-  // Reuses the pre-warmed pipeline when available; otherwise warms now.
-  await prewarmScope(settings.scopePipeline, onStatus);
+  const timer = stageTimer();
+  activeSessions += 1;
 
   const ice = await call("/api/v1/webrtc/ice-servers", "GET");
-  const iceServers =
-    (ice.body as { iceServers?: RTCIceServer[] } | null)?.iceServers ??
-    ([{ urls: "stun:stun.l.google.com:19302" }] as RTCIceServer[]);
-  diag("webrtc", `${iceServers.length} servere ICE`);
+  const iceServers = [
+    ...((ice.body as { iceServers?: RTCIceServer[] } | null)?.iceServers ??
+      ([{ urls: "stun:stun.l.google.com:19302" }] as RTCIceServer[])),
+  ];
+  // Operator-supplied relay (needed when the GPU host has no public IP).
+  if (settings.turnUrl) {
+    iceServers.push({
+      urls: settings.turnUrl,
+      username: settings.turnUsername || undefined,
+      credential: settings.turnCredential || undefined,
+    });
+  }
+  const hasTurn = iceServers.some((s) =>
+    (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => String(u).startsWith("turn")),
+  );
+  diag("webrtc", `${iceServers.length} servere ICE${hasTurn ? " (TURN disponibil)" : " (doar STUN)"}`,
+    hasTurn ? "info" : "warn");
+  timer.mark("ice-servers");
 
   const pc = new RTCPeerConnection({ iceServers });
   let sessionId: string | null = null;
   const queued: RTCIceCandidate[] = [];
+  let closed = false;
 
   const dataChannel = pc.createDataChannel("parameters", { ordered: true });
 
@@ -220,7 +394,7 @@ export async function startScopeSession({
     );
 
   const sendCandidate = async (candidate: RTCIceCandidate) => {
-    if (!sessionId) return;
+    if (!sessionId || closed) return;
     await call(`/api/v1/webrtc/offer/${sessionId}`, "PATCH", {
       candidates: [
         {
@@ -238,19 +412,36 @@ export async function startScopeSession({
     else queued.push(event.candidate);
   };
 
+  const cleanup = () => {
+    if (closed) return;
+    closed = true;
+    activeSessions = Math.max(0, activeSessions - 1);
+    try {
+      dataChannel.close();
+    } catch {
+      /* ignore */
+    }
+    pc.close();
+  };
+
+  const fail = (message: string): never => {
+    cleanup();
+    diag("session", message, "error");
+    throw new Error(message);
+  };
+
   const processed = new Promise<MediaStream>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Fluxul procesat nu a sosit")), 90_000);
+    const t = setTimeout(() => reject(new Error("Pista video procesată nu a sosit (30 s)")), 30_000);
     pc.ontrack = (event) => {
       const stream = event.streams[0];
       if (stream) {
-        diag("webrtc", "pistă video primită de la GPU");
-        clearTimeout(timer);
+        clearTimeout(t);
         resolve(stream);
       }
     };
     pc.addEventListener("connectionstatechange", () => {
       if (pc.connectionState === "failed") {
-        clearTimeout(timer);
+        clearTimeout(t);
         reject(new Error("Conexiunea WebRTC cu GPU-ul a eșuat (firewall / TURN)"));
       }
     });
@@ -258,10 +449,10 @@ export async function startScopeSession({
 
   for (const track of cameraStream.getVideoTracks()) pc.addTrack(track, cameraStream);
 
-  onStatus?.("publishing");
-  diag("webrtc", "trimit oferta SDP");
+  onStatus?.("publishing", "conectare video");
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
+  timer.mark("offer");
 
   const answerRes = await call("/api/v1/webrtc/offer", "POST", {
     sdp: pc.localDescription?.sdp,
@@ -276,41 +467,35 @@ export async function startScopeSession({
 
   const answer = answerRes.body as { sdp?: string; type?: string; sessionId?: string } | null;
   if (!answerRes.ok || !answer?.sdp) {
-    pc.close();
-    diag("webrtc", `oferta respinsă (${answerRes.status})`, "error");
-    throw new Error(answerRes.error ?? `Scope offer ${answerRes.status}`);
+    return fail(answerRes.error || `Oferta WebRTC respinsă (${answerRes.status})`);
   }
   sessionId = answer.sessionId ?? null;
-  diag("webrtc", `răspuns SDP primit · sesiune ${sessionId ?? "?"}`);
   await pc.setRemoteDescription({ type: "answer", sdp: answer.sdp });
   for (const candidate of queued.splice(0)) void sendCandidate(candidate);
+  timer.mark("answer");
 
-  const processedStream = await processed.catch((error: Error) => {
-    pc.close();
-    throw error;
-  });
+  const processedStream = await processed.catch((error: Error) => fail(error.message));
+  timer.mark("track");
 
   const outputTrack = processedStream.getVideoTracks()[0];
-  if (!outputTrack) {
-    pc.close();
-    throw new Error("GPU-ul nu a trimis o pistă video");
-  }
+  if (!outputTrack) return fail("GPU-ul nu a trimis o pistă video");
+
   if (outputTrack.muted) {
-    diag("frames", "aștept primele cadre (pista este mută)");
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        outputTrack.removeEventListener("unmute", handleUnmute);
-        reject(new Error("GPU-ul s-a conectat, dar nu a trimis cadre video"));
-      }, 90_000);
-      const handleUnmute = () => {
-        clearTimeout(timer);
-        resolve();
-      };
-      outputTrack.addEventListener("unmute", handleUnmute, { once: true });
-    }).catch((error: Error) => {
-      pc.close();
-      throw error;
-    });
+      const t = setTimeout(
+        () => reject(new Error("GPU-ul s-a conectat, dar nu a trimis cadre (30 s)")),
+        30_000,
+      );
+      outputTrack.addEventListener(
+        "unmute",
+        () => {
+          clearTimeout(t);
+          resolve();
+        },
+        { once: true },
+      );
+    }).catch((error: Error) => fail(error.message));
+    timer.mark("unmute");
   }
 
   const probe = document.createElement("video");
@@ -319,7 +504,7 @@ export async function startScopeSession({
   probe.srcObject = processedStream;
   await probe.play().catch(() => undefined);
   await new Promise<void>((resolve, reject) => {
-    const deadline = Date.now() + 90_000;
+    const deadline = Date.now() + 30_000;
     const check = () => {
       if (probe.videoWidth > 0 && probe.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
         diag("frames", `primul cadru procesat ${probe.videoWidth}×${probe.videoHeight}`);
@@ -327,41 +512,84 @@ export async function startScopeSession({
         return;
       }
       if (Date.now() >= deadline) {
-        reject(new Error("GPU-ul s-a conectat, dar nu a produs cadre video"));
+        reject(new Error("GPU-ul s-a conectat, dar nu a produs cadre video (30 s)"));
         return;
       }
-      setTimeout(check, 250);
+      setTimeout(check, 100);
     };
     check();
   }).catch((error: Error) => {
     probe.srcObject = null;
-    pc.close();
-    throw error;
+    return fail(error.message);
   });
   probe.srcObject = null;
+  timer.mark("first-frame");
 
+  diag("session", `LIVE în ${timer.total()} ms`);
   onStatus?.("live");
-  diag("session", "LIVE");
-
-  let stopped = false;
-  const stop = async () => {
-    if (stopped) return;
-    stopped = true;
-    try {
-      dataChannel.close();
-    } catch {
-      /* ignore */
-    }
-    pc.close();
-    diag("session", "sesiune închisă");
-    onStatus?.("ended");
-  };
 
   return {
     streamId: sessionId ?? "scope",
     processedStream,
     playbackUrl: "",
     cameraStream,
-    stop,
+    startupMs: timer.total(),
+    stop: async () => {
+      cleanup();
+      diag("session", "sesiune închisă");
+      onStatus?.("ended");
+    },
   };
+}
+
+/**
+ * Warm-up verification: opens a short session with a synthetic black canvas
+ * stream and confirms the GPU returns a decoded frame. Only after this does
+ * the kiosk report READY.
+ */
+async function probeProcessedFrame(pipeline: string) {
+  if (typeof document === "undefined") return;
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  let frame = 0;
+  const paint = window.setInterval(() => {
+    if (!ctx) return;
+    frame += 1;
+    ctx.fillStyle = `hsl(${frame % 360} 20% 45%)`;
+    ctx.fillRect(0, 0, 512, 512);
+  }, 66);
+  const stream = canvas.captureStream(15);
+  try {
+    const session = await openSession({
+      settings: {
+        prompt: "portrait",
+        scopeDenoiseSteps: [700, 500],
+      } as MirrorSettings,
+      cameraStream: stream,
+    });
+    await session.stop();
+    diag("probe", `pipeline ${pipeline} produce cadre reale`);
+  } finally {
+    window.clearInterval(paint);
+    stream.getTracks().forEach((t) => t.stop());
+  }
+}
+
+export async function startScopeSession({
+  settings,
+  cameraStream,
+  onStatus,
+}: {
+  settings: MirrorSettings;
+  cameraStream: MediaStream;
+  onStatus?: ((status: MirrorStatus, detail?: string) => void) | undefined;
+}): Promise<MirrorSession> {
+  onStatus?.("creating");
+  // Reuses the warm pipeline when available; otherwise warms now (shared).
+  if (!isScopeReady(settings.scopePipeline)) {
+    await prewarmScope(settings.scopePipeline, onStatus);
+  }
+  return openSession({ settings, cameraStream, onStatus });
 }

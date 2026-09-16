@@ -93,6 +93,41 @@ export const GPU_PREFERENCE = [
   "NVIDIA A100 80GB PCIe",
 ] as const;
 
+async function createPod(
+  apiKey: string,
+  data: { imageName?: string; pipeline?: string; gpuTypeIds?: string[] },
+): Promise<RunpodState> {
+  const env: Record<string, string> = {
+    PIPELINE: data.pipeline || "streamdiffusionv2",
+  };
+  const hf = process.env["HF_TOKEN"];
+  if (hf) env["HF_TOKEN"] = hf;
+
+  const res = await fetch(`${RUNPOD_API}/pods`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify({
+      name: POD_NAME,
+      imageName: data.imageName || "daydreamlive/scope:latest",
+      gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : [...GPU_PREFERENCE],
+      gpuCount: 1,
+      cloudType: "SECURE",
+      computeType: "GPU",
+      containerDiskInGb: 40,
+      volumeInGb: 80,
+      volumeMountPath: "/workspace",
+      ports: [`${SCOPE_PORT}/http`],
+      env,
+      interruptible: false,
+    }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    return { configured: true, pod: null, error: `RunPod ${res.status}: ${text.slice(0, 300)}` };
+  }
+  return { configured: true, pod: shape(JSON.parse(text) as RawPod) };
+}
+
 export const startRunpodPod = createServerFn({ method: "POST" })
   .validator((input: { imageName?: string; pipeline?: string; gpuTypeIds?: string[] }) => input ?? {})
   .handler(async ({ data }): Promise<RunpodState> => {
@@ -119,40 +154,12 @@ export const startRunpodPod = createServerFn({ method: "POST" })
         return { configured: true, pod: refreshed ? shape(refreshed) : shape(existing) };
       }
 
-      const env: Record<string, string> = {
-        PIPELINE: data.pipeline || "streamdiffusionv2",
-      };
-      const hf = process.env["HF_TOKEN"];
-      if (hf) env["HF_TOKEN"] = hf;
-
-      const res = await fetch(`${RUNPOD_API}/pods`, {
-        method: "POST",
-        headers: headers(apiKey),
-        body: JSON.stringify({
-          name: POD_NAME,
-          imageName: data.imageName || "daydreamlive/scope:latest",
-          gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : [...GPU_PREFERENCE],
-          gpuCount: 1,
-          cloudType: "SECURE",
-          computeType: "GPU",
-          containerDiskInGb: 40,
-          volumeInGb: 80,
-          volumeMountPath: "/workspace",
-          ports: [`${SCOPE_PORT}/http`],
-          env,
-          interruptible: false,
-        }),
-      });
-      const text = await res.text();
-      if (!res.ok) {
-        return { configured: true, pod: null, error: `RunPod ${res.status}: ${text.slice(0, 300)}` };
-      }
-      const created = JSON.parse(text) as RawPod;
-      return { configured: true, pod: shape(created) };
+      return await createPod(apiKey, data);
     } catch (error) {
       return { configured: true, pod: null, error: (error as Error).message };
     }
   });
+
 
 export const stopRunpodPod = createServerFn({ method: "POST" })
   .validator((input: { id: string; terminate?: boolean }) => input)
@@ -168,6 +175,39 @@ export const stopRunpodPod = createServerFn({ method: "POST" })
       return { ok: res.ok, error: res.ok ? undefined : `${res.status}: ${(await res.text()).slice(0, 200)}` };
     } catch (error) {
       return { ok: false, error: (error as Error).message };
+    }
+  });
+
+/**
+ * Repairs corrupted model files: the Scope API cannot delete them, so the pod
+ * and its volume are terminated and a clean one is created. This is the only
+ * reliable way to clear a half-written weight file.
+ */
+export const repairRunpodPod = createServerFn({ method: "POST" })
+  .validator((input: { pipeline?: string }) => input ?? {})
+  .handler(async ({ data }): Promise<RunpodState> => {
+    const apiKey = key();
+    if (!apiKey) return { configured: false, pod: null, error: "RUNPOD_API_KEY lipsește" };
+    try {
+      const existing = await findPod(apiKey);
+      if (existing) {
+        const res = await fetch(`${RUNPOD_API}/pods/${existing.id}`, {
+          method: "DELETE",
+          headers: headers(apiKey),
+        });
+        if (!res.ok) {
+          return {
+            configured: true,
+            pod: shape(existing),
+            error: `Ștergerea pod-ului a eșuat ${res.status}: ${(await res.text()).slice(0, 200)}`,
+          };
+        }
+        // RunPod needs a moment to release the volume before a new pod can use the name.
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+      return await createPod(apiKey, data.pipeline ? { pipeline: data.pipeline } : {});
+    } catch (error) {
+      return { configured: true, pod: null, error: (error as Error).message };
     }
   });
 
