@@ -370,6 +370,25 @@ async function openSession({
       username: settings.turnUsername,
       credential: settings.turnCredential,
     });
+  } else {
+    // Fallback public relay: the GPU pod has no public UDP port, so media can
+    // only reach the browser through a relay allocation on our side.
+    iceServers.push(
+      {
+        urls: [
+          "turn:openrelay.metered.ca:80",
+          "turn:openrelay.metered.ca:443",
+          "turn:openrelay.metered.ca:443?transport=tcp",
+        ],
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
+      {
+        urls: ["turn:relay1.expressturn.com:3480", "turn:relay1.expressturn.com:3480?transport=tcp"],
+        username: "000000002074843897",
+        credential: "yrbbGZmqZ3wUzPTMrPLAHO0Xz7Y=",
+      },
+    );
   }
   const hasTurn = iceServers.some((s) =>
     (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => String(u).startsWith("turn")),
