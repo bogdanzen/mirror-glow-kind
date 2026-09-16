@@ -76,7 +76,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   turnUrl: "",
   turnUsername: "",
   turnCredential: "",
-  scopeDenoiseSteps: [700, 500],
+  scopeDenoiseSteps: [800, 650, 500],
   diagnostics: false,
   prewarm: true,
   cameraWidth: 3840,
