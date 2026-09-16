@@ -57,6 +57,9 @@ function Kiosk() {
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
+  const [statusDetail, setStatusDetail] = useState("");
+  const [warm, setWarm] = useState<"idle" | "warming" | "ready" | "failed">("idle");
+
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
