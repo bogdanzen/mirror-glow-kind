@@ -111,6 +111,8 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
     .filter((value) => Number.isFinite(value) && value > 0);
   merged.scopeDenoiseSteps = steps.length ? steps : DEFAULT_SETTINGS.scopeDenoiseSteps;
   merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
+  merged.fallbackPrompt = String(merged.fallbackPrompt || FALLBACK_PROMPT);
+  merged.fallbackMode = Boolean(merged.fallbackMode);
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)
