@@ -460,6 +460,11 @@ async function openSession({
   });
 
   for (const track of cameraStream.getVideoTracks()) pc.addTrack(track, cameraStream);
+  const videoTransceiver = pc.getTransceivers().find((item) => item.sender.track?.kind === "video");
+  const vp8 = RTCRtpReceiver.getCapabilities("video")?.codecs.filter(
+    (codec) => codec.mimeType.toLowerCase() === "video/vp8",
+  );
+  if (videoTransceiver && vp8?.length) videoTransceiver.setCodecPreferences(vp8);
   // The outgoing camera transceiver is sendrecv, allowing Scope to attach the
   // processed track to the same negotiated video m-line.
 

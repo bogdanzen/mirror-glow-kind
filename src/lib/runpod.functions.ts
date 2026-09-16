@@ -171,10 +171,10 @@ async function createPod(
     PIPELINE: data.pipeline || "streamdiffusionv2",
   };
   const hf = process.env["HF_TOKEN"];
-  // Scope v0.2.5 gives HF_TOKEN priority for TURN and then calls the retired
-  // turn.fastrtc.org service. Keep the token available for gated model pulls,
-  // but prevent huggingface_hub.get_token() from selecting that dead relay.
-  if (hf) env["HUGGING_FACE_HUB_TOKEN"] = hf;
+  // Required only while a fresh volume downloads gated model files. Once the
+  // cache is complete this must be removed before Scope starts, because v0.2.5
+  // otherwise selects the retired Hugging Face TURN endpoint.
+  if (hf) env["HF_TOKEN"] = hf;
   // Cloudflare TURN lets the GPU relay media when it has no public IP.
   const turnId = process.env["CLOUDFLARE_TURN_KEY_ID"];
   const turnToken = process.env["CLOUDFLARE_TURN_KEY_API_TOKEN"];
