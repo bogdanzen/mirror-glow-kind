@@ -16,3 +16,10 @@
 - [x] Hydration mismatch and duplicate initialization fixed
 - [x] Operator TURN relay settings + Cloudflare TURN passthrough to the GPU host
 - [x] GPU machines rented in Europe, Romania first (EU-RO-1), with `RUNPOD_DATA_CENTERS` override
+
+## Status (după reparatie + releu)
+- Pod nou EU-RO-1 (Bucuresti), RTX 4090, ~$0.74/h: descarcare + verificare + incarcare reusite intr-un singur
+  owner (~13 min), model incarcat in VRAM, stare "loaded".
+- Releu Cloudflare TURN: chei create + salvate (CLOUDFLARE_TURN_KEY_ID / _API_TOKEN); aplicatia emite
+  credentiale de scurta durata in src/lib/turn.functions.ts si le ataseaza conexiunii din browser.
+- ramas: primul cadru procesat verificat pe masina utilizatorului (5 sesiuni la rand, primul cadru <= 5s).
