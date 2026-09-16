@@ -93,6 +93,45 @@ export const GPU_PREFERENCE = [
   "NVIDIA A100 80GB PCIe",
 ] as const;
 
+/**
+ * Data centres, Romania first. Model weights are tens of gigabytes and US
+ * data centres download them far too slowly for a live event, so machines are
+ * always rented in Europe with Bucharest/Timișoara preferred.
+ * Override with the RUNPOD_DATA_CENTERS secret (comma-separated codes).
+ */
+export const EU_DATA_CENTERS = [
+  "EU-RO-1",
+  "EU-CZ-1",
+  "EU-NL-1",
+  "EU-FR-1",
+  "EU-SE-1",
+  "EUR-IS-1",
+  "EUR-IS-2",
+  "EUR-IS-3",
+  "EUR-NO-1",
+] as const;
+
+function preferredDataCenters(): string[] {
+  const raw = process.env["RUNPOD_DATA_CENTERS"] ?? "";
+  const list = raw
+    .split(",")
+    .map((code) => code.trim().toUpperCase())
+    .filter(Boolean);
+  return list.length ? list : [...EU_DATA_CENTERS];
+}
+
+/** True when the machine simply is not there — worth retrying elsewhere. */
+function isCapacityError(text: string): boolean {
+  return /no instances|not enough|unavailable|capacity|no machines|sold out|exhausted|out of stock/i.test(
+    text,
+  );
+}
+
+function regionLabel(codes: string[]): string {
+  if (codes[0] === "EU-RO-1") return "Europa · România (EU-RO-1)";
+  return `Europa (${codes.join(", ")})`;
+}
+
 async function createPod(
   apiKey: string,
   data: { imageName?: string; pipeline?: string; gpuTypeIds?: string[] },
