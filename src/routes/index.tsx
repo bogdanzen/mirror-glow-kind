@@ -73,6 +73,27 @@ function Kiosk() {
     return installKioskHardening();
   }, []);
 
+  // PRE-WARM: load the model on the GPU while the kiosk is idle, so a
+  // visitor's session starts in real time instead of waiting for a cold GPU.
+  useEffect(() => {
+    if (!settings.prewarm || settings.demoMode) return;
+    let cancelled = false;
+    setWarm("warming");
+    diag("kiosk", "pre-încălzire pornită");
+    void prewarmMirror(settings, (_s, detail) => {
+      if (!cancelled && detail) setStatusDetail(detail);
+    })
+      .then(() => !cancelled && setWarm("ready"))
+      .catch((e: Error) => {
+        if (cancelled) return;
+        setWarm("failed");
+        setStatusDetail(e.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.prewarm, settings.demoMode, settings.scopePipeline, settings]);
+
   const stopCamera = useCallback(() => {
     cameraRef.current?.getTracks().forEach((t) => t.stop());
     cameraRef.current = null;
