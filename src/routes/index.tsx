@@ -544,6 +544,11 @@ function Kiosk() {
                 }}
               />
             )}
+            {settings.fallbackMode && mirrorStatus === "publishing" && (
+              <p className="absolute bottom-[4%] left-0 w-full text-center text-[clamp(0.9rem,1.8vw,1.5rem)] text-foreground/80">
+                Se transformă imaginea…
+              </p>
+            )}
             {mirrorStatus !== "live" && !(settings.fallbackMode && mirrorStatus === "publishing") && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
                 <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
