@@ -318,8 +318,52 @@ export function AdminPanel({
           }
         />
         <p className="text-xs text-muted-foreground">
-          Mai puțini pași = latență mai mică. Implicit 700, 500.
+          Mai puțini pași = latență mai mică. Implicit 650, 500.
         </p>
+
+        <label className={label}>Claritate (latura lungă a imaginii AI)</label>
+        <input
+          className={field}
+          type="number"
+          min={320}
+          max={1280}
+          step={16}
+          value={draft.outputLongEdge}
+          onChange={(e) => set("outputLongEdge", Number(e.target.value))}
+        />
+        <p className="text-xs text-muted-foreground">
+          Latura scurtă se calculează automat din raportul ecranului, deci imaginea nu mai este
+          deformată. Mai mare = mai clar, dar mai lent.
+        </p>
+
+        <label className={label}>Libertate față de chip (noise)</label>
+        <input
+          className={field}
+          type="number"
+          min={0}
+          max={1}
+          step={0.05}
+          value={draft.noiseScale}
+          onChange={(e) => set("noiseScale", Number(e.target.value))}
+        />
+        <p className="text-xs text-muted-foreground">
+          Valori mici = imagine mai stabilă și mai fidelă. Implicit 0.35.
+        </p>
+
+        <button
+          className="mt-6 hairline-t hairline-b w-full py-4 text-left text-primary"
+          onClick={() => {
+            apply(draft);
+            setStatus("Reîncarc modelul la rezoluția ecranului…");
+            void reloadMirrorResolution(draft)
+              .then(() => setStatus("Model reîncărcat la rezoluția ecranului."))
+              .catch((e: Error) => setStatus(`Reîncărcare eșuată: ${e.message}`));
+          }}
+        >
+          Reîncarcă modelul la rezoluția ecranului (fără repornirea mașinii)
+        </button>
+
+
 
 
         <label className={label}>Prompt</label>
