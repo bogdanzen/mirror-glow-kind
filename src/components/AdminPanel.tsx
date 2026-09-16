@@ -49,6 +49,7 @@ export function AdminPanel({
   const [log, setLog] = useState<SessionLogEntry[]>([]);
   const [runpod, setRunpod] = useState<RunpodState | null>(null);
   const [podMsg, setPodMsg] = useState("");
+  const [turnMsg, setTurnMsg] = useState("");
   const [diagEntries, setDiagEntries] = useState<DiagEntry[]>([]);
   const [warm, setWarm] = useState<WarmState>({
     stage: "idle",
