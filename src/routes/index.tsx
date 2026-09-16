@@ -268,6 +268,45 @@ function Kiosk() {
         return;
       }
 
+      // FALLBACK: no GPU. One frame is re-rendered on the server as a
+      // photorealistic bald portrait and held on screen.
+      if (current.fallbackMode) {
+        setDemo(false);
+        setFallbackUrl("");
+        setStatusDetail("Se transformă imaginea…");
+        setMirrorStatus("publishing");
+        if (mirrorRef.current) {
+          mirrorRef.current.srcObject = camera;
+          await mirrorRef.current.play().catch(() => undefined);
+        }
+        try {
+          const { frameToFile, baldifyFrame } = await import("@/lib/bald");
+          // Let the camera settle and auto-expose before grabbing the frame.
+          await new Promise((r) => setTimeout(r, 1200));
+          const v = mirrorRef.current;
+          const file = v ? frameToFile(v) : null;
+          if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
+          const t0 = performance.now();
+          await baldifyFrame(file, current.fallbackPrompt, (url) => {
+            if (cancelled) return;
+            setFallbackUrl(url);
+            setMirrorStatus("live");
+          });
+          appendSessionLog({
+            at: Date.now(),
+            status: "demo",
+            latencyMs: Math.round(performance.now() - t0),
+          });
+        } catch (e) {
+          if (!cancelled) {
+            appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+            setError((e as Error).message);
+            setMirrorStatus("error");
+          }
+        }
+        return;
+      }
+
       const started = performance.now();
       try {
         const session = await startMirrorSession({
