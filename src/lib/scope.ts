@@ -367,8 +367,8 @@ async function openSession({
   if (settings.turnUrl) {
     iceServers.push({
       urls: settings.turnUrl,
-      username: settings.turnUsername || undefined,
-      credential: settings.turnCredential || undefined,
+      username: settings.turnUsername,
+      credential: settings.turnCredential,
     });
   }
   const hasTurn = iceServers.some((s) =>
