@@ -190,9 +190,20 @@ async function ensureModels(pipeline: string) {
 async function loadPipeline(pipeline: string) {
   const current = await call("/api/v1/pipeline/status", "GET");
   const currentState = current.body as { status?: string; pipeline_id?: string } | null;
-  if (current.ok && currentState?.status === "loaded") {
+  if (
+    current.ok &&
+    currentState?.status === "loaded" &&
+    currentState.pipeline_id === pipeline
+  ) {
     setStage("loading", `${pipeline} deja în VRAM`);
     return;
+  }
+
+  if (current.ok && currentState?.status === "loaded" && currentState.pipeline_id !== pipeline) {
+    diag(
+      "pipeline",
+      `schimb ${currentState.pipeline_id ?? "pipeline necunoscut"} → ${pipeline}`,
+    );
   }
 
   setStage("loading", `încarc ${pipeline}`);
@@ -208,10 +219,22 @@ async function loadPipeline(pipeline: string) {
   const deadline = Date.now() + 900_000;
   while (Date.now() < deadline) {
     const res = await call("/api/v1/pipeline/status", "GET");
-    const state = res.body as { status?: string; error?: string | null } | null;
-    if (state?.status === "loaded") {
+    const state = res.body as {
+      status?: string;
+      pipeline_id?: string;
+      error?: string | null;
+    } | null;
+    if (state?.status === "loaded" && state.pipeline_id === pipeline) {
       setStage("loading", `${pipeline} încărcat în VRAM`);
       return;
+    }
+    if (state?.status === "loaded" && state.pipeline_id !== pipeline) {
+      setStage(
+        "loading",
+        `GPU raportează încă ${state.pipeline_id ?? "alt pipeline"}; aștept ${pipeline}`,
+      );
+      await sleep(2500);
+      continue;
     }
     if (state?.status === "error") {
       const message = state.error || "pipeline-ul a eșuat la încărcare";
@@ -460,13 +483,9 @@ async function openSession({
   });
 
   for (const track of cameraStream.getVideoTracks()) pc.addTrack(track, cameraStream);
-  const videoTransceiver = pc.getTransceivers().find((item) => item.sender.track?.kind === "video");
-  const vp8 = RTCRtpReceiver.getCapabilities("video")?.codecs.filter(
-    (codec) => codec.mimeType.toLowerCase() === "video/vp8",
-  );
-  if (videoTransceiver && vp8?.length) videoTransceiver.setCodecPreferences(vp8);
   // The outgoing camera transceiver is sendrecv, allowing Scope to attach the
-  // processed track to the same negotiated video m-line.
+  // processed track to the same negotiated video m-line. Keep the browser's
+  // complete codec list: forcing VP8 can leave aiortc without a usable encoder.
 
   onStatus?.("publishing", "conectare video");
   const offer = await pc.createOffer();
@@ -549,10 +568,10 @@ async function openSession({
     }).catch(async (error: Error) => {
       const snapshot = await transportSnapshot();
       diag("webrtc", snapshot, "error");
-      const relayHint = hasTurn
-        ? "releul TURN nu transportă video"
+      const transportHint = hasTurn
+        ? "GPU-ul procesează, dar pista video de retur nu ajunge în browser"
         : "lipsește un releu TURN dedicat pe GPU";
-      return fail(`${error.message}; ${relayHint}`);
+      return fail(`${error.message}; ${transportHint}`);
     });
     timer.mark("unmute");
   }

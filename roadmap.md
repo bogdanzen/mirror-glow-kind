@@ -2,7 +2,7 @@
 
 ## Open
 
-- [ ] Live video path: Cloudflare TURN is configured on both peers. Scope v0.2.5 incorrectly preferred the retired Hugging Face relay and cached credentials at boot; new pods now keep the model-download token separate so Scope selects Cloudflare directly. Existing pod needs one restart/update and a real-device frame check.
+- [ ] Live video path: Cloudflare TURN is configured in the browser. GPU logs prove the camera arrives and StreamDiffusion produces frames, while the browser receives zero. Krea selection previously reused the already-loaded StreamDiffusion pipeline; pipeline readiness now requires an exact ID match and loads Krea before opening WebRTC. Real-device frame check remains.
 - [ ] Verification of first-frame ≤5 s over 5 warm sessions must be run on the kiosk/user machine: this sandbox browser produces no ICE candidates, so WebRTC media cannot be validated here.
 
 ## Done
