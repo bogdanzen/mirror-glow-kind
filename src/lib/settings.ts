@@ -35,12 +35,8 @@ export type MirrorSettings = {
   cameraHeight: number;
 };
 
-export const SCOPE_PIPELINES = [
-  "streamdiffusionv2",
-  "longlive",
-  "krea-realtime-video",
-  "passthrough",
-] as const;
+// Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
+export const SCOPE_PIPELINES = ["krea-realtime-video"] as const;
 
 export const MODEL_OPTIONS = [
   "stabilityai/sdxl-turbo",
@@ -72,7 +68,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   seed: 42,
   steps: 2,
   provider: "runpod",
-  scopePipeline: "streamdiffusionv2",
+  scopePipeline: "krea-realtime-video",
   turnUrl: "",
   turnUsername: "",
   turnCredential: "",
@@ -83,7 +79,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   cameraHeight: 2160,
 };
 
-const KEY = "mirror.settings.v2";
+const KEY = "mirror.settings.v3";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**

@@ -182,7 +182,7 @@ async function createPod(
   data: { imageName?: string; pipeline?: string; gpuTypeIds?: string[] },
 ): Promise<RunpodState> {
   const env: Record<string, string> = {
-    PIPELINE: data.pipeline || "streamdiffusionv2",
+    PIPELINE: data.pipeline || "krea-realtime-video",
   };
   const hf = process.env["HF_TOKEN"];
   // Required only while a fresh volume downloads gated model files. Once the

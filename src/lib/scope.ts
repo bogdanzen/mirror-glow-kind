@@ -217,7 +217,21 @@ async function loadPipeline(pipeline: string) {
   }
 
   setStage("loading", `încarc ${pipeline}`);
-  const load = await call("/api/v1/pipeline/load", "POST", { pipeline_ids: [pipeline] });
+  // Krea este un model de 14B: fără cuantizare fp8 și fără modulul VACE nu
+  // încape nici pe 48 GB (CUDA out of memory). LightTAE îl face și mai rapid.
+  const load = await call("/api/v1/pipeline/load", "POST", {
+    pipeline_ids: [pipeline],
+    load_params:
+      pipeline === "krea-realtime-video"
+        ? {
+            quantization: "fp8_e4m3fn",
+            vace_enabled: false,
+            vae_type: "lighttae",
+            height: 320,
+            width: 576,
+          }
+        : undefined,
+  });
   if (!load.ok) {
     const message = typeof load.body === "string" ? load.body : load.error;
     throw pipelineError(message || `Pornirea modelului a eșuat (${load.status})`);
@@ -515,7 +529,7 @@ async function openSession({
     type: pc.localDescription?.type ?? "offer",
     initialParameters: {
       input_mode: "video",
-      pipeline_ids: [settings.scopePipeline || "streamdiffusionv2"],
+      pipeline_ids: [settings.scopePipeline || "krea-realtime-video"],
       prompts: [{ text: String(settings.prompt || ""), weight: 1 }],
       ...(steps.length ? { denoising_step_list: steps } : {}),
       manage_cache: true,
