@@ -42,6 +42,23 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Output resolution asked of the GPU: the live viewport aspect ratio, scaled
+ * to the requested long edge and snapped to multiples of 16 (model constraint).
+ * Asking for a fixed landscape size on a portrait totem is what produced the
+ * squashed, low-resolution image.
+ */
+export function outputSize(longEdge = 768): { width: number; height: number } {
+  const snap = (v: number) => Math.max(256, Math.round(v / 16) * 16);
+  const vw = typeof window === "undefined" ? 1080 : window.innerWidth;
+  const vh = typeof window === "undefined" ? 1920 : window.innerHeight;
+  const aspect = vw / vh;
+  return aspect >= 1
+    ? { width: snap(longEdge), height: snap(longEdge / aspect) }
+    : { width: snap(longEdge * aspect), height: snap(longEdge) };
+}
+
+
 /* ---------- Warm-up stages ---------- */
 
 export type WarmStage =
