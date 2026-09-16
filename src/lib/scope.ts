@@ -370,25 +370,6 @@ async function openSession({
       username: settings.turnUsername,
       credential: settings.turnCredential,
     });
-  } else {
-    // Fallback public relay: the GPU pod has no public UDP port, so media can
-    // only reach the browser through a relay allocation on our side.
-    iceServers.push(
-      {
-        urls: [
-          "turn:openrelay.metered.ca:80",
-          "turn:openrelay.metered.ca:443",
-          "turn:openrelay.metered.ca:443?transport=tcp",
-        ],
-        username: "openrelayproject",
-        credential: "openrelayproject",
-      },
-      {
-        urls: ["turn:relay1.expressturn.com:3480", "turn:relay1.expressturn.com:3480?transport=tcp"],
-        username: "000000002074843897",
-        credential: "yrbbGZmqZ3wUzPTMrPLAHO0Xz7Y=",
-      },
-    );
   }
   const hasTurn = iceServers.some((s) =>
     (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => String(u).startsWith("turn")),
@@ -499,6 +480,22 @@ async function openSession({
   const outputTrack = processedStream.getVideoTracks()[0];
   if (!outputTrack) return fail("GPU-ul nu a trimis o pistă video");
 
+  const transportSnapshot = async () => {
+    const stats = await pc.getStats().catch(() => null);
+    if (!stats) return "statistici indisponibile";
+    let selected = "nicio rută ICE selectată";
+    let inbound = "cadre primite: 0";
+    stats.forEach((report) => {
+      if (report.type === "candidate-pair" && report.state === "succeeded" && report.nominated) {
+        selected = `rută ICE ${report.currentRoundTripTime != null ? `${Math.round(Number(report.currentRoundTripTime) * 1000)} ms` : "activă"}`;
+      }
+      if (report.type === "inbound-rtp" && report.kind === "video") {
+        inbound = `cadre primite: ${Number(report.framesDecoded ?? report.framesReceived ?? 0)}`;
+      }
+    });
+    return `${selected}, ${inbound}`;
+  };
+
   if (outputTrack.muted) {
     await new Promise<void>((resolve, reject) => {
       const t = setTimeout(
@@ -513,7 +510,14 @@ async function openSession({
         },
         { once: true },
       );
-    }).catch((error: Error) => fail(error.message));
+    }).catch(async (error: Error) => {
+      const snapshot = await transportSnapshot();
+      diag("webrtc", snapshot, "error");
+      const relayHint = hasTurn
+        ? "releul TURN nu transportă video"
+        : "lipsește un releu TURN dedicat pe GPU";
+      return fail(`${error.message}; ${relayHint}`);
+    });
     timer.mark("unmute");
   }
 
