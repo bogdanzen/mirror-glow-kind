@@ -181,6 +181,10 @@ async function createPod(
   if (turnId && turnToken) {
     env["CLOUDFLARE_TURN_KEY_ID"] = turnId;
     env["CLOUDFLARE_TURN_KEY_API_TOKEN"] = turnToken;
+    // Scope v0.2.5 only enables its configurable provider when the Twilio
+    // switch is present; get_turn_credentials then uses these Cloudflare keys.
+    env["TWILIO_ACCOUNT_SID"] = turnId;
+    env["TWILIO_AUTH_TOKEN"] = turnToken;
   }
 
   const body: Record<string, unknown> = {
