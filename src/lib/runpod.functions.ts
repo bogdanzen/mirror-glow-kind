@@ -102,6 +102,13 @@ async function createPod(
   };
   const hf = process.env["HF_TOKEN"];
   if (hf) env["HF_TOKEN"] = hf;
+  // Cloudflare TURN lets the GPU relay media when it has no public IP.
+  const turnId = process.env["CLOUDFLARE_TURN_KEY_ID"];
+  const turnToken = process.env["CLOUDFLARE_TURN_KEY_API_TOKEN"];
+  if (turnId && turnToken) {
+    env["CLOUDFLARE_TURN_KEY_ID"] = turnId;
+    env["CLOUDFLARE_TURN_KEY_API_TOKEN"] = turnToken;
+  }
 
   const res = await fetch(`${RUNPOD_API}/pods`, {
     method: "POST",
