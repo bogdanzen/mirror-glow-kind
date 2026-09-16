@@ -17,7 +17,13 @@
 - [x] Operator TURN relay settings + Cloudflare TURN passthrough to the GPU host
 - [x] GPU machines rented in Europe, Romania first (EU-RO-1), with `RUNPOD_DATA_CENTERS` override
 
-## Status (după reparatie + releu)
+## Status (16 sep, repornire completă)
+- Pod nou n65dpk4lvacqwf (Europa, 48+ GB, ~$2.19/h), fără auto-încărcare la boot.
+- Krea încărcat în VRAM cu fp8_e4m3fn + vace_enabled=false + lighttae (fără acestea: CUDA OOM chiar pe 48 GB).
+- Aplicația folosește exclusiv krea-realtime-video; oferta WebRTC returnează 200 cu răspuns SDP.
+- Rămâne: verificarea primului cadru procesat pe mașina utilizatorului.
+
+## Status anterior (după reparatie + releu)
 - Pod nou EU-RO-1 (Bucuresti), RTX 4090, ~$0.74/h: descarcare + verificare + incarcare reusite intr-un singur
   owner (~13 min), model incarcat in VRAM, stare "loaded".
 - Releu Cloudflare TURN: chei create + salvate (CLOUDFLARE_TURN_KEY_ID / _API_TOKEN); aplicatia emite
