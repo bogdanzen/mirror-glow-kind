@@ -85,12 +85,30 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 const KEY = "mirror.settings.v1";
 const COUNTER_KEY = "mirror.sessions.v1";
 
+/**
+ * Settings stored by older builds can hold shapes the GPU rejects with a 422
+ * (e.g. a single number where a denoising schedule list is expected), so every
+ * value that travels to Scope is normalised on load.
+ */
+export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings {
+  const merged = { ...DEFAULT_SETTINGS, ...input };
+  const raw = merged.scopeDenoiseSteps as unknown;
+  const list = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
+  const steps = list
+    .map((value) => Math.round(Number(value)))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  merged.scopeDenoiseSteps = steps.length ? steps : DEFAULT_SETTINGS.scopeDenoiseSteps;
+  merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
+  merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
+  return merged;
+}
+
 export function loadSettings(): MirrorSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<MirrorSettings>) };
+    return sanitizeSettings(JSON.parse(raw) as Partial<MirrorSettings>);
   } catch {
     return DEFAULT_SETTINGS;
   }
