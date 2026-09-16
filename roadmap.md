@@ -15,3 +15,4 @@
 - [x] 4K portrait presentation, 4K camera preference with fallbacks, high-quality capture upscale
 - [x] Hydration mismatch and duplicate initialization fixed
 - [x] Operator TURN relay settings + Cloudflare TURN passthrough to the GPU host
+- [x] GPU machines rented in Europe, Romania first (EU-RO-1), with `RUNPOD_DATA_CENTERS` override
