@@ -552,6 +552,29 @@ function Kiosk() {
       )}
 
 
+      {settings.diagnostics && !admin && (
+        <>
+          <span className="absolute left-[4vw] top-[4vh] z-40 border border-hairline px-3 py-1 font-mono text-[11px] tracking-[0.2em] text-muted-foreground">
+            {`GPU: ${
+              warm === "ready"
+                ? "PREGĂTIT"
+                : warm === "warming"
+                  ? "SE ÎNCĂLZEȘTE"
+                  : warm === "failed"
+                    ? "EȘUAT"
+                    : "INACTIV"
+            } · ${screen} · ${mirrorStatus}`}
+          </span>
+          <DiagOverlay
+            onClose={() => {
+              const next = { ...settings, diagnostics: false };
+              saveSettings(next);
+              setSettings(next);
+            }}
+          />
+        </>
+      )}
+
       {admin && (
         <AdminPanel
           settings={settings}
