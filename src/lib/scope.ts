@@ -214,10 +214,12 @@ async function ensureModels(pipeline: string) {
 }
 
 /** Loads the pipeline into VRAM. One request, then polling only. */
-async function loadPipeline(pipeline: string) {
+async function loadPipeline(pipeline: string, longEdge = 768, force = false) {
+  const size = outputSize(longEdge);
   const current = await call("/api/v1/pipeline/status", "GET");
   const currentState = current.body as { status?: string; pipeline_id?: string } | null;
   if (
+    !force &&
     current.ok &&
     currentState?.status === "loaded" &&
     currentState.pipeline_id === pipeline
@@ -233,7 +235,7 @@ async function loadPipeline(pipeline: string) {
     );
   }
 
-  setStage("loading", `încarc ${pipeline}`);
+  setStage("loading", `încarc ${pipeline} la ${size.width}×${size.height}`);
   // Krea este un model de 14B: fără cuantizare fp8 și fără modulul VACE nu
   // încape nici pe 48 GB (CUDA out of memory). LightTAE îl face și mai rapid.
   const load = await call("/api/v1/pipeline/load", "POST", {
@@ -244,12 +246,13 @@ async function loadPipeline(pipeline: string) {
             quantization: "fp8_e4m3fn",
             vace_enabled: false,
             vae_type: "lighttae",
-            height: 320,
-            width: 576,
+            height: size.height,
+            width: size.width,
           }
         : undefined,
   });
   if (!load.ok) {
+
     const message = typeof load.body === "string" ? load.body : load.error;
     throw pipelineError(message || `Pornirea modelului a eșuat (${load.status})`);
   }
