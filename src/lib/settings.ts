@@ -89,12 +89,12 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   noiseScale: 0.35,
   cameraWidth: 3840,
   cameraHeight: 2160,
-  fallbackMode: false,
+  fallbackMode: true,
   fallbackPrompt: FALLBACK_PROMPT,
 };
 
 
-const KEY = "mirror.settings.v4";
+const KEY = "mirror.settings.v5";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
