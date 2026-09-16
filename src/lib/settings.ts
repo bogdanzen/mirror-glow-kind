@@ -30,9 +30,14 @@ export type MirrorSettings = {
   diagnostics: boolean;
   /** Load the model on the GPU while the kiosk is idle. */
   prewarm: boolean;
+  /** Long edge of the AI output; the short edge follows the screen ratio. */
+  outputLongEdge: number;
+  /** How far the model may drift from the real face (lower = clearer). */
+  noiseScale: number;
   /** Preferred camera capture size (falls back automatically). */
   cameraWidth: number;
   cameraHeight: number;
+
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
