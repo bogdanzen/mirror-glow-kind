@@ -1,3 +1,5 @@
+import { FALLBACK_PROMPT } from "./bald";
+
 export type MirrorSettings = {
   prompt: string;
   width: number;
