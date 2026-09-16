@@ -22,6 +22,10 @@ export type MirrorSettings = {
   scopePipeline: string;
   /** Scope denoising schedule — fewer steps = lower latency. */
   scopeDenoiseSteps: number[];
+  /** Verbose on-screen diagnostics. */
+  diagnostics: boolean;
+  /** Load the model on the GPU while the kiosk is idle. */
+  prewarm: boolean;
 };
 
 export const SCOPE_PIPELINES = [
@@ -62,6 +66,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   provider: "runpod",
   scopePipeline: "streamdiffusionv2",
   scopeDenoiseSteps: [700, 500],
+  diagnostics: false,
+  prewarm: true,
 };
 
 const KEY = "mirror.settings.v1";
