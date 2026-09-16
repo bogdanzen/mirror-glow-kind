@@ -171,6 +171,9 @@ async function createPod(
     PIPELINE: data.pipeline || "streamdiffusionv2",
   };
   const hf = process.env["HF_TOKEN"];
+  // Required only while a fresh volume downloads gated model files. Once the
+  // cache is complete this must be removed before Scope starts, because v0.2.5
+  // otherwise selects the retired Hugging Face TURN endpoint.
   if (hf) env["HF_TOKEN"] = hf;
   // Cloudflare TURN lets the GPU relay media when it has no public IP.
   const turnId = process.env["CLOUDFLARE_TURN_KEY_ID"];
@@ -192,6 +195,9 @@ async function createPod(
     volumeMountPath: "/workspace",
     ports: [`${SCOPE_PORT}/http`],
     env,
+    // Scope currently caches TURN credentials at process start. A public
+    // media route provides a stable fallback after those credentials expire.
+    globalNetworking: true,
     interruptible: false,
   };
 
