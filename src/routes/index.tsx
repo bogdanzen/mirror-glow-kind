@@ -378,6 +378,12 @@ function Kiosk() {
   // Freeze a frame when entering capture, upscaled for the 4K presentation.
   useEffect(() => {
     if (screen !== "capture") return;
+    if (fallbackUrl) {
+      setCaptureUrl(fallbackUrl);
+      teardownStream();
+      stopCamera();
+      return;
+    }
     const v = mirrorRef.current;
     if (!v || !v.videoWidth) return;
     const target = 2048;
