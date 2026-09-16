@@ -50,7 +50,8 @@ export const MODEL_OPTIONS = [
 ] as const;
 
 export const DEFAULT_PROMPT =
-  "photorealistic live portrait of the exact same person, completely bald with a smooth naturally shaved scalp, preserve exact facial identity, eyes, nose, mouth, skin tone, expression, clothing, camera angle, lighting and unchanged background, documentary photography, realistic skin texture";
+  "photorealistic portrait of the exact same person undergoing chemotherapy, completely hairless head: totally bald smooth scalp with no hair and no stubble, clean-shaven face with no beard and no moustache, very thin almost invisible eyebrows, no eyelashes, slightly pale tired skin with soft shadows under the eyes, same face shape, same eyes, same nose, same mouth, same neutral expression, same dark t-shirt, same red chair, same room and background unchanged, same camera angle and soft daylight, natural skin texture, documentary photograph, sharp focus";
+
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
   prompt: DEFAULT_PROMPT,
@@ -67,7 +68,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   idleTimeoutSeconds: 45,
   campaignLine: "SCHIMBAREA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
-  delta: 0.45,
+  delta: 0.6,
   seed: 42,
   steps: 2,
   provider: "runpod",
@@ -75,14 +76,14 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   turnUrl: "",
   turnUsername: "",
   turnCredential: "",
-  scopeDenoiseSteps: [700, 500],
+  scopeDenoiseSteps: [800, 650, 500],
   diagnostics: false,
   prewarm: true,
   cameraWidth: 3840,
   cameraHeight: 2160,
 };
 
-const KEY = "mirror.settings.v1";
+const KEY = "mirror.settings.v2";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
