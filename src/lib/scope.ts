@@ -473,21 +473,37 @@ async function openSession({
   await pc.setLocalDescription(offer);
   timer.mark("offer");
 
+  const localSdp = pc.localDescription?.sdp;
+  if (!localSdp) return fail("Browserul nu a produs o ofertă video");
+
+  const steps = (Array.isArray(settings.scopeDenoiseSteps) ? settings.scopeDenoiseSteps : [])
+    .map((value) => Math.round(Number(value)))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
   const answerRes = await call("/api/v1/webrtc/offer", "POST", {
-    sdp: pc.localDescription?.sdp,
-    type: pc.localDescription?.type,
+    sdp: localSdp,
+    type: pc.localDescription?.type ?? "offer",
     initialParameters: {
       input_mode: "video",
-      pipeline_ids: [settings.scopePipeline],
-      prompts: [{ text: settings.prompt, weight: 1.0 }],
-      denoising_step_list: settings.scopeDenoiseSteps,
+      pipeline_ids: [settings.scopePipeline || "streamdiffusionv2"],
+      prompts: [{ text: String(settings.prompt || ""), weight: 1 }],
+      ...(steps.length ? { denoising_step_list: steps } : {}),
       manage_cache: true,
     },
   });
 
   const answer = answerRes.body as { sdp?: string; type?: string; sessionId?: string } | null;
   if (!answerRes.ok || !answer?.sdp) {
-    return fail(answerRes.error || `Oferta WebRTC respinsă (${answerRes.status})`);
+    const detail = (() => {
+      const body = answerRes.body as { detail?: unknown } | string | null;
+      if (typeof body === "string") return body.slice(0, 300);
+      const d = body && typeof body === "object" ? body.detail : null;
+      if (!d) return "";
+      return (typeof d === "string" ? d : JSON.stringify(d)).slice(0, 300);
+    })();
+    return fail(
+      `${answerRes.error || `Oferta WebRTC respinsă (${answerRes.status})`}${detail ? ` — ${detail}` : ""}`,
+    );
   }
   sessionId = answer.sessionId ?? null;
   await pc.setRemoteDescription({ type: "answer", sdp: answer.sdp });
