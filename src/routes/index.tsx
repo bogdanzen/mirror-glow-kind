@@ -65,6 +65,7 @@ function Kiosk() {
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
   const [statusDetail, setStatusDetail] = useState("");
+  const [fallbackUrl, setFallbackUrl] = useState("");
   const [warm, setWarm] = useState<WarmState>({
     stage: "idle",
     detail: "",
