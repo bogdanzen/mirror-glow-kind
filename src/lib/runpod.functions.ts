@@ -134,6 +134,18 @@ function regionLabel(codes: string[]): string {
   return `Europa (${codes.join(", ")})`;
 }
 
+async function postPod(
+  apiKey: string,
+  body: Record<string, unknown>,
+): Promise<{ ok: boolean; status: number; text: string }> {
+  const res = await fetch(`${RUNPOD_API}/pods`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify(body),
+  });
+  return { ok: res.ok, status: res.status, text: await res.text() };
+}
+
 async function createPod(
   apiKey: string,
   data: { imageName?: string; pipeline?: string; gpuTypeIds?: string[] },
@@ -151,29 +163,44 @@ async function createPod(
     env["CLOUDFLARE_TURN_KEY_API_TOKEN"] = turnToken;
   }
 
-  const res = await fetch(`${RUNPOD_API}/pods`, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify({
-      name: POD_NAME,
-      imageName: data.imageName || "daydreamlive/scope:latest",
-      gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : [...GPU_PREFERENCE],
-      gpuCount: 1,
-      cloudType: "SECURE",
-      computeType: "GPU",
-      containerDiskInGb: 40,
-      volumeInGb: 80,
-      volumeMountPath: "/workspace",
-      ports: [`${SCOPE_PORT}/http`],
-      env,
-      interruptible: false,
-    }),
+  const body: Record<string, unknown> = {
+    name: POD_NAME,
+    imageName: data.imageName || "daydreamlive/scope:latest",
+    gpuTypeIds: data.gpuTypeIds?.length ? data.gpuTypeIds : [...GPU_PREFERENCE],
+    gpuCount: 1,
+    cloudType: "SECURE",
+    computeType: "GPU",
+    containerDiskInGb: 40,
+    volumeInGb: 80,
+    volumeMountPath: "/workspace",
+    ports: [`${SCOPE_PORT}/http`],
+    env,
+    interruptible: false,
+  };
+
+  // Rent in Europe, Romania first: the model is tens of GB and US machines
+  // take far too long to pull it. "custom" keeps the order we asked for.
+  const centers = preferredDataCenters();
+  let res = await postPod(apiKey, {
+    ...body,
+    dataCenterIds: centers,
+    dataCenterPriority: "custom",
   });
-  const text = await res.text();
-  if (!res.ok) {
-    return { configured: true, pod: null, error: `RunPod ${res.status}: ${text.slice(0, 300)}` };
+  let region = regionLabel(centers);
+
+  // Only when Europe is genuinely full do we accept another region.
+  if (!res.ok && isCapacityError(res.text)) {
+    const retry = await postPod(apiKey, body);
+    if (retry.ok) {
+      res = retry;
+      region = "în afara Europei (Europa fără capacitate)";
+    }
   }
-  return { configured: true, pod: shape(JSON.parse(text) as RawPod) };
+
+  if (!res.ok) {
+    return { configured: true, pod: null, error: `RunPod ${res.status}: ${res.text.slice(0, 300)}` };
+  }
+  return { configured: true, pod: shape(JSON.parse(res.text) as RawPod), region };
 }
 
 export const startRunpodPod = createServerFn({ method: "POST" })
