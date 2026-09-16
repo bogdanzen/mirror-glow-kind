@@ -264,8 +264,10 @@ function Kiosk() {
         const session = await startMirrorSession({
           settings,
           cameraStream: camera,
-          onStatus: (status) => {
-            if (!cancelled && status !== "ended") setMirrorStatus(status);
+          onStatus: (status, detail) => {
+            if (cancelled) return;
+            if (status !== "ended") setMirrorStatus(status);
+            if (detail) setStatusDetail(detail);
           },
         });
         if (cancelled) {
