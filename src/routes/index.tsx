@@ -133,6 +133,7 @@ function Kiosk() {
     setCountdown(null);
     setCaptureUrl("");
     setCaptureId("");
+    setFallbackUrl("");
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
