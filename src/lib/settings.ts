@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v5";
+const KEY = "mirror.settings.v6";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -119,6 +119,14 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
   merged.fallbackPrompt = String(merged.fallbackPrompt || FALLBACK_PROMPT);
   merged.fallbackMode = Boolean(merged.fallbackMode);
+  merged.fallbackRefresh = (["off", "normal", "fast"] as const).includes(
+    merged.fallbackRefresh as "off",
+  )
+    ? merged.fallbackRefresh
+    : DEFAULT_SETTINGS.fallbackRefresh;
+  merged.fallbackModel = FALLBACK_MODELS.includes(merged.fallbackModel as (typeof FALLBACK_MODELS)[number])
+    ? merged.fallbackModel
+    : DEFAULT_SETTINGS.fallbackModel;
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)
