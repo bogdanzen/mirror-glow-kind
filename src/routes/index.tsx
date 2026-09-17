@@ -66,6 +66,9 @@ function Kiosk() {
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
   const [statusDetail, setStatusDetail] = useState("");
   const [fallbackUrl, setFallbackUrl] = useState("");
+  /** Previous portrait, kept underneath so refreshes crossfade. */
+  const [prevFallbackUrl, setPrevFallbackUrl] = useState("");
+  const fallbackUrlRef = useRef("");
   const [warm, setWarm] = useState<WarmState>({
     stage: "idle",
     detail: "",
