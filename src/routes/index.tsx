@@ -78,6 +78,8 @@ function Kiosk() {
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
 
   const sessionRef = useRef<MirrorSession | null>(null);
+  /** Stops the repeating fallback transformation loop. */
+  const loopRef = useRef<AbortController | null>(null);
   const idleRef = useRef<number>(Date.now());
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -125,6 +127,8 @@ function Kiosk() {
     const session = sessionRef.current;
     sessionRef.current = null;
     if (session) void session.stop();
+    loopRef.current?.abort();
+    loopRef.current = null;
   }, []);
 
   const goAttract = useCallback(() => {
