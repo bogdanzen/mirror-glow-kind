@@ -69,6 +69,8 @@ function Kiosk() {
   /** Previous portrait, kept underneath so refreshes crossfade. */
   const [prevFallbackUrl, setPrevFallbackUrl] = useState("");
   const fallbackUrlRef = useRef("");
+  /** Last fully finished portrait — used for the capture and QR. */
+  const finalFallbackRef = useRef("");
   const [warm, setWarm] = useState<WarmState>({
     stage: "idle",
     detail: "",
@@ -306,6 +308,7 @@ function Kiosk() {
             fallbackUrlRef.current = url;
             setFallbackUrl(url);
             setMirrorStatus("live");
+            if (isFinal) finalFallbackRef.current = url;
             if (isFinal && !logged) {
               logged = true;
               appendSessionLog({
