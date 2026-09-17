@@ -15,7 +15,9 @@ export const Route = createFileRoute("/api/bald")({
 
         const form = await request.formData();
         const streaming = form.get("stream") !== "false";
-        form.set("model", "openai/gpt-image-2.5-sunburst");
+        const allowed = ["openai/gpt-image-2.5-flare", "openai/gpt-image-2.5-sunburst"];
+        const asked = String(form.get("model") ?? "");
+        form.set("model", allowed.includes(asked) ? asked : "openai/gpt-image-2.5-flare");
         if (!form.get("quality")) form.set("quality", "high");
         if (streaming) {
           form.set("stream", "true");
