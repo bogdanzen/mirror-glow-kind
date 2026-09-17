@@ -1,4 +1,4 @@
-import { FALLBACK_PROMPT } from "./bald";
+import { FALLBACK_MODELS, FALLBACK_PROMPT } from "./bald";
 
 export type MirrorSettings = {
   prompt: string;
