@@ -430,7 +430,7 @@ function Kiosk() {
   useEffect(() => {
     if (screen !== "capture") return;
     if (fallbackUrl) {
-      setCaptureUrl(fallbackUrl);
+      setCaptureUrl(finalFallbackRef.current || fallbackUrl);
       teardownStream();
       stopCamera();
       return;
