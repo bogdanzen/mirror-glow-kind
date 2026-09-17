@@ -283,23 +283,54 @@ function Kiosk() {
           await mirrorRef.current.play().catch(() => undefined);
         }
         try {
-          const { frameToFile, baldifyFrame } = await import("@/lib/bald");
+          const { frameToFile, baldifyFrame, startBaldLoop } = await import("@/lib/bald");
           // Let the camera settle and auto-expose before grabbing the frame.
           await new Promise((r) => setTimeout(r, 1200));
           const v = mirrorRef.current;
-          const file = v ? frameToFile(v) : null;
-          if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
           const t0 = performance.now();
-          await baldifyFrame(file, current.fallbackPrompt, (url) => {
+          let logged = false;
+          const show = (url: string, isFinal: boolean) => {
             if (cancelled) return;
             setFallbackUrl(url);
             setMirrorStatus("live");
-          });
-          appendSessionLog({
-            at: Date.now(),
-            status: "demo",
-            latencyMs: Math.round(performance.now() - t0),
-          });
+            if (isFinal && !logged) {
+              logged = true;
+              appendSessionLog({
+                at: Date.now(),
+                status: "demo",
+                latencyMs: Math.round(performance.now() - t0),
+              });
+            }
+          };
+
+          if (current.fallbackRefresh === "off") {
+            const file = v ? frameToFile(v) : null;
+            if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
+            await baldifyFrame(
+              file,
+              current.fallbackPrompt,
+              show,
+              undefined,
+              current.fallbackModel,
+            );
+          } else {
+            const controller = new AbortController();
+            loopRef.current = controller;
+            startBaldLoop({
+              getFrame: () => (mirrorRef.current ? frameToFile(mirrorRef.current) : null),
+              prompt: current.fallbackPrompt,
+              model: current.fallbackModel,
+              concurrency: current.fallbackRefresh === "fast" ? 2 : 1,
+              onFrame: show,
+              onError: (err) => {
+                if (cancelled || logged) return;
+                appendSessionLog({ at: Date.now(), status: "error", error: err.message });
+                setError(err.message);
+                setMirrorStatus("error");
+              },
+              signal: controller.signal,
+            });
+          }
         } catch (e) {
           if (!cancelled) {
             appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
