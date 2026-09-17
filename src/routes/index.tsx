@@ -568,11 +568,26 @@ function Kiosk() {
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
               }}
             />
+            {prevFallbackUrl && (
+              <img
+                src={prevFallbackUrl}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+                style={{
+                  maskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                }}
+              />
+            )}
             {fallbackUrl && (
               <img
+                key={fallbackUrl}
                 src={fallbackUrl}
                 alt="Portret transformat"
-                className="fade-in-slow absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+                className={`${prevFallbackUrl ? "fade-in-quick" : "fade-in-slow"} absolute inset-0 h-full w-full scale-x-[-1] object-cover`}
                 style={{
                   maskImage:
                     "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
