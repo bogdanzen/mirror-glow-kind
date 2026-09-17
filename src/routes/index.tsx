@@ -146,6 +146,7 @@ function Kiosk() {
     setFallbackUrl("");
     setPrevFallbackUrl("");
     fallbackUrlRef.current = "";
+    finalFallbackRef.current = "";
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
@@ -289,6 +290,7 @@ function Kiosk() {
         setFallbackUrl("");
         setPrevFallbackUrl("");
         fallbackUrlRef.current = "";
+        finalFallbackRef.current = "";
         setStatusDetail("Se transformă imaginea…");
         setMirrorStatus("publishing");
         if (mirrorRef.current) {
