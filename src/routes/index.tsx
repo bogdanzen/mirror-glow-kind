@@ -463,30 +463,25 @@ function Kiosk() {
             void enterFullscreen();
             setScreen("consent");
           }}
-          className="flex h-full w-full flex-col items-center justify-center px-[8vw] text-center"
+          className="neon-stage flex h-full w-full flex-col items-center justify-center px-[8vw] text-center"
         >
-          <GildedBackdrop intense />
-          <h1 className="gilded fade-in-slow relative font-display text-[clamp(3.5rem,12vw,11rem)] leading-[0.92] tracking-[-0.02em]">
+          <div className="kiosk-noise" aria-hidden />
+          <NeonButterfly className="absolute left-[10vw] top-[14vh] w-[28vw]" />
+          <NeonButterfly className="absolute bottom-[16vh] right-[8vw] w-[18vw]" delay="-4s" reverse />
+          <p className="relative mb-[3vh] text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">
+            Vertical Freedom prezintă
+          </p>
+          <h1 className="neon-title fade-in-slow relative font-display text-[clamp(4.5rem,14vw,13rem)] leading-[0.86]">
             TE VEZI?
           </h1>
-          <p className="fade-in-slow relative mt-[5vh] max-w-[22ch] text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug">
-            Oglinda nu îți arată cine ești astăzi.
-            <br />
-            Îți arată cine ai putea deveni.
+          <p className="fade-in-slow relative mt-[5vh] max-w-[24ch] text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug text-foreground/85">
+            Privește-te.
+            <br />Doar zece secunde.
           </p>
-          <span className="relative mt-[6vh] block h-px w-[22vmin] bg-[linear-gradient(90deg,transparent,var(--gold-2),transparent)]" />
-          <p className="breathe relative mt-[6vh] text-[clamp(1.1rem,2.6vw,2.4rem)] tracking-[0.08em] text-primary">
+          <span className="relative mt-[6vh] block h-px w-[22vmin] bg-primary" />
+          <p className="breathe relative mt-[6vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
             Atinge ecranul pentru a începe
           </p>
-          <p className="absolute bottom-[6vh] left-1/2 -translate-x-1/2 text-[clamp(0.8rem,1.6vw,1.4rem)] tracking-[0.18em] text-muted-foreground">
-            {campaign}
-          </p>
-          <div className="absolute bottom-[5vh] right-[5vw] flex flex-col items-center gap-3">
-            <QrCode value={origin} size={140} />
-            <span className="text-[clamp(0.7rem,1.2vw,1rem)] text-muted-foreground">
-              Încearcă și de pe telefonul tău
-            </span>
-          </div>
         </section>
       )}
 
@@ -534,20 +529,27 @@ function Kiosk() {
       )}
 
       {screen === "framing" && (
-        <section className="relative h-full w-full">
+        <section className="video-stage relative h-full w-full">
           <video
             ref={previewRef}
             muted
             playsInline
-            className="h-full w-full scale-x-[-1] object-cover opacity-70"
+            className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
           />
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <div className="h-[46vh] w-[34vh] rounded-[50%] border border-[--color-foreground]/50" />
-            <p className="mt-[6vh] px-[8vw] text-center text-[clamp(1.1rem,2.4vw,2.2rem)]">
-              Stai în fața ecranului, la un pas distanță.
-            </p>
+          <div className="video-grade" aria-hidden />
+          <div className="kiosk-noise" aria-hidden />
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between px-[7vw] py-[8vh]">
+            <div>
+              <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">Te vezi?</p>
+              <h2 className="mt-4 max-w-[9ch] font-display text-[clamp(3.8rem,11vw,10rem)] leading-[0.88] text-foreground">
+                Privește-te 10 secunde.
+              </h2>
+            </div>
             {countdown !== null && (
-              <p className="mt-[4vh] font-display text-[clamp(5rem,16vw,13rem)] leading-none text-primary">{countdown}</p>
+              <div className="self-end text-right">
+                <p className="font-display text-[clamp(7rem,22vw,20rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p>
+                <p className="text-[clamp(0.85rem,1.6vw,1.4rem)] uppercase tracking-[0.35em] text-foreground/70">Un moment doar al tău</p>
+              </div>
             )}
             {error && <p className="mt-6 text-primary">{error}</p>}
           </div>
@@ -555,25 +557,20 @@ function Kiosk() {
       )}
 
       {screen === "mirror" && (
-        <section className="relative flex h-full w-full flex-col items-center justify-center bg-background">
-          <GildedBackdrop />
-          <div className="relative aspect-square w-[88vmin] max-w-[92vw] overflow-hidden shadow-[0_0_120px_color-mix(in_oklab,var(--gold-2)_28%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--gold-2)_45%,transparent)]">
+        <section className="video-stage relative h-full w-full bg-background">
+          <div className="absolute inset-0 overflow-hidden">
 
             <video
               ref={mirrorRef}
               muted
               playsInline
-              className="h-full w-full scale-x-[-1] object-cover transition-opacity duration-[600ms]"
+              className="absolute inset-0 h-full w-full scale-x-[-1] object-cover transition-opacity duration-[900ms]"
               style={{
                 opacity:
                   mirrorStatus === "live" ||
                   (settings.fallbackMode && mirrorStatus === "publishing")
                     ? 1
                     : 0,
-                maskImage:
-                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-                WebkitMaskImage:
-                  "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
               }}
             />
             {prevFallbackUrl && (
@@ -582,12 +579,6 @@ function Kiosk() {
                 alt=""
                 aria-hidden
                 className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
-                style={{
-                  maskImage:
-                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-                  WebkitMaskImage:
-                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-                }}
               />
             )}
             {fallbackUrl && (
@@ -596,12 +587,6 @@ function Kiosk() {
                 src={fallbackUrl}
                 alt="Portret transformat"
                 className={`${prevFallbackUrl ? "fade-in-quick" : "fade-in-slow"} absolute inset-0 h-full w-full scale-x-[-1] object-cover`}
-                style={{
-                  maskImage:
-                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-                  WebkitMaskImage:
-                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
-                }}
               />
             )}
             {settings.fallbackMode && mirrorStatus === "publishing" && (
@@ -611,7 +596,6 @@ function Kiosk() {
             )}
             {mirrorStatus !== "live" && !(settings.fallbackMode && mirrorStatus === "publishing") && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
-                <div className="breathe h-[22vmin] w-[22vmin] rounded-full bg-primary/10 blur-[60px]" />
                 <div className="absolute px-[6vw] text-center">
                   <p className="text-[clamp(1.1rem,2.4vw,2.2rem)] text-muted-foreground">
                     {mirrorStatus === "error" && error ? error : "Se pregătește oglinda…"}
@@ -625,70 +609,79 @@ function Kiosk() {
               </div>
             )}
           </div>
+          <div className="video-grade" aria-hidden />
+          <div className="kiosk-noise" aria-hidden />
+          <div className="pointer-events-none absolute inset-x-[7vw] top-[7vh]">
+            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.38em] text-primary">Dacă mâine totul s-ar schimba?</p>
+            <h2 className="mt-4 max-w-[10ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">Te-ai privi la fel?</h2>
+          </div>
 
           {demo && mirrorStatus === "live" && (
             <span className="absolute right-[4vw] top-[4vh] border border-hairline px-4 py-2 text-[clamp(0.7rem,1.2vw,1rem)] tracking-[0.3em] text-muted-foreground">
               DEMO
             </span>
           )}
-          <p className="absolute bottom-[5vh] left-1/2 w-full -translate-x-1/2 text-center text-[clamp(0.9rem,1.8vw,1.6rem)] text-foreground/80">
-            {campaign}
+          <p className="absolute bottom-[6vh] left-[7vw] max-w-[18ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Realitatea poate fi imprevizibilă.</p>
+        </section>
+      )}
+
+      {screen === "choice" && (
+        <section className="neon-stage relative flex h-full w-full flex-col items-center justify-center px-[8vw] text-center">
+          <div className="kiosk-noise" aria-hidden />
+          <NeonButterfly className="absolute left-[8vw] top-[22vh] w-[19vw]" />
+          <NeonButterfly className="absolute bottom-[20vh] right-[9vw] w-[15vw]" delay="-3s" reverse />
+          <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">Realitatea poate fi imprevizibilă</p>
+          <h2 className="neon-title mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">ÎNCĂ POȚI ALEGE.</h2>
+          <p className="mt-[5vh] text-[clamp(1rem,2.3vw,2rem)] text-foreground/75">Atinge oglinda. Aici începe schimbarea.</p>
+        </section>
+      )}
+
+      {screen === "healthy" && (
+        <section className="video-stage relative h-full w-full">
+          <video ref={healthyRef} muted playsInline className="absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
+          <div className="video-grade video-grade-soft" aria-hidden />
+          <div className="kiosk-noise" aria-hidden />
+          <NeonButterfly className="absolute bottom-[13vh] right-[7vw] w-[14vw]" />
+          <div className="absolute left-[7vw] top-[8vh] max-w-[78vw]">
+            <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">Prevenția începe înainte să doară.</h2>
+          </div>
+          <p className="absolute bottom-[8vh] left-[7vw] max-w-[24ch] text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
+            Fă-ți controalele.<br />Ascultă-ți corpul.<br />Ai grijă de tine.
           </p>
         </section>
       )}
 
       {screen === "capture" && (
-        <section className="fade-in-slow flex h-full flex-col items-center justify-center px-[8vw] text-center">
-          {captureUrl && (
-            <img
-              src={captureUrl}
-              alt="Imaginea ta"
-              className="max-h-[45vh] scale-x-[-1] object-contain"
-            />
-          )}
-          {!captureId ? (
-            <button
-              onClick={() => captureUrl && setCaptureId(saveCapture(captureUrl))}
-              className="mt-[6vh] w-full hairline-t hairline-b py-[3vh] text-[clamp(1.4rem,3.2vw,2.8rem)] text-primary"
-            >
-              Păstrează imaginea
-            </button>
-          ) : (
-            <div className="mt-[6vh] flex flex-col items-center gap-6">
-              <QrCode value={`${origin}/r/${captureId}`} size={200} />
-              <p className="text-[clamp(0.9rem,1.8vw,1.5rem)] text-muted-foreground">
-                Scanează pentru a descărca. Imaginea se șterge în 24 de ore.
-              </p>
+        <section className="neon-stage fade-in-slow relative flex h-full flex-col px-[7vw] py-[7vh]">
+          <div className="kiosk-noise" aria-hidden />
+          <NeonButterfly className="absolute right-[7vw] top-[9vh] w-[24vw]" />
+          <div className="relative">
+            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">Împreună pentru viață</p>
+            <h2 className="mt-3 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.82]">VERTICAL<br /><span className="text-primary">FREEDOM</span></h2>
+            <p className="mt-[4vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.4rem)] leading-snug text-foreground/85">Alege viața înainte să te oblige viața să alegi.</p>
+          </div>
+          <div className="relative mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-end gap-[5vw]">
+            <div className="min-w-0">
+              <p className="mb-[3vh] text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.28em] text-muted-foreground">Scanează și alege drumul tău</p>
+              <div className="grid grid-cols-2 gap-x-[4vw] gap-y-[2vh] text-[clamp(0.9rem,1.7vw,1.5rem)]">
+                <span>Informează-te</span><span>Fă-ți controalele</span><span>Intră în comunitate</span><span>Susține prevenția</span>
+              </div>
+              <button
+                onClick={() => {
+                  idleRef.current = Date.now();
+                  setPresenceSeconds(20);
+                }}
+                className="mt-[5vh] border-y border-primary/50 py-[2vh] text-[clamp(1rem,2vw,1.8rem)] text-primary"
+              >
+                Mai ești aici? Atinge ecranul
+              </button>
+              <p className="mt-3 text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">Resetare automată în {presenceSeconds} secunde</p>
             </div>
-          )}
-          <button
-            onClick={() => setScreen("thanks")}
-            className="mt-[5vh] text-[clamp(0.9rem,1.6vw,1.3rem)] text-muted-foreground underline underline-offset-8"
-          >
-            Continuă
-          </button>
-        </section>
-      )}
-
-      {screen === "thanks" && (
-        <section className="fade-in-slow relative flex h-full flex-col items-center justify-center px-[8vw] text-center">
-          <GildedBackdrop />
-          <h2 className="gilded relative font-display text-[clamp(3rem,9vw,9rem)] leading-[0.92] tracking-[-0.02em]">TE VEZI?</h2>
-          <p className="relative mt-[5vh] max-w-[24ch] text-[clamp(1.1rem,2.6vw,2.4rem)] leading-snug">
-            Oglinda nu îți arată cine ești astăzi.
-            <br />
-            Îți arată cine ai putea deveni.
-          </p>
-          <span className="relative mt-[5vh] block h-px w-[18vmin] bg-[linear-gradient(90deg,transparent,var(--gold-2),transparent)]" />
-          <p className="relative mt-[5vh] text-[clamp(1rem,2.4vw,2.2rem)] tracking-[0.12em] text-primary">
-            {campaign}
-          </p>
-          <p className="relative mt-[4vh] max-w-[30ch] text-[clamp(0.95rem,2vw,1.8rem)] uppercase tracking-[0.06em] text-foreground/80">
-            Tu ce alegi să faci după ce te-ai văzut?
-          </p>
-          <p className="gilded relative mt-[7vh] text-[clamp(0.9rem,1.7vw,1.4rem)] tracking-[0.42em]">
-            PENTRU VIAȚĂ
-          </p>
+            <div className="flex shrink-0 flex-col items-center gap-5">
+              <div className="bg-foreground p-3"><QrCode value={origin} size={180} /></div>
+              <CancerRibbon className="h-[14vh] w-auto text-primary" />
+            </div>
+          </div>
         </section>
       )}
 
