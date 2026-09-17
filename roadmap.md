@@ -2,6 +2,8 @@
 
 ## Open
 
+- [ ] Rebuild the kiosk around the official six-stage timeline and black/hot-pink visual language.
+- [ ] Add full-screen camera/AI presentation, animated neon butterflies, texture/noise masking, final QR options, and 20-second presence confirmation.
 - [ ] Live video path: Cloudflare TURN is configured in the browser. GPU logs prove the camera arrives and StreamDiffusion produces frames. Krea selection previously reused StreamDiffusion; exact pipeline matching exposed the real blocker: Krea exhausts the current 24 GB RTX 4090. New Krea pods now require a 48+ GB GPU in Europe. Recreate the current pod, then run the real-device frame check.
 - [ ] Verification of first-frame ≤5 s over 5 warm sessions must be run on the kiosk/user machine: this sandbox browser produces no ICE candidates, so WebRTC media cannot be validated here.
 
