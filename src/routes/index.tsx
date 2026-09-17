@@ -21,7 +21,7 @@ import {
   type MirrorStatus,
 } from "@/lib/mirror";
 import type { WarmState } from "@/lib/scope";
-import { GildedBackdrop } from "@/components/GildedBackdrop";
+import { CancerRibbon, NeonButterfly } from "@/components/NeonButterfly";
 import { DiagOverlay } from "@/components/DiagOverlay";
 
 
@@ -47,7 +47,14 @@ export const Route = createFileRoute("/")({
   component: Kiosk,
 });
 
-type Screen = "attract" | "consent" | "framing" | "mirror" | "capture" | "thanks";
+type Screen =
+  | "attract"
+  | "consent"
+  | "framing"
+  | "mirror"
+  | "choice"
+  | "healthy"
+  | "capture";
 
 function Kiosk() {
   // Start from defaults so the server and the first client render agree;
@@ -58,7 +65,8 @@ function Kiosk() {
   const [admin, setAdmin] = useState(false);
   const [demo, setDemo] = useState(true);
   const [consent, setConsent] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(10);
+  const [presenceSeconds, setPresenceSeconds] = useState(20);
   const [captureUrl, setCaptureUrl] = useState<string>("");
   const [captureId, setCaptureId] = useState<string>("");
   const [origin, setOrigin] = useState("");
@@ -81,6 +89,7 @@ function Kiosk() {
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
+  const healthyRef = useRef<HTMLVideoElement | null>(null);
 
   const sessionRef = useRef<MirrorSession | null>(null);
   /** Stops the repeating fallback transformation loop. */
@@ -141,6 +150,7 @@ function Kiosk() {
     stopCamera();
     setConsent(false);
     setCountdown(null);
+    setPresenceSeconds(20);
     setCaptureUrl("");
     setCaptureId("");
     setFallbackUrl("");
@@ -187,13 +197,11 @@ function Kiosk() {
     return stream;
   }, []);
 
-  // FRAMING: preview + presence heuristic + countdown
+  // CAMERA INTRO: the visitor gets ten quiet seconds with their real reflection.
   useEffect(() => {
     if (screen !== "framing") return;
     let cancelled = false;
-    let raf = 0;
-    let stableFrames = 0;
-    let lastLuma = 0;
+    let interval = 0;
 
     void (async () => {
       try {
@@ -203,60 +211,26 @@ function Kiosk() {
           previewRef.current.srcObject = stream;
           await previewRef.current.play().catch(() => undefined);
         }
+        if (cancelled) return;
+        let n = 10;
+        setCountdown(n);
+        interval = window.setInterval(() => {
+          n -= 1;
+          if (n <= 0) {
+            window.clearInterval(interval);
+            setCountdown(null);
+            setScreen("mirror");
+          } else {
+            setCountdown(n);
+          }
+        }, 1000);
       } catch {
         setError("Camera nu este disponibilă.");
-        return;
       }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-
-      const tick = () => {
-        if (cancelled) return;
-        const v = previewRef.current;
-        if (v && v.videoWidth) {
-          ctx.drawImage(v, 0, 0, 64, 64);
-          const { data } = ctx.getImageData(16, 16, 32, 32);
-          let sum = 0;
-          for (let i = 0; i < data.length; i += 4)
-          for (let i = 0; i < data.length; i += 4)
-            sum += ((data[i] ?? 0) + (data[i + 1] ?? 0) + (data[i + 2] ?? 0)) / 3;
-          const luma = sum / (data.length / 4);
-          const motion = Math.abs(luma - lastLuma);
-          lastLuma = luma;
-          if (luma > 35 && motion < 8) stableFrames += 1;
-          else stableFrames = Math.max(0, stableFrames - 2);
-          if (stableFrames > 45) {
-            startCountdown();
-            return;
-          }
-        }
-        raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
     })();
-
-    const startCountdown = () => {
-      let n = 3;
-      setCountdown(n);
-      const id = window.setInterval(() => {
-        n -= 1;
-        if (n <= 0) {
-          window.clearInterval(id);
-          setCountdown(null);
-          setScreen("mirror");
-        } else setCountdown(n);
-      }, 1000);
-    };
-
-    // Safety: never get stuck framing
-    const fallback = window.setTimeout(startCountdown, 12000);
     return () => {
       cancelled = true;
-      cancelAnimationFrame(raf);
-      window.clearTimeout(fallback);
+      window.clearInterval(interval);
     };
   }, [screen, startCamera]);
 
@@ -409,24 +383,46 @@ function Kiosk() {
   useEffect(() => {
     if (screen !== "mirror" || mirrorStatus !== "live") return;
     const id = window.setTimeout(() => {
-      if (settings.storageEnabled) setScreen("capture");
-      else setScreen("thanks");
+      setScreen("choice");
     }, settings.mirrorSeconds * 1000);
     return () => window.clearTimeout(id);
   }, [screen, mirrorStatus, settings.storageEnabled, settings.mirrorSeconds]);
 
-  // CAPTURE / THANKS timers
+  // Official dramatic beats after the altered reflection.
   useEffect(() => {
-    if (screen === "capture") {
-      const id = window.setTimeout(() => setScreen("thanks"), settings.captureSeconds * 1000);
+    if (screen === "choice") {
+      teardownStream();
+      const id = window.setTimeout(() => setScreen("healthy"), 7000);
       return () => window.clearTimeout(id);
     }
-    if (screen === "thanks") {
-      const id = window.setTimeout(goAttract, settings.thanksSeconds * 1000);
+    if (screen === "healthy") {
+      const video = healthyRef.current;
+      if (video && cameraRef.current) {
+        video.srcObject = cameraRef.current;
+        void video.play().catch(() => undefined);
+      }
+      const id = window.setTimeout(() => setScreen("capture"), 12000);
       return () => window.clearTimeout(id);
     }
     return undefined;
-  }, [screen, settings.captureSeconds, settings.thanksSeconds, goAttract]);
+  }, [screen, teardownStream]);
+
+  // Final presence check. Any interaction confirms the visitor is still here.
+  useEffect(() => {
+    if (screen !== "capture") return;
+    setPresenceSeconds(20);
+    const id = window.setInterval(() => {
+      setPresenceSeconds((seconds) => {
+        if (seconds <= 1) {
+          window.clearInterval(id);
+          window.setTimeout(goAttract, 0);
+          return 0;
+        }
+        return seconds - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [screen, goAttract]);
 
   // Freeze a frame when entering capture, upscaled for the 4K presentation.
   useEffect(() => {
@@ -434,7 +430,6 @@ function Kiosk() {
     if (fallbackUrl) {
       setCaptureUrl(finalFallbackRef.current || fallbackUrl);
       teardownStream();
-      stopCamera();
       return;
     }
     const v = mirrorRef.current;
@@ -450,7 +445,6 @@ function Kiosk() {
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
     setCaptureUrl(canvas.toDataURL("image/jpeg", 0.92));
     teardownStream();
-    stopCamera();
   }, [screen, stopCamera, teardownStream, fallbackUrl]);
 
   const campaign = settings.campaignLine;
