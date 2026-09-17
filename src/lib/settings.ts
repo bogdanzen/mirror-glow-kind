@@ -71,11 +71,11 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   demoMode: false,
   storageEnabled: false,
   pin: "0000",
-  mirrorSeconds: 20,
+  mirrorSeconds: 40,
   captureSeconds: 30,
   thanksSeconds: 15,
   idleTimeoutSeconds: 45,
-  campaignLine: "SCHIMBAREA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
+  campaignLine: "PREVENȚIA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
   delta: 0.45,
   seed: 42,
@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v6";
+const KEY = "mirror.settings.v7";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
