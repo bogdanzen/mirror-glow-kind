@@ -43,6 +43,10 @@ export type MirrorSettings = {
   fallbackMode: boolean;
   /** Prompt used by the server fallback. */
   fallbackPrompt: string;
+  /** How often the fallback portrait is regenerated. */
+  fallbackRefresh: "off" | "normal" | "fast";
+  /** Image model used by the fallback. */
+  fallbackModel: string;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
@@ -91,6 +95,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   cameraHeight: 2160,
   fallbackMode: true,
   fallbackPrompt: FALLBACK_PROMPT,
+  fallbackRefresh: "normal",
+  fallbackModel: "openai/gpt-image-2.5-flare",
 };
 
 
