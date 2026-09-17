@@ -1,13 +1,27 @@
 /**
- * Client side of the server fallback: grabs one frame from the camera and
- * streams back a photorealistic bald portrait of the same person.
+ * Client side of the server fallback: grabs frames from the camera and
+ * streams back photorealistic bald portraits of the same person.
  */
 
 export const FALLBACK_PROMPT =
   "Re-render this exact photograph of the same person as a documentary-grade, photorealistic portrait of a chemotherapy patient. Remove ALL hair: completely bald smooth scalp with no hair and no stubble, no eyebrows at all, no eyelashes, no beard and no moustache, clean-shaven skin. Keep the identity absolutely unchanged: identical face shape, identical eyes, nose, mouth, ears, skin tone, age, expression, head pose and camera angle. Keep the same clothing, the same background and the same lighting. Skin slightly paler and a little tired, natural fine skin texture and pores on the scalp. Serious, clinical, dignified, editorial photograph. Sharp focus, high detail, natural colour, no filter, no stylisation, no cartoon, no smoothing, no beauty retouch, no distortion, no extra people.";
 
+/** Fast, latency-first model; the other one trades speed for fidelity. */
+export const FALLBACK_MODELS = [
+  "openai/gpt-image-2.5-flare",
+  "openai/gpt-image-2.5-sunburst",
+] as const;
+
 function dataUrl(b64: string) {
   return `data:image/png;base64,${b64}`;
+}
+
+class BaldError extends Error {
+  status: number;
+  constructor(message: string, status = 0) {
+    super(message);
+    this.status = status;
+  }
 }
 
 /** Captures the current video frame as a square-ish JPEG file. */
@@ -26,10 +40,11 @@ export function frameToFile(video: HTMLVideoElement, longEdge = 1024): File | nu
   return new File([bytes], "frame.jpg", { type: "image/jpeg" });
 }
 
-function buildForm(file: File, prompt: string) {
+function buildForm(file: File, prompt: string, model?: string) {
   const fd = new FormData();
   fd.append("image", file);
   fd.append("prompt", prompt);
+  if (model) fd.append("model", model);
   return fd;
 }
 
@@ -42,10 +57,29 @@ export async function baldifyFrame(
   prompt: string,
   onFrame: (url: string, isFinal: boolean) => void,
   signal?: AbortSignal,
+  model?: string,
+  partials = true,
 ): Promise<void> {
-  const res = await fetch("/api/bald", { method: "POST", body: buildForm(file, prompt), ...(signal ? { signal } : {}) });
+  const form = buildForm(file, prompt, model);
+  if (!partials) form.append("stream", "false");
+  const res = await fetch("/api/bald", {
+    method: "POST",
+    body: form,
+    ...(signal ? { signal } : {}),
+  });
   if (!res.ok || !res.body) {
-    throw new Error(`Fallback AI ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    throw new BaldError(
+      `Fallback AI ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`,
+      res.status,
+    );
+  }
+
+  if (!partials) {
+    const json = (await res.json()) as { data?: { b64_json?: string }[] };
+    const b64 = json.data?.[0]?.b64_json;
+    if (!b64) throw new BaldError("Fallback AI nu a returnat imagine");
+    onFrame(dataUrl(b64), true);
+    return;
   }
 
   const reader = res.body.getReader();
@@ -75,18 +109,96 @@ export async function baldifyFrame(
         }
       }
     }
-  } catch {
+  } catch (e) {
+    if (signal?.aborted) throw e;
     /* stream broke — fall through to the replay below */
   }
 
   if (events > 0) return;
+  if (signal?.aborted) return;
 
-  const fd = buildForm(file, prompt);
+  const fd = buildForm(file, prompt, model);
   fd.append("stream", "false");
   const replay = await fetch("/api/bald", { method: "POST", body: fd, ...(signal ? { signal } : {}) });
-  if (!replay.ok) throw new Error(`Fallback AI ${replay.status}`);
+  if (!replay.ok) throw new BaldError(`Fallback AI ${replay.status}`, replay.status);
   const json = (await replay.json()) as { data?: { b64_json?: string }[] };
   const b64 = json.data?.[0]?.b64_json;
-  if (!b64) throw new Error("Fallback AI nu a returnat imagine");
+  if (!b64) throw new BaldError("Fallback AI nu a returnat imagine");
   onFrame(dataUrl(b64), true);
+}
+
+export type BaldLoopOptions = {
+  /** Returns a fresh camera frame, or null while the camera is not ready. */
+  getFrame: () => File | null;
+  prompt: string;
+  model?: string;
+  /** How many portraits stay in flight at once (1–2). */
+  concurrency?: number;
+  onFrame: (url: string, isFinal: boolean) => void;
+  onError?: (error: Error) => void;
+  signal: AbortSignal;
+};
+
+const sleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve) => {
+    const id = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(id);
+      resolve();
+    }, { once: true });
+  });
+
+/**
+ * Keeps one or two transformations in flight so the portrait refreshes every
+ * few seconds instead of freezing on the first result.
+ */
+export function startBaldLoop(options: BaldLoopOptions): void {
+  const { getFrame, prompt, model, onFrame, onError, signal } = options;
+  const workers = Math.min(2, Math.max(1, options.concurrency ?? 2));
+  let firstDone = false;
+  let stopped = false;
+
+  const run = async (index: number) => {
+    // Stagger the second worker so results land between the first one's.
+    if (index > 0) await sleep(2500, signal);
+    let backoff = 2000;
+    while (!signal.aborted && !stopped) {
+      const file = getFrame();
+      if (!file) {
+        await sleep(300, signal);
+        continue;
+      }
+      try {
+        const allowPartials = !firstDone && index === 0;
+        await baldifyFrame(
+          file,
+          prompt,
+          (url, isFinal) => {
+            if (signal.aborted) return;
+            if (isFinal) firstDone = true;
+            onFrame(url, isFinal);
+          },
+          signal,
+          model,
+          allowPartials,
+        );
+        backoff = 2000;
+      } catch (error) {
+        if (signal.aborted) return;
+        const err = error as BaldError;
+        const status = typeof err.status === "number" ? err.status : 0;
+        // Only rate limits and upstream hiccups are worth another attempt.
+        if (status === 429 || status >= 500) {
+          await sleep(backoff, signal);
+          backoff = Math.min(15000, backoff * 2);
+          continue;
+        }
+        stopped = true;
+        onError?.(err instanceof Error ? err : new Error(String(error)));
+        return;
+      }
+    }
+  };
+
+  for (let i = 0; i < workers; i += 1) void run(i);
 }

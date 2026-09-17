@@ -463,6 +463,51 @@ export function AdminPanel({
           </button>
           {draft.fallbackMode && (
             <>
+              <label className={label}>Reîmprospătare portret</label>
+              <div className="flex gap-3">
+                {(
+                  [
+                    ["off", "Oprit"],
+                    ["normal", "Normal"],
+                    ["fast", "Rapid"],
+                  ] as const
+                ).map(([value, text]) => (
+                  <button
+                    key={value}
+                    onClick={() => set("fallbackRefresh", value)}
+                    className={`border px-5 py-3 ${
+                      draft.fallbackRefresh === value
+                        ? "border-primary text-primary"
+                        : "border-foreground/20 text-muted-foreground"
+                    }`}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+
+              <label className={label}>Model imagine</label>
+              <div className="flex gap-3">
+                {(
+                  [
+                    ["openai/gpt-image-2.5-flare", "Rapid"],
+                    ["openai/gpt-image-2.5-sunburst", "Calitate maximă"],
+                  ] as const
+                ).map(([value, text]) => (
+                  <button
+                    key={value}
+                    onClick={() => set("fallbackModel", value)}
+                    className={`border px-5 py-3 ${
+                      draft.fallbackModel === value
+                        ? "border-primary text-primary"
+                        : "border-foreground/20 text-muted-foreground"
+                    }`}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+
               <label className={label}>Prompt mod rezervă</label>
               <textarea
                 className={`${field} min-h-32 resize-none`}

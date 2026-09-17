@@ -109,6 +109,11 @@
   animation: mirror-fade 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+/* Quick crossfade between consecutive AI portraits */
+@utility fade-in-quick {
+  animation: mirror-fade 400ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
 @utility breathe {
   animation: mirror-breathe 5.5s ease-in-out infinite;
 }

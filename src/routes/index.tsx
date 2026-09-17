@@ -66,6 +66,11 @@ function Kiosk() {
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
   const [statusDetail, setStatusDetail] = useState("");
   const [fallbackUrl, setFallbackUrl] = useState("");
+  /** Previous portrait, kept underneath so refreshes crossfade. */
+  const [prevFallbackUrl, setPrevFallbackUrl] = useState("");
+  const fallbackUrlRef = useRef("");
+  /** Last fully finished portrait — used for the capture and QR. */
+  const finalFallbackRef = useRef("");
   const [warm, setWarm] = useState<WarmState>({
     stage: "idle",
     detail: "",
@@ -78,6 +83,8 @@ function Kiosk() {
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
 
   const sessionRef = useRef<MirrorSession | null>(null);
+  /** Stops the repeating fallback transformation loop. */
+  const loopRef = useRef<AbortController | null>(null);
   const idleRef = useRef<number>(Date.now());
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -125,6 +132,8 @@ function Kiosk() {
     const session = sessionRef.current;
     sessionRef.current = null;
     if (session) void session.stop();
+    loopRef.current?.abort();
+    loopRef.current = null;
   }, []);
 
   const goAttract = useCallback(() => {
@@ -135,6 +144,9 @@ function Kiosk() {
     setCaptureUrl("");
     setCaptureId("");
     setFallbackUrl("");
+    setPrevFallbackUrl("");
+    fallbackUrlRef.current = "";
+    finalFallbackRef.current = "";
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
@@ -276,6 +288,9 @@ function Kiosk() {
       if (current.fallbackMode) {
         setDemo(false);
         setFallbackUrl("");
+        setPrevFallbackUrl("");
+        fallbackUrlRef.current = "";
+        finalFallbackRef.current = "";
         setStatusDetail("Se transformă imaginea…");
         setMirrorStatus("publishing");
         if (mirrorRef.current) {
@@ -283,23 +298,57 @@ function Kiosk() {
           await mirrorRef.current.play().catch(() => undefined);
         }
         try {
-          const { frameToFile, baldifyFrame } = await import("@/lib/bald");
+          const { frameToFile, baldifyFrame, startBaldLoop } = await import("@/lib/bald");
           // Let the camera settle and auto-expose before grabbing the frame.
           await new Promise((r) => setTimeout(r, 1200));
           const v = mirrorRef.current;
-          const file = v ? frameToFile(v) : null;
-          if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
           const t0 = performance.now();
-          await baldifyFrame(file, current.fallbackPrompt, (url) => {
+          let logged = false;
+          const show = (url: string, isFinal: boolean) => {
             if (cancelled) return;
+            if (fallbackUrlRef.current) setPrevFallbackUrl(fallbackUrlRef.current);
+            fallbackUrlRef.current = url;
             setFallbackUrl(url);
             setMirrorStatus("live");
-          });
-          appendSessionLog({
-            at: Date.now(),
-            status: "demo",
-            latencyMs: Math.round(performance.now() - t0),
-          });
+            if (isFinal) finalFallbackRef.current = url;
+            if (isFinal && !logged) {
+              logged = true;
+              appendSessionLog({
+                at: Date.now(),
+                status: "demo",
+                latencyMs: Math.round(performance.now() - t0),
+              });
+            }
+          };
+
+          if (current.fallbackRefresh === "off") {
+            const file = v ? frameToFile(v) : null;
+            if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
+            await baldifyFrame(
+              file,
+              current.fallbackPrompt,
+              show,
+              undefined,
+              current.fallbackModel,
+            );
+          } else {
+            const controller = new AbortController();
+            loopRef.current = controller;
+            startBaldLoop({
+              getFrame: () => (mirrorRef.current ? frameToFile(mirrorRef.current) : null),
+              prompt: current.fallbackPrompt,
+              model: current.fallbackModel,
+              concurrency: current.fallbackRefresh === "fast" ? 2 : 1,
+              onFrame: show,
+              onError: (err) => {
+                if (cancelled || logged) return;
+                appendSessionLog({ at: Date.now(), status: "error", error: err.message });
+                setError(err.message);
+                setMirrorStatus("error");
+              },
+              signal: controller.signal,
+            });
+          }
         } catch (e) {
           if (!cancelled) {
             appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
@@ -349,6 +398,8 @@ function Kiosk() {
 
     return () => {
       cancelled = true;
+      loopRef.current?.abort();
+      loopRef.current = null;
     };
   }, [screen, startCamera, teardownStream]);
 
@@ -381,7 +432,7 @@ function Kiosk() {
   useEffect(() => {
     if (screen !== "capture") return;
     if (fallbackUrl) {
-      setCaptureUrl(fallbackUrl);
+      setCaptureUrl(finalFallbackRef.current || fallbackUrl);
       teardownStream();
       stopCamera();
       return;
@@ -531,11 +582,26 @@ function Kiosk() {
                   "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
               }}
             />
+            {prevFallbackUrl && (
+              <img
+                src={prevFallbackUrl}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+                style={{
+                  maskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
+                }}
+              />
+            )}
             {fallbackUrl && (
               <img
+                key={fallbackUrl}
                 src={fallbackUrl}
                 alt="Portret transformat"
-                className="fade-in-slow absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+                className={`${prevFallbackUrl ? "fade-in-quick" : "fade-in-slow"} absolute inset-0 h-full w-full scale-x-[-1] object-cover`}
                 style={{
                   maskImage:
                     "radial-gradient(ellipse at center, black 55%, rgba(0,0,0,0.65) 78%, transparent 100%)",
