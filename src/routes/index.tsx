@@ -384,6 +384,8 @@ function Kiosk() {
 
     return () => {
       cancelled = true;
+      loopRef.current?.abort();
+      loopRef.current = null;
     };
   }, [screen, startCamera, teardownStream]);
 
