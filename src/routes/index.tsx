@@ -142,6 +142,8 @@ function Kiosk() {
     setCaptureUrl("");
     setCaptureId("");
     setFallbackUrl("");
+    setPrevFallbackUrl("");
+    fallbackUrlRef.current = "";
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
@@ -283,6 +285,8 @@ function Kiosk() {
       if (current.fallbackMode) {
         setDemo(false);
         setFallbackUrl("");
+        setPrevFallbackUrl("");
+        fallbackUrlRef.current = "";
         setStatusDetail("Se transformă imaginea…");
         setMirrorStatus("publishing");
         if (mirrorRef.current) {
@@ -298,6 +302,8 @@ function Kiosk() {
           let logged = false;
           const show = (url: string, isFinal: boolean) => {
             if (cancelled) return;
+            if (fallbackUrlRef.current) setPrevFallbackUrl(fallbackUrlRef.current);
+            fallbackUrlRef.current = url;
             setFallbackUrl(url);
             setMirrorStatus("live");
             if (isFinal && !logged) {
