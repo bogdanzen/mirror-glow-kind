@@ -241,7 +241,10 @@ function Kiosk() {
                 negativePrompt: SDXL_NEGATIVE_PROMPT,
               },
               signal,
-            ),
+            );
+            recordModelTiming(current.falModel, performance.now() - t);
+            return url;
+          },
           onFirstHead: () => {
             if (fallbackCancelRef.current) return;
             setMirrorStatus("live");
