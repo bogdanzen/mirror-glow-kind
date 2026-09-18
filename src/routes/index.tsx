@@ -91,6 +91,9 @@ function Kiosk() {
   const sessionRef = useRef<MirrorSession | null>(null);
   /** Stops the repeating fallback transformation loop. */
   const loopRef = useRef<AbortController | null>(null);
+  /** The portrait work starts during the countdown, so it runs only once. */
+  const fallbackStartedRef = useRef(false);
+  const fallbackCancelRef = useRef(false);
   const idleRef = useRef<number>(Date.now());
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -152,9 +155,88 @@ function Kiosk() {
     setPrevFallbackUrl("");
     fallbackUrlRef.current = "";
     finalFallbackRef.current = "";
+    fallbackStartedRef.current = false;
+    fallbackCancelRef.current = true;
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
+
+  /**
+   * Server portrait work. Started already during the ten-second countdown so
+   * the transformed face is on screen the moment the mirror opens.
+   */
+  const startFallbackWork = useCallback(async () => {
+    if (fallbackStartedRef.current) return;
+    fallbackStartedRef.current = true;
+    fallbackCancelRef.current = false;
+    const current = settingsRef.current;
+    setDemo(false);
+    setFallbackUrl("");
+    setPrevFallbackUrl("");
+    fallbackUrlRef.current = "";
+    finalFallbackRef.current = "";
+    setStatusDetail(current.messages.mirrorWorking);
+    setMirrorStatus("publishing");
+
+    try {
+      const { frameToFile, baldifyFrame, startBaldLoop } = await import("@/lib/bald");
+      // Whichever video element is currently showing the camera.
+      const pick = () => {
+        for (const v of [previewRef.current, mirrorRef.current]) {
+          if (v && v.videoWidth) return frameToFile(v);
+        }
+        return null;
+      };
+      // Let the camera settle and auto-expose before grabbing the frame.
+      await new Promise((r) => setTimeout(r, 1200));
+      const t0 = performance.now();
+      let logged = false;
+      const show = (url: string, isFinal: boolean) => {
+        if (fallbackCancelRef.current) return;
+        if (fallbackUrlRef.current) setPrevFallbackUrl(fallbackUrlRef.current);
+        fallbackUrlRef.current = url;
+        setFallbackUrl(url);
+        setMirrorStatus("live");
+        if (isFinal) finalFallbackRef.current = url;
+        if (isFinal && !logged) {
+          logged = true;
+          appendSessionLog({
+            at: Date.now(),
+            status: "demo",
+            latencyMs: Math.round(performance.now() - t0),
+          });
+        }
+      };
+
+      if (current.fallbackRefresh === "off") {
+        const file = pick();
+        if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
+        await baldifyFrame(file, current.fallbackPrompt, show, undefined, current.fallbackModel);
+      } else {
+        const controller = new AbortController();
+        loopRef.current = controller;
+        startBaldLoop({
+          getFrame: pick,
+          prompt: current.fallbackPrompt,
+          model: current.fallbackModel,
+          concurrency: current.fallbackRefresh === "fast" ? 2 : 1,
+          onFrame: show,
+          onError: (err) => {
+            if (fallbackCancelRef.current || logged) return;
+            appendSessionLog({ at: Date.now(), status: "error", error: err.message });
+            setError(err.message);
+            setMirrorStatus("error");
+          },
+          signal: controller.signal,
+        });
+      }
+    } catch (e) {
+      if (fallbackCancelRef.current) return;
+      appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+      setError((e as Error).message);
+      setMirrorStatus("error");
+    }
+  }, []);
 
   // Keep status fresh during the timed story. The final screen owns its
   // explicit 20-second presence check below.
@@ -199,6 +281,9 @@ function Kiosk() {
           await previewRef.current.play().catch(() => undefined);
         }
         if (cancelled) return;
+        // Use the ten quiet seconds to already render the portrait.
+        const current = settingsRef.current;
+        if (current.fallbackMode && !current.demoMode) void startFallbackWork();
         let n = 10;
         setCountdown(n);
         interval = window.setInterval(() => {
@@ -219,7 +304,7 @@ function Kiosk() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [screen, startCamera]);
+  }, [screen, startCamera, startFallbackWork]);
 
   // MIRROR: live AI stream. Never restarts because an unrelated setting changed.
   useEffect(() => {
@@ -231,7 +316,8 @@ function Kiosk() {
       const camera = cameraRef.current ?? (await startCamera().catch(() => null));
       if (!camera || cancelled) return;
       bumpSessionCounter();
-      setMirrorStatus("creating");
+      // Don't wipe the status when the portrait is already being generated.
+      if (!fallbackStartedRef.current) setMirrorStatus("creating");
 
       if (current.demoMode) {
         appendSessionLog({ at: Date.now(), status: "demo" });
@@ -248,75 +334,12 @@ function Kiosk() {
       // photorealistic bald portrait and held on screen.
       if (current.fallbackMode) {
         setDemo(false);
-        setFallbackUrl("");
-        setPrevFallbackUrl("");
-        fallbackUrlRef.current = "";
-        finalFallbackRef.current = "";
-        setStatusDetail("Se transformă imaginea…");
-        setMirrorStatus("publishing");
         if (mirrorRef.current) {
           mirrorRef.current.srcObject = camera;
           await mirrorRef.current.play().catch(() => undefined);
         }
-        try {
-          const { frameToFile, baldifyFrame, startBaldLoop } = await import("@/lib/bald");
-          // Let the camera settle and auto-expose before grabbing the frame.
-          await new Promise((r) => setTimeout(r, 1200));
-          const v = mirrorRef.current;
-          const t0 = performance.now();
-          let logged = false;
-          const show = (url: string, isFinal: boolean) => {
-            if (cancelled) return;
-            if (fallbackUrlRef.current) setPrevFallbackUrl(fallbackUrlRef.current);
-            fallbackUrlRef.current = url;
-            setFallbackUrl(url);
-            setMirrorStatus("live");
-            if (isFinal) finalFallbackRef.current = url;
-            if (isFinal && !logged) {
-              logged = true;
-              appendSessionLog({
-                at: Date.now(),
-                status: "demo",
-                latencyMs: Math.round(performance.now() - t0),
-              });
-            }
-          };
-
-          if (current.fallbackRefresh === "off") {
-            const file = v ? frameToFile(v) : null;
-            if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
-            await baldifyFrame(
-              file,
-              current.fallbackPrompt,
-              show,
-              undefined,
-              current.fallbackModel,
-            );
-          } else {
-            const controller = new AbortController();
-            loopRef.current = controller;
-            startBaldLoop({
-              getFrame: () => (mirrorRef.current ? frameToFile(mirrorRef.current) : null),
-              prompt: current.fallbackPrompt,
-              model: current.fallbackModel,
-              concurrency: current.fallbackRefresh === "fast" ? 2 : 1,
-              onFrame: show,
-              onError: (err) => {
-                if (cancelled || logged) return;
-                appendSessionLog({ at: Date.now(), status: "error", error: err.message });
-                setError(err.message);
-                setMirrorStatus("error");
-              },
-              signal: controller.signal,
-            });
-          }
-        } catch (e) {
-          if (!cancelled) {
-            appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
-            setError((e as Error).message);
-            setMirrorStatus("error");
-          }
-        }
+        // Usually already running since the countdown; this is the safety net.
+        void startFallbackWork();
         return;
       }
 
@@ -362,7 +385,7 @@ function Kiosk() {
       loopRef.current?.abort();
       loopRef.current = null;
     };
-  }, [screen, startCamera, teardownStream]);
+  }, [screen, startCamera, teardownStream, startFallbackWork]);
 
 
   // Only start counting the mirror time once the image is actually visible,
@@ -411,6 +434,8 @@ function Kiosk() {
     return () => window.clearInterval(id);
   }, [screen, goAttract]);
 
+  const m = settings.messages;
+
   return (
     <main className="relative h-dvh w-screen overflow-hidden bg-background text-foreground">
       <button
@@ -431,18 +456,17 @@ function Kiosk() {
           <NeonButterfly className="absolute left-[10vw] top-[14vh] w-[28vw]" />
           <NeonButterfly className="absolute bottom-[16vh] right-[8vw] w-[18vw]" delay="-4s" reverse />
           <p className="relative mb-[3vh] text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">
-            Vertical Freedom prezintă
+            {m.attractKicker}
           </p>
           <h1 className="neon-title fade-in-slow relative font-display text-[clamp(4.5rem,14vw,13rem)] leading-[0.86]">
-            TE VEZI?
+            {m.attractTitle}
           </h1>
-          <p className="fade-in-slow relative mt-[5vh] max-w-[24ch] text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug text-foreground/85">
-            Privește-te.
-            <br />Doar zece secunde.
+          <p className="fade-in-slow relative mt-[5vh] max-w-[24ch] whitespace-pre-line text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug text-foreground/85">
+            {m.attractSubtitle}
           </p>
           <span className="relative mt-[6vh] block h-px w-[22vmin] bg-primary" />
           <p className="breathe relative mt-[6vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
-            Atinge ecranul pentru a începe
+            {m.attractCta}
           </p>
         </section>
       )}
@@ -450,11 +474,9 @@ function Kiosk() {
 
       {screen === "consent" && (
         <section className="fade-in-slow flex h-full flex-col justify-center px-[8vw]">
-          <h2 className="font-display text-[clamp(2.4rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.015em]">Înainte de a începe</h2>
-          <div className="mt-[5vh] max-w-[46ch] space-y-6 text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-muted-foreground">
-            <p>Imaginea ta este procesată live, în cloud, doar în memorie.</p>
-            <p>Nu se salvează nimic. Nimic nu te identifică.</p>
-            <p>Poți pleca oricând — totul dispare în aceeași secundă.</p>
+          <h2 className="font-display text-[clamp(2.4rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.015em]">{m.consentTitle}</h2>
+          <div className="mt-[5vh] max-w-[46ch] space-y-6 whitespace-pre-line text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-muted-foreground">
+            {m.consentBody}
           </div>
 
           <button
@@ -468,7 +490,7 @@ function Kiosk() {
             >
               {consent ? "✓" : ""}
             </span>
-            Am citit și sunt de acord.
+            {m.consentCheckbox}
           </button>
 
           <button
@@ -478,14 +500,14 @@ function Kiosk() {
               consent ? "text-primary" : "text-muted-foreground/40"
             }`}
           >
-            Continuă
+            {m.consentContinue}
           </button>
 
           <div className="mt-[5vh] flex items-center justify-between text-[clamp(0.85rem,1.6vw,1.3rem)] text-muted-foreground">
             <a href="/gdpr" className="underline underline-offset-8">
               Notă de confidențialitate
             </a>
-            <button onClick={goAttract}>Renunț</button>
+            <button onClick={goAttract}>{m.consentDecline}</button>
           </div>
         </section>
       )}
@@ -502,15 +524,15 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between px-[7vw] py-[8vh]">
             <div>
-              <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">Te vezi?</p>
+              <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">{m.framingKicker}</p>
               <h2 className="mt-4 max-w-[9ch] font-display text-[clamp(3.8rem,11vw,10rem)] leading-[0.88] text-foreground">
-                Privește-te 10 secunde.
+                {m.framingTitle}
               </h2>
             </div>
             {countdown !== null && (
               <div className="self-end text-right">
                 <p className="font-display text-[clamp(7rem,22vw,20rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p>
-                <p className="text-[clamp(0.85rem,1.6vw,1.4rem)] uppercase tracking-[0.35em] text-foreground/70">Un moment doar al tău</p>
+                <p className="text-[clamp(0.85rem,1.6vw,1.4rem)] uppercase tracking-[0.35em] text-foreground/70">{m.framingCaption}</p>
               </div>
             )}
             {error && <p className="mt-6 text-primary">{error}</p>}
@@ -553,7 +575,7 @@ function Kiosk() {
             )}
             {settings.fallbackMode && mirrorStatus === "publishing" && (
               <p className="absolute bottom-[4%] left-0 w-full text-center text-[clamp(0.9rem,1.8vw,1.5rem)] text-foreground/80">
-                Se transformă imaginea…
+                {m.mirrorWorking}
               </p>
             )}
             {mirrorStatus !== "live" && !(settings.fallbackMode && mirrorStatus === "publishing") && (
@@ -574,8 +596,8 @@ function Kiosk() {
           <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
           <div className="pointer-events-none absolute inset-x-[7vw] top-[7vh] z-10">
-            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.38em] text-primary">Dacă mâine totul s-ar schimba?</p>
-            <h2 className="mt-4 max-w-[11ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">Ce ai fi vrut să nu mai amâni?</h2>
+            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.38em] text-primary">{m.mirrorKicker}</p>
+            <h2 className="mt-4 max-w-[11ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">{m.mirrorTitle}</h2>
           </div>
 
           {demo && mirrorStatus === "live" && (
@@ -583,7 +605,7 @@ function Kiosk() {
               DEMO
             </span>
           )}
-          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[22ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Vezi o posibilă versiune vulnerabilă a ta. Realitatea poate fi imprevizibilă.</p>
+          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[22ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">{m.mirrorFooter}</p>
         </section>
       )}
 
@@ -592,8 +614,8 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute left-[8vw] top-[22vh] w-[19vw]" />
           <NeonButterfly className="absolute bottom-[20vh] right-[9vw] w-[15vw]" delay="-3s" reverse />
-          <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">Realitatea poate fi imprevizibilă</p>
-          <h2 className="neon-title mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">ÎNCĂ POȚI ALEGE.</h2>
+          <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">{m.choiceKicker}</p>
+          <h2 className="neon-title mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">{m.choiceTitle}</h2>
         </section>
       )}
 
@@ -604,10 +626,10 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute bottom-[13vh] right-[7vw] w-[14vw]" />
           <div className="absolute left-[7vw] top-[8vh] z-10 max-w-[78vw]">
-            <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">Prevenția începe înainte să doară.</h2>
+            <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">{m.healthyTitle}</h2>
           </div>
-          <p className="absolute bottom-[8vh] left-[7vw] z-10 max-w-[24ch] text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
-            Fă-ți controalele.<br />Ascultă-ți corpul.<br />Ai grijă de tine.
+          <p className="absolute bottom-[8vh] left-[7vw] z-10 max-w-[24ch] whitespace-pre-line text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
+            {m.healthyBody}
           </p>
         </section>
       )}
@@ -617,15 +639,20 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute right-[7vw] top-[9vh] w-[24vw]" />
           <div className="relative">
-            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">Împreună pentru viață</p>
-            <h2 className="mt-3 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.82]">VERTICAL<br /><span className="text-primary">FREEDOM</span></h2>
-            <p className="mt-[4vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.4rem)] leading-snug text-foreground/85">Alege viața înainte să te oblige viața să alegi.</p>
+            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">{m.finalKicker}</p>
+            <h2 className="mt-3 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.82]">{m.finalTitleTop}<br /><span className="text-primary">{m.finalTitleBottom}</span></h2>
+            <p className="mt-[4vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.4rem)] leading-snug text-foreground/85">{m.finalSubtitle}</p>
           </div>
           <div className="relative mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-end gap-[5vw]">
             <div className="min-w-0">
-              <p className="mb-[3vh] text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.28em] text-muted-foreground">Scanează și alege drumul tău</p>
+              <p className="mb-[3vh] text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.28em] text-muted-foreground">{m.finalQrLabel}</p>
               <div className="grid grid-cols-2 gap-x-[4vw] gap-y-[2vh] text-[clamp(0.9rem,1.7vw,1.5rem)]">
-                <span>Informează-te</span><span>Fă-ți controalele</span><span>Intră în comunitate</span><span>Susține prevenția</span>
+                {m.finalOptions
+                  .split("\n")
+                  .filter(Boolean)
+                  .map((option) => (
+                    <span key={option}>{option}</span>
+                  ))}
               </div>
               <button
                 onClick={() => {
@@ -634,7 +661,7 @@ function Kiosk() {
                 }}
                 className="mt-[5vh] border-y border-primary/50 py-[2vh] text-[clamp(1rem,2vw,1.8rem)] text-primary"
               >
-                Mai ești aici? Atinge ecranul
+                {m.finalPresence}
               </button>
               <p className="mt-3 text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">Resetare automată în {presenceSeconds} secunde</p>
             </div>

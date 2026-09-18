@@ -1,6 +1,70 @@
 import { FALLBACK_MODELS, FALLBACK_PROMPT } from "./bald";
 
+/** Every visible line of copy, editable from the admin panel. */
+export type MirrorMessages = {
+  attractKicker: string;
+  attractTitle: string;
+  attractSubtitle: string;
+  attractCta: string;
+  consentTitle: string;
+  consentBody: string;
+  consentCheckbox: string;
+  consentContinue: string;
+  consentDecline: string;
+  framingKicker: string;
+  framingTitle: string;
+  framingCaption: string;
+  mirrorKicker: string;
+  mirrorTitle: string;
+  mirrorFooter: string;
+  mirrorWorking: string;
+  choiceKicker: string;
+  choiceTitle: string;
+  healthyTitle: string;
+  healthyBody: string;
+  finalKicker: string;
+  finalTitleTop: string;
+  finalTitleBottom: string;
+  finalSubtitle: string;
+  finalQrLabel: string;
+  finalOptions: string;
+  finalPresence: string;
+};
+
+export const DEFAULT_MESSAGES: MirrorMessages = {
+  attractKicker: "Vertical Freedom prezintă",
+  attractTitle: "TE VEZI?",
+  attractSubtitle: "Privește-te.\nDoar zece secunde.",
+  attractCta: "Atinge ecranul pentru a începe",
+  consentTitle: "Înainte de a începe",
+  consentBody:
+    "Imaginea ta este procesată live, în cloud, doar în memorie.\nNu se salvează nimic. Nimic nu te identifică.\nPoți pleca oricând — totul dispare în aceeași secundă.",
+  consentCheckbox: "Am citit și sunt de acord.",
+  consentContinue: "Continuă",
+  consentDecline: "Renunț",
+  framingKicker: "Te vezi?",
+  framingTitle: "Privește-te 10 secunde.",
+  framingCaption: "Un moment doar al tău",
+  mirrorKicker: "Dacă mâine totul s-ar schimba?",
+  mirrorTitle: "Ce ai fi vrut să nu mai amâni?",
+  mirrorFooter: "Vezi o posibilă versiune vulnerabilă a ta. Realitatea poate fi imprevizibilă.",
+  mirrorWorking: "Se transformă imaginea…",
+  choiceKicker: "Realitatea poate fi imprevizibilă",
+  choiceTitle: "ÎNCĂ POȚI ALEGE.",
+  healthyTitle: "Prevenția începe înainte să doară.",
+  healthyBody: "Fă-ți controalele.\nAscultă-ți corpul.\nAi grijă de tine.",
+  finalKicker: "Împreună pentru viață",
+  finalTitleTop: "VERTICAL",
+  finalTitleBottom: "FREEDOM",
+  finalSubtitle: "Alege viața înainte să te oblige viața să alegi.",
+  finalQrLabel: "Scanează și alege drumul tău",
+  finalOptions: "Informează-te\nFă-ți controalele\nIntră în comunitate\nSusține prevenția",
+  finalPresence: "Mai ești aici? Atinge ecranul",
+};
+
 export type MirrorSettings = {
+  /** All on-screen copy. */
+  messages: MirrorMessages;
   prompt: string;
   width: number;
   height: number;
@@ -63,6 +127,7 @@ export const DEFAULT_PROMPT =
   "ultra sharp photorealistic close-up portrait of the exact same person, completely bald: smooth hairless scalp with no hair and no stubble, clean-shaven face, no beard, no moustache, very thin almost invisible eyebrows, no eyelashes, slightly pale skin, undistorted natural facial proportions, identical face shape, identical eyes, nose and mouth, same expression, same clothes, same background and lighting unchanged, crisp fine skin texture and pores, studio-grade clarity, high detail, professional documentary photograph, sharp focus, no warping, no melting, no extra limbs, no blur";
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
+  messages: DEFAULT_MESSAGES,
   prompt: DEFAULT_PROMPT,
   width: 512,
   height: 512,
@@ -100,7 +165,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v7";
+const KEY = "mirror.settings.v8";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -110,6 +175,11 @@ const COUNTER_KEY = "mirror.sessions.v1";
  */
 export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings {
   const merged = { ...DEFAULT_SETTINGS, ...input };
+  const messages = { ...DEFAULT_MESSAGES, ...(input.messages ?? {}) };
+  for (const key of Object.keys(DEFAULT_MESSAGES) as (keyof MirrorMessages)[]) {
+    messages[key] = String(messages[key] ?? DEFAULT_MESSAGES[key]);
+  }
+  merged.messages = messages;
   const raw = merged.scopeDenoiseSteps as unknown;
   const list = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
   const steps = list
