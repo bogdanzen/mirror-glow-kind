@@ -26,7 +26,9 @@ export type DelayMirrorStats = {
 
 export type DelayMirrorOptions = {
   video: HTMLVideoElement;
-  canvas: HTMLCanvasElement;
+  /** Optional at start: buffering and generation can run before the
+   *  mirror screen exists, so the first head is ready when it opens. */
+  canvas?: HTMLCanvasElement | null;
   /** How far behind real time the picture runs. */
   delayMs: number;
   /** Frames stored per second (memory: ~1 MB each at 720p). */
