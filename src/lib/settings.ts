@@ -111,6 +111,16 @@ export type MirrorSettings = {
   fallbackRefresh: "off" | "normal" | "fast";
   /** Image model used by the fallback. */
   fallbackModel: string;
+  /** Which fallback backend renders the portrait. */
+  fallbackProvider: "lovable" | "fal";
+  /** fal.ai API key entered in the control panel (optional, FAL_KEY is used otherwise). */
+  falKey: string;
+  /** Fast diffusion model on fal.ai. */
+  falModel: string;
+  /** How far the flash model may drift from the real face. */
+  falStrength: number;
+  /** Diffusion steps for the flash model (fewer = faster). */
+  falSteps: number;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
@@ -162,6 +172,11 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   fallbackPrompt: FALLBACK_PROMPT,
   fallbackRefresh: "normal",
   fallbackModel: "openai/gpt-image-2.5-flare",
+  fallbackProvider: "lovable",
+  falKey: "",
+  falModel: "fal-ai/fast-lcm-diffusion/image-to-image",
+  falStrength: 0.45,
+  falSteps: 6,
 };
 
 
@@ -197,6 +212,13 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.fallbackModel = FALLBACK_MODELS.includes(merged.fallbackModel as (typeof FALLBACK_MODELS)[number])
     ? merged.fallbackModel
     : DEFAULT_SETTINGS.fallbackModel;
+  merged.fallbackProvider = merged.fallbackProvider === "fal" ? "fal" : "lovable";
+  merged.falKey = String(merged.falKey ?? "");
+  merged.falModel = String(merged.falModel || DEFAULT_SETTINGS.falModel);
+  const strength = Number(merged.falStrength);
+  merged.falStrength = Number.isFinite(strength) ? Math.min(1, Math.max(0.1, strength)) : 0.45;
+  const falSteps = Math.round(Number(merged.falSteps));
+  merged.falSteps = Number.isFinite(falSteps) ? Math.min(20, Math.max(1, falSteps)) : 6;
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)
