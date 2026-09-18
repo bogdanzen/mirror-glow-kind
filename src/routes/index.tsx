@@ -474,11 +474,9 @@ function Kiosk() {
 
       {screen === "consent" && (
         <section className="fade-in-slow flex h-full flex-col justify-center px-[8vw]">
-          <h2 className="font-display text-[clamp(2.4rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.015em]">Înainte de a începe</h2>
-          <div className="mt-[5vh] max-w-[46ch] space-y-6 text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-muted-foreground">
-            <p>Imaginea ta este procesată live, în cloud, doar în memorie.</p>
-            <p>Nu se salvează nimic. Nimic nu te identifică.</p>
-            <p>Poți pleca oricând — totul dispare în aceeași secundă.</p>
+          <h2 className="font-display text-[clamp(2.4rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.015em]">{m.consentTitle}</h2>
+          <div className="mt-[5vh] max-w-[46ch] space-y-6 whitespace-pre-line text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-muted-foreground">
+            {m.consentBody}
           </div>
 
           <button
