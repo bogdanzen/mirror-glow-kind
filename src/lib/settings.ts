@@ -193,6 +193,14 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   falModel: "fal-ai/fast-lcm-diffusion/image-to-image",
   falStrength: 0.45,
   falSteps: 6,
+  falSeed: 7331,
+  mirrorEngine: "portrait",
+  delayMs: 2000,
+  genFps: 2,
+  cropSize: 1024,
+  headMargin: 0.85,
+  featherPx: 70,
+  headDebug: false,
 };
 
 
