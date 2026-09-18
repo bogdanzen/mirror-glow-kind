@@ -111,6 +111,16 @@ export type MirrorSettings = {
   fallbackRefresh: "off" | "normal" | "fast";
   /** Image model used by the fallback. */
   fallbackModel: string;
+  /** Which fallback backend renders the portrait. */
+  fallbackProvider: "lovable" | "fal";
+  /** fal.ai API key entered in the control panel (optional, FAL_KEY is used otherwise). */
+  falKey: string;
+  /** Fast diffusion model on fal.ai. */
+  falModel: string;
+  /** How far the flash model may drift from the real face. */
+  falStrength: number;
+  /** Diffusion steps for the flash model (fewer = faster). */
+  falSteps: number;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
