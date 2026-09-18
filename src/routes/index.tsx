@@ -88,6 +88,18 @@ function Kiosk() {
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
   const healthyRef = useRef<HTMLVideoElement | null>(null);
 
+  /** Delayed mirror: canvas that shows the composed picture. */
+  const mirrorCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const delayRef = useRef<{
+    stop: () => void;
+    attach: (c: HTMLCanvasElement | null) => void;
+    ready: () => boolean;
+    snapshot: () => string;
+  } | null>(null);
+  /** Off-screen video that feeds the delayed mirror from the countdown on. */
+  const feedRef = useRef<HTMLVideoElement | null>(null);
+  const [delayed, setDelayed] = useState(false);
+
   const sessionRef = useRef<MirrorSession | null>(null);
   /** Stops the repeating fallback transformation loop. */
   const loopRef = useRef<AbortController | null>(null);
