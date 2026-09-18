@@ -819,9 +819,13 @@ export function AdminPanel({
                         }`}
                       >
                         {text}
+                        <span className="ml-2 text-xs opacity-70">{timing(value)}</span>
                       </button>
                     ))}
                   </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Durata măsurată pentru o imagine, pe acest ecran.
+                  </p>
                 </>
               )}
 
