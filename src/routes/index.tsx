@@ -220,7 +220,8 @@ function Kiosk() {
       if (current.fallbackRefresh === "off") {
         const file = pick();
         if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
-        await baldifyFrame(file, current.fallbackPrompt, show, undefined, current.fallbackModel);
+        if (fal) await falFrame(file, current.fallbackPrompt, fal, show);
+        else await baldifyFrame(file, current.fallbackPrompt, show, undefined, current.fallbackModel);
       } else {
         const controller = new AbortController();
         loopRef.current = controller;
@@ -228,7 +229,9 @@ function Kiosk() {
           getFrame: pick,
           prompt: current.fallbackPrompt,
           model: current.fallbackModel,
-          concurrency: current.fallbackRefresh === "fast" ? 2 : 1,
+          ...(fal ? { fal } : {}),
+          // The flash model answers in under a second, so more requests fit.
+          concurrency: fal ? 2 : current.fallbackRefresh === "fast" ? 2 : 1,
           onFrame: show,
           onError: (err) => {
             if (fallbackCancelRef.current || logged) return;
