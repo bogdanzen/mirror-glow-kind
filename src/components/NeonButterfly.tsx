@@ -62,8 +62,10 @@ export function NeonButterfly({
         <g className="butterfly-wing butterfly-wing-left">
           <Wing />
         </g>
-        <g className="butterfly-wing butterfly-wing-right" transform="translate(200 0) scale(-1 1)">
-          <Wing />
+        <g className="butterfly-wing butterfly-wing-right">
+          <g transform="translate(200 0) scale(-1 1)">
+            <Wing />
+          </g>
         </g>
         {/* body */}
         <path
