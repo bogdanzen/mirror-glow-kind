@@ -316,7 +316,8 @@ function Kiosk() {
       const camera = cameraRef.current ?? (await startCamera().catch(() => null));
       if (!camera || cancelled) return;
       bumpSessionCounter();
-      setMirrorStatus("creating");
+      // Don't wipe the status when the portrait is already being generated.
+      if (!fallbackStartedRef.current) setMirrorStatus("creating");
 
       if (current.demoMode) {
         appendSessionLog({ at: Date.now(), status: "demo" });
