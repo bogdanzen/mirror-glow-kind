@@ -250,8 +250,9 @@
 }
 
 @keyframes butterfly-wing {
-  0%, 100% { transform: scaleX(1); }
-  50% { transform: scaleX(0.72); }
+  0%, 100% { transform: scaleX(1) rotate(0deg); }
+  45% { transform: scaleX(0.58) rotate(-1.5deg); }
+  55% { transform: scaleX(0.62) rotate(1deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
