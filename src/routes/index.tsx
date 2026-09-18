@@ -626,10 +626,10 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute bottom-[13vh] right-[7vw] w-[14vw]" />
           <div className="absolute left-[7vw] top-[8vh] z-10 max-w-[78vw]">
-            <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">Prevenția începe înainte să doară.</h2>
+            <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">{m.healthyTitle}</h2>
           </div>
-          <p className="absolute bottom-[8vh] left-[7vw] z-10 max-w-[24ch] text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
-            Fă-ți controalele.<br />Ascultă-ți corpul.<br />Ai grijă de tine.
+          <p className="absolute bottom-[8vh] left-[7vw] z-10 max-w-[24ch] whitespace-pre-line text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
+            {m.healthyBody}
           </p>
         </section>
       )}
