@@ -22,6 +22,7 @@ import {
 } from "@/lib/mirror";
 import type { WarmState } from "@/lib/scope";
 import { CancerRibbon, NeonButterfly } from "@/components/NeonButterfly";
+import { ButterflyVideo } from "@/components/ButterflyVideo";
 import { DiagOverlay } from "@/components/DiagOverlay";
 
 
@@ -72,6 +73,7 @@ function Kiosk() {
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
   const [statusDetail, setStatusDetail] = useState("");
   const [fallbackUrl, setFallbackUrl] = useState("");
+  const [smileUrl, setSmileUrl] = useState("");
   /** Previous portrait, kept underneath so refreshes crossfade. */
   const [prevFallbackUrl, setPrevFallbackUrl] = useState("");
   const fallbackUrlRef = useRef("");
@@ -86,7 +88,9 @@ function Kiosk() {
 
   const cameraRef = useRef<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement | null>(null);
+  const attractRef = useRef<HTMLVideoElement | null>(null);
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
+  const choiceRef = useRef<HTMLVideoElement | null>(null);
   const healthyRef = useRef<HTMLVideoElement | null>(null);
 
   /** Delayed mirror: canvas that shows the composed picture. */
@@ -107,6 +111,8 @@ function Kiosk() {
   /** The portrait work starts during the countdown, so it runs only once. */
   const fallbackStartedRef = useRef(false);
   const fallbackCancelRef = useRef(false);
+  const smileStartedRef = useRef(false);
+  const smileAbortRef = useRef<AbortController | null>(null);
   const idleRef = useRef<number>(Date.now());
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -176,16 +182,20 @@ function Kiosk() {
     setPresenceSeconds(20);
     setFallbackUrl("");
     setPrevFallbackUrl("");
+    setSmileUrl("");
     fallbackUrlRef.current = "";
     finalFallbackRef.current = "";
     fallbackStartedRef.current = false;
     fallbackCancelRef.current = true;
+    smileStartedRef.current = false;
+    smileAbortRef.current?.abort();
+    smileAbortRef.current = null;
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
 
   /**
-   * Server portrait work. Started already during the ten-second countdown so
+   * Server portrait work. Started already during the opening countdown so
    * the transformed face is on screen the moment the mirror opens.
    */
   const startFallbackWork = useCallback(async () => {
@@ -382,6 +392,69 @@ function Kiosk() {
     return stream;
   }, []);
 
+  // The attract screen is already a mirror. If permission was previously
+  // granted it appears immediately; otherwise the browser asks once here.
+  useEffect(() => {
+    if (screen !== "attract" || !hydrated) return;
+    let cancelled = false;
+    void startCamera()
+      .then(async (stream) => {
+        if (cancelled || !attractRef.current) return;
+        attractRef.current.srcObject = stream;
+        await attractRef.current.play().catch(() => undefined);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      if (attractRef.current) attractRef.current.srcObject = null;
+    };
+  }, [screen, hydrated, startCamera]);
+
+  // Prepare the visitor's healthy smiling portrait while the bald chapter is
+  // playing, so the next dramatic beat has no loading screen.
+  const startSmileWork = useCallback(async () => {
+    if (smileStartedRef.current) return;
+    smileStartedRef.current = true;
+    const controller = new AbortController();
+    smileAbortRef.current = controller;
+    try {
+      const { frameToFile, baldifyFrame, falFrame, SMILE_PROMPT, SMILE_NEGATIVE_PROMPT } =
+        await import("@/lib/bald");
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      if (controller.signal.aborted) return;
+      const source = mirrorRef.current ?? previewRef.current ?? attractRef.current;
+      if (!source?.videoWidth) throw new Error("Camera nu este pregătită pentru portretul final");
+      const file = frameToFile(source);
+      if (!file) throw new Error("Nu am putut prelua portretul final");
+      const current = settingsRef.current;
+      const show = (url: string, isFinal: boolean) => {
+        if (!controller.signal.aborted && isFinal) setSmileUrl(url);
+      };
+      if (current.fallbackProvider === "fal") {
+        await falFrame(
+          file,
+          SMILE_PROMPT,
+          {
+            key: current.falKey,
+            model: current.falModel,
+            strength: Math.min(current.falStrength, 0.4),
+            steps: current.falSteps,
+            seed: current.falSeed,
+            negativePrompt: SMILE_NEGATIVE_PROMPT,
+          },
+          show,
+          controller.signal,
+        );
+      } else {
+        await baldifyFrame(file, SMILE_PROMPT, show, controller.signal, current.fallbackModel, false);
+      }
+    } catch (e) {
+      if (!controller.signal.aborted) {
+        appendSessionLog({ at: Date.now(), status: "error", error: `Portret zâmbitor: ${(e as Error).message}` });
+      }
+    }
+  }, []);
+
   // CAMERA INTRO: the configured quiet countdown with their real reflection.
   useEffect(() => {
     if (screen !== "framing") return;
@@ -456,6 +529,7 @@ function Kiosk() {
         }
         // Usually already running since the countdown; this is the safety net.
         void startFallbackWork();
+          void startSmileWork();
         return;
       }
 
@@ -486,6 +560,7 @@ function Kiosk() {
           await mirrorRef.current.play().catch(() => undefined);
         }
         setMirrorStatus("live");
+        void startSmileWork();
       } catch (e) {
         appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
         teardownStream();
@@ -501,7 +576,7 @@ function Kiosk() {
       loopRef.current?.abort();
       loopRef.current = null;
     };
-  }, [screen, startCamera, teardownStream, startFallbackWork]);
+  }, [screen, startCamera, teardownStream, startFallbackWork, startSmileWork]);
 
 
   // Only start counting the mirror time once the image is actually visible,
@@ -518,6 +593,11 @@ function Kiosk() {
   useEffect(() => {
     if (screen === "choice") {
       teardownStream();
+      const video = choiceRef.current;
+      if (video && cameraRef.current) {
+        video.srcObject = cameraRef.current;
+        void video.play().catch(() => undefined);
+      }
       const id = window.setTimeout(() => setScreen("healthy"), 7000);
       return () => window.clearTimeout(id);
     }
@@ -566,11 +646,12 @@ function Kiosk() {
             void enterFullscreen();
             setScreen("consent");
           }}
-          className="neon-stage flex h-full w-full flex-col items-center justify-center px-[8vw] text-center"
+          className="video-stage flex h-full w-full flex-col items-center justify-center px-[8vw] text-center"
         >
+          <video ref={attractRef} muted playsInline className="attract-camera absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
+          <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
-          <NeonButterfly className="absolute left-[10vw] top-[14vh] w-[28vw]" />
-          <NeonButterfly className="absolute bottom-[16vh] right-[8vw] w-[18vw]" delay="-4s" reverse />
+          <ButterflyVideo className="butterfly-film absolute inset-0" />
           <p className="relative mb-[3vh] text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">
             {m.attractKicker}
           </p>
@@ -697,7 +778,7 @@ function Kiosk() {
                 key={fallbackUrl}
                 src={fallbackUrl}
                 alt="Portret transformat"
-                className={`${prevFallbackUrl ? "fade-in-quick" : "fade-in-slow"} absolute inset-0 h-full w-full scale-x-[-1] object-cover`}
+                className={`${prevFallbackUrl ? "fade-in-quick" : "portrait-reveal"} absolute inset-0 h-full w-full scale-x-[-1] object-cover`}
               />
             )}
             {settings.fallbackMode && mirrorStatus === "publishing" && (
@@ -737,12 +818,16 @@ function Kiosk() {
       )}
 
       {screen === "choice" && (
-        <section className="neon-stage relative flex h-full w-full flex-col items-center justify-center px-[8vw] text-center">
+        <section className="video-stage relative flex h-full w-full flex-col items-center justify-center px-[8vw] text-center">
+          <video ref={choiceRef} muted playsInline className="absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
+          {smileUrl && (
+            <img src={smileUrl} alt="Portretul vizitatorului zâmbind" className="portrait-reveal absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
+          )}
+          <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
-          <NeonButterfly className="absolute left-[8vw] top-[22vh] w-[19vw]" />
-          <NeonButterfly className="absolute bottom-[20vh] right-[9vw] w-[15vw]" delay="-3s" reverse />
-          <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">{m.choiceKicker}</p>
-          <h2 className="neon-title mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">{m.choiceTitle}</h2>
+          <ButterflyVideo className="butterfly-film absolute inset-0 opacity-70" />
+          <p className="relative z-10 text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">{m.choiceKicker}</p>
+          <h2 className="neon-title relative z-10 mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">{m.choiceTitle}</h2>
         </section>
       )}
 
