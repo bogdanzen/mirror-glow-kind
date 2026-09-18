@@ -1,6 +1,70 @@
 import { FALLBACK_MODELS, FALLBACK_PROMPT } from "./bald";
 
+/** Every visible line of copy, editable from the admin panel. */
+export type MirrorMessages = {
+  attractKicker: string;
+  attractTitle: string;
+  attractSubtitle: string;
+  attractCta: string;
+  consentTitle: string;
+  consentBody: string;
+  consentCheckbox: string;
+  consentContinue: string;
+  consentDecline: string;
+  framingKicker: string;
+  framingTitle: string;
+  framingCaption: string;
+  mirrorKicker: string;
+  mirrorTitle: string;
+  mirrorFooter: string;
+  mirrorWorking: string;
+  choiceKicker: string;
+  choiceTitle: string;
+  healthyTitle: string;
+  healthyBody: string;
+  finalKicker: string;
+  finalTitleTop: string;
+  finalTitleBottom: string;
+  finalSubtitle: string;
+  finalQrLabel: string;
+  finalOptions: string;
+  finalPresence: string;
+};
+
+export const DEFAULT_MESSAGES: MirrorMessages = {
+  attractKicker: "Vertical Freedom prezintă",
+  attractTitle: "TE VEZI?",
+  attractSubtitle: "Privește-te.\nDoar zece secunde.",
+  attractCta: "Atinge ecranul pentru a începe",
+  consentTitle: "Înainte de a începe",
+  consentBody:
+    "Imaginea ta este procesată live, în cloud, doar în memorie.\nNu se salvează nimic. Nimic nu te identifică.\nPoți pleca oricând — totul dispare în aceeași secundă.",
+  consentCheckbox: "Am citit și sunt de acord.",
+  consentContinue: "Continuă",
+  consentDecline: "Renunț",
+  framingKicker: "Te vezi?",
+  framingTitle: "Privește-te 10 secunde.",
+  framingCaption: "Un moment doar al tău",
+  mirrorKicker: "Dacă mâine totul s-ar schimba?",
+  mirrorTitle: "Ce ai fi vrut să nu mai amâni?",
+  mirrorFooter: "Vezi o posibilă versiune vulnerabilă a ta. Realitatea poate fi imprevizibilă.",
+  mirrorWorking: "Se transformă imaginea…",
+  choiceKicker: "Realitatea poate fi imprevizibilă",
+  choiceTitle: "ÎNCĂ POȚI ALEGE.",
+  healthyTitle: "Prevenția începe înainte să doară.",
+  healthyBody: "Fă-ți controalele.\nAscultă-ți corpul.\nAi grijă de tine.",
+  finalKicker: "Împreună pentru viață",
+  finalTitleTop: "VERTICAL",
+  finalTitleBottom: "FREEDOM",
+  finalSubtitle: "Alege viața înainte să te oblige viața să alegi.",
+  finalQrLabel: "Scanează și alege drumul tău",
+  finalOptions: "Informează-te\nFă-ți controalele\nIntră în comunitate\nSusține prevenția",
+  finalPresence: "Mai ești aici? Atinge ecranul",
+};
+
 export type MirrorSettings = {
+  /** All on-screen copy. */
+  messages: MirrorMessages;
   prompt: string;
   width: number;
   height: number;
