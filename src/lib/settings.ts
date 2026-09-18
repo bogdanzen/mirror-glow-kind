@@ -127,6 +127,7 @@ export const DEFAULT_PROMPT =
   "ultra sharp photorealistic close-up portrait of the exact same person, completely bald: smooth hairless scalp with no hair and no stubble, clean-shaven face, no beard, no moustache, very thin almost invisible eyebrows, no eyelashes, slightly pale skin, undistorted natural facial proportions, identical face shape, identical eyes, nose and mouth, same expression, same clothes, same background and lighting unchanged, crisp fine skin texture and pores, studio-grade clarity, high detail, professional documentary photograph, sharp focus, no warping, no melting, no extra limbs, no blur";
 
 export const DEFAULT_SETTINGS: MirrorSettings = {
+  messages: DEFAULT_MESSAGES,
   prompt: DEFAULT_PROMPT,
   width: 512,
   height: 512,
