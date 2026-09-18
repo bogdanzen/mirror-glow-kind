@@ -221,6 +221,8 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
 
   const render = () => {
     raf = requestAnimationFrame(render);
+    const canvas = surface;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const now = performance.now();
