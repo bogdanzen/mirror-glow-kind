@@ -123,6 +123,8 @@ export type MirrorSettings = {
   falSteps: number;
   /** Fixed seed: keeps every generated head the same person. */
   falSeed: number;
+  /** Extra detail appended to the fixed SDXL bald prompt. */
+  sdxlDetail: string;
   /** "portrait" = one held AI portrait, "delayed" = delayed video + pasted head. */
   mirrorEngine: "portrait" | "delayed";
   /** How far behind real time the delayed mirror runs. */
@@ -194,6 +196,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   falStrength: 0.45,
   falSteps: 6,
   falSeed: 7331,
+  sdxlDetail: "",
   mirrorEngine: "portrait",
   delayMs: 2000,
   genFps: 2,
@@ -248,6 +251,7 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
   };
   merged.falSeed = Math.round(clamp(merged.falSeed, 1, 2147483647, DEFAULT_SETTINGS.falSeed));
+  merged.sdxlDetail = String(merged.sdxlDetail ?? "");
   merged.mirrorEngine = merged.mirrorEngine === "delayed" ? "delayed" : "portrait";
   merged.delayMs = Math.round(clamp(merged.delayMs, 500, 4000, DEFAULT_SETTINGS.delayMs));
   merged.genFps = clamp(merged.genFps, 0.5, 4, DEFAULT_SETTINGS.genFps);
@@ -342,6 +346,43 @@ export function appendSessionLog(entry: SessionLogEntry) {
   } catch {
     /* ignore */
   }
+}
+
+/* ---------- Measured generation time per model ---------- */
+
+const TIMING_KEY = "mirror.timings.v1";
+
+export type ModelTiming = { lastMs: number; avgMs: number; runs: number; at: number };
+
+export function readModelTimings(): Record<string, ModelTiming> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(TIMING_KEY) ?? "{}") as Record<
+      string,
+      ModelTiming
+    >;
+  } catch {
+    return {};
+  }
+}
+
+/** Records how long one image took, so the panel can show the fastest model. */
+export function recordModelTiming(model: string, ms: number) {
+  if (typeof window === "undefined" || !model || !Number.isFinite(ms)) return;
+  const all = readModelTimings();
+  const prev = all[model];
+  const runs = (prev?.runs ?? 0) + 1;
+  const avg = prev ? Math.round((prev.avgMs * prev.runs + ms) / runs) : Math.round(ms);
+  all[model] = { lastMs: Math.round(ms), avgMs: avg, runs, at: Date.now() };
+  try {
+    window.localStorage.setItem(TIMING_KEY, JSON.stringify(all));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearModelTimings() {
+  if (typeof window !== "undefined") window.localStorage.removeItem(TIMING_KEY);
 }
 
 export function clearSessionLog() {

@@ -142,6 +142,12 @@ export const FAL_MODELS = [
 export const SDXL_HEAD_PROMPT =
   "photorealistic portrait of the same person, completely bald, smooth hairless scalp, no eyebrows, no eyelashes, clean shaven, pale tired skin, natural skin texture, same face, same lighting, same background, sharp focus, documentary photo";
 
+/** The fixed base above, plus whatever detail the operator adds in the panel. */
+export function sdxlPrompt(detail?: string): string {
+  const extra = (detail ?? "").trim();
+  return extra ? `${SDXL_HEAD_PROMPT}, ${extra}` : SDXL_HEAD_PROMPT;
+}
+
 export const SDXL_NEGATIVE_PROMPT =
   "hair, hairline, stubble, wig, hat, eyebrows, beard, moustache, cartoon, illustration, painting, distorted face, deformed, extra head, blurry, oversaturated, plastic skin";
 

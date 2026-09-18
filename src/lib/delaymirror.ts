@@ -81,6 +81,7 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
   const heads: Head[] = [];
   let smoothed: HeadBox | null = null;
   let detectorReady = false;
+  let lastDetectionAt = 0;
   let lastLatency = 0;
   let renderFps = 0;
   let previousHead: Head | null = null;
@@ -109,8 +110,14 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
       });
       const now = performance.now();
       const detected = await detectHead(bitmap, width, height, now, options.headMargin);
+      if (detected) lastDetectionAt = now;
       smoothed = detected ? smoothBox(smoothed, detected) : smoothed;
-      const box = smoothed ?? (detectorReady ? null : fallbackHeadBox(width, height));
+      // Never leave generation without a crop: if tracking has not produced a
+      // box within a second and a half, use the centred head area instead.
+      const box =
+        smoothed && now - lastDetectionAt < 2000
+          ? smoothed
+          : (smoothed ?? fallbackHeadBox(width, height));
       frames.push({ t: now, bitmap, box });
       // Keep a little more than the delay window.
       const cutoff = now - options.delayMs - 1000;

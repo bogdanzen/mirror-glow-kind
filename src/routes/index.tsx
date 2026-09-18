@@ -8,6 +8,7 @@ import {
   appendSessionLog,
   bumpSessionCounter,
   loadSettings,
+  recordModelTiming,
   saveSettings,
   type MirrorSettings,
 } from "@/lib/settings";
@@ -204,7 +205,7 @@ function Kiosk() {
     // regenerated bald in that window, then pasted back onto the real frame.
     if (current.mirrorEngine === "delayed") {
       try {
-        const [{ startDelayMirror }, { falHead, SDXL_HEAD_PROMPT, SDXL_NEGATIVE_PROMPT }] =
+        const [{ startDelayMirror }, { falHead, sdxlPrompt, SDXL_NEGATIVE_PROMPT }] =
           await Promise.all([import("@/lib/delaymirror"), import("@/lib/bald")]);
         const camera = cameraRef.current ?? (await startCamera());
         const feed = document.createElement("video");
@@ -226,10 +227,11 @@ function Kiosk() {
           headMargin: current.headMargin,
           feather: current.featherPx,
           debug: current.headDebug,
-          generate: (file, signal) =>
-            falHead(
+          generate: async (file, signal) => {
+            const t = performance.now();
+            const url = await falHead(
               file,
-              SDXL_HEAD_PROMPT,
+              sdxlPrompt(current.sdxlDetail),
               {
                 key: current.falKey,
                 model: current.falModel,
@@ -240,7 +242,10 @@ function Kiosk() {
                 negativePrompt: SDXL_NEGATIVE_PROMPT,
               },
               signal,
-            ),
+            );
+            recordModelTiming(current.falModel, performance.now() - t);
+            return url;
+          },
           onFirstHead: () => {
             if (fallbackCancelRef.current) return;
             setMirrorStatus("live");
@@ -303,6 +308,9 @@ function Kiosk() {
         setFallbackUrl(url);
         setMirrorStatus("live");
         if (isFinal) finalFallbackRef.current = url;
+        if (isFinal) {
+          recordModelTiming(fal ? current.falModel : current.fallbackModel, performance.now() - t0);
+        }
         if (isFinal && !logged) {
           logged = true;
           appendSessionLog({

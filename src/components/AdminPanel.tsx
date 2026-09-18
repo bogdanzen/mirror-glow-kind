@@ -7,6 +7,7 @@ import {
   clearSessionLog,
   readSessionCounter,
   readSessionLog,
+  readModelTimings,
   saveSettings,
   type MirrorSettings,
   type SessionLogEntry,
@@ -85,6 +86,13 @@ export function AdminPanel({
 
   const set = <K extends keyof MirrorSettings>(k: K, v: MirrorSettings[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
+
+  // Measured generation time per model, so the fastest one is obvious.
+  const timings = unlocked ? readModelTimings() : {};
+  const timing = (model: string) => {
+    const t = timings[model];
+    return t ? `${(t.avgMs / 1000).toFixed(1)} s` : "—";
+  };
 
   const apply = (next: MirrorSettings) => {
     saveSettings(next);
@@ -726,9 +734,21 @@ export function AdminPanel({
                         }`}
                       >
                         {text}
+                        <span className="ml-2 text-xs opacity-70">{timing(value)}</span>
                       </button>
                     ))}
                   </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Durata afișată e media măsurată pe acest ecran, pentru o imagine.
+                  </p>
+
+                  <label className={label}>Detalii prompt (se adaugă la promptul fix de ras)</label>
+                  <textarea
+                    className={`${field} min-h-20 resize-none`}
+                    placeholder="ex: lumină rece, privire serioasă"
+                    value={draft.sdxlDetail}
+                    onChange={(e) => set("sdxlDetail", e.target.value)}
+                  />
 
                   <label className={label}>
                     Intensitate transformare: {draft.falStrength.toFixed(2)}
@@ -799,9 +819,13 @@ export function AdminPanel({
                         }`}
                       >
                         {text}
+                        <span className="ml-2 text-xs opacity-70">{timing(value)}</span>
                       </button>
                     ))}
                   </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Durata măsurată pentru o imagine, pe acest ecran.
+                  </p>
                 </>
               )}
 
