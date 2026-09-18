@@ -456,18 +456,17 @@ function Kiosk() {
           <NeonButterfly className="absolute left-[10vw] top-[14vh] w-[28vw]" />
           <NeonButterfly className="absolute bottom-[16vh] right-[8vw] w-[18vw]" delay="-4s" reverse />
           <p className="relative mb-[3vh] text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">
-            Vertical Freedom prezintă
+            {m.attractKicker}
           </p>
           <h1 className="neon-title fade-in-slow relative font-display text-[clamp(4.5rem,14vw,13rem)] leading-[0.86]">
-            TE VEZI?
+            {m.attractTitle}
           </h1>
-          <p className="fade-in-slow relative mt-[5vh] max-w-[24ch] text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug text-foreground/85">
-            Privește-te.
-            <br />Doar zece secunde.
+          <p className="fade-in-slow relative mt-[5vh] max-w-[24ch] whitespace-pre-line text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug text-foreground/85">
+            {m.attractSubtitle}
           </p>
           <span className="relative mt-[6vh] block h-px w-[22vmin] bg-primary" />
           <p className="breathe relative mt-[6vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
-            Atinge ecranul pentru a începe
+            {m.attractCta}
           </p>
         </section>
       )}
