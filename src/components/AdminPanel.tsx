@@ -565,6 +565,91 @@ export function AdminPanel({
           </button>
           {draft.fallbackMode && (
             <>
+              <label className={label}>Motor imagine</label>
+              <div className="flex gap-3">
+                {(
+                  [
+                    ["lovable", "Model pe server (fidelitate maximă)"],
+                    ["fal", "Diffusion flash (fal.ai, sub o secundă)"],
+                  ] as const
+                ).map(([value, text]) => (
+                  <button
+                    key={value}
+                    onClick={() => set("fallbackProvider", value)}
+                    className={`border px-5 py-3 text-left ${
+                      draft.fallbackProvider === value
+                        ? "border-primary text-primary"
+                        : "border-foreground/20 text-muted-foreground"
+                    }`}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+
+              {draft.fallbackProvider === "fal" && (
+                <>
+                  <label className={label}>Cheie API fal.ai</label>
+                  <input
+                    className={field}
+                    type="password"
+                    placeholder="key_id:key_secret"
+                    value={draft.falKey}
+                    onChange={(e) => set("falKey", e.target.value)}
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Se ia din fal.ai → Keys. Dacă rămâne gol, se folosește cheia FAL_KEY salvată pe server.
+                  </p>
+
+                  <label className={label}>Model flash</label>
+                  <div className="flex flex-wrap gap-3">
+                    {(
+                      [
+                        ["fal-ai/fast-lcm-diffusion/image-to-image", "LCM (cel mai rapid)"],
+                        ["fal-ai/fast-sdxl/image-to-image", "SDXL rapid"],
+                        ["fal-ai/flux/schnell/image-to-image", "FLUX schnell"],
+                      ] as const
+                    ).map(([value, text]) => (
+                      <button
+                        key={value}
+                        onClick={() => set("falModel", value)}
+                        className={`border px-5 py-3 ${
+                          draft.falModel === value
+                            ? "border-primary text-primary"
+                            : "border-foreground/20 text-muted-foreground"
+                        }`}
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+
+                  <label className={label}>
+                    Intensitate transformare: {draft.falStrength.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min={0.1}
+                    max={1}
+                    step={0.05}
+                    value={draft.falStrength}
+                    onChange={(e) => set("falStrength", Number(e.target.value))}
+                    className="w-full accent-[--color-primary]"
+                  />
+
+                  <label className={label}>Pași de difuzie: {draft.falSteps}</label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={20}
+                    step={1}
+                    value={draft.falSteps}
+                    onChange={(e) => set("falSteps", Number(e.target.value))}
+                    className="w-full accent-[--color-primary]"
+                  />
+                </>
+              )}
+
               <label className={label}>Reîmprospătare portret</label>
               <div className="flex gap-3">
                 {(
