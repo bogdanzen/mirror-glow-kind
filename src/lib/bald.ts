@@ -178,6 +178,8 @@ export type BaldLoopOptions = {
   onFrame: (url: string, isFinal: boolean) => void;
   onError?: (error: Error) => void;
   signal: AbortSignal;
+  /** When present, the fast fal.ai model is used instead of the server model. */
+  fal?: FalOptions;
 };
 
 const sleep = (ms: number, signal: AbortSignal) =>
