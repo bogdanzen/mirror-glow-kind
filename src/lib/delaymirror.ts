@@ -308,9 +308,13 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
       frames.length = 0;
       heads.length = 0;
     },
+    attach: (next) => {
+      surface = next;
+    },
+    ready: () => heads.length > 0,
     snapshot: () => {
       try {
-        return canvas.toDataURL("image/jpeg", 0.92);
+        return surface?.toDataURL("image/jpeg", 0.92) ?? "";
       } catch {
         return "";
       }
