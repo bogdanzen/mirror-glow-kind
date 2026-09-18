@@ -524,9 +524,9 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between px-[7vw] py-[8vh]">
             <div>
-              <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">Te vezi?</p>
+              <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">{m.framingKicker}</p>
               <h2 className="mt-4 max-w-[9ch] font-display text-[clamp(3.8rem,11vw,10rem)] leading-[0.88] text-foreground">
-                Privește-te 10 secunde.
+                {m.framingTitle}
               </h2>
             </div>
             {countdown !== null && (
