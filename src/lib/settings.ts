@@ -175,6 +175,11 @@ const COUNTER_KEY = "mirror.sessions.v1";
  */
 export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings {
   const merged = { ...DEFAULT_SETTINGS, ...input };
+  const messages = { ...DEFAULT_MESSAGES, ...(input.messages ?? {}) };
+  for (const key of Object.keys(DEFAULT_MESSAGES) as (keyof MirrorMessages)[]) {
+    messages[key] = String(messages[key] ?? DEFAULT_MESSAGES[key]);
+  }
+  merged.messages = messages;
   const raw = merged.scopeDenoiseSteps as unknown;
   const list = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
   const steps = list
