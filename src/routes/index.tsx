@@ -333,75 +333,12 @@ function Kiosk() {
       // photorealistic bald portrait and held on screen.
       if (current.fallbackMode) {
         setDemo(false);
-        setFallbackUrl("");
-        setPrevFallbackUrl("");
-        fallbackUrlRef.current = "";
-        finalFallbackRef.current = "";
-        setStatusDetail("Se transformă imaginea…");
-        setMirrorStatus("publishing");
         if (mirrorRef.current) {
           mirrorRef.current.srcObject = camera;
           await mirrorRef.current.play().catch(() => undefined);
         }
-        try {
-          const { frameToFile, baldifyFrame, startBaldLoop } = await import("@/lib/bald");
-          // Let the camera settle and auto-expose before grabbing the frame.
-          await new Promise((r) => setTimeout(r, 1200));
-          const v = mirrorRef.current;
-          const t0 = performance.now();
-          let logged = false;
-          const show = (url: string, isFinal: boolean) => {
-            if (cancelled) return;
-            if (fallbackUrlRef.current) setPrevFallbackUrl(fallbackUrlRef.current);
-            fallbackUrlRef.current = url;
-            setFallbackUrl(url);
-            setMirrorStatus("live");
-            if (isFinal) finalFallbackRef.current = url;
-            if (isFinal && !logged) {
-              logged = true;
-              appendSessionLog({
-                at: Date.now(),
-                status: "demo",
-                latencyMs: Math.round(performance.now() - t0),
-              });
-            }
-          };
-
-          if (current.fallbackRefresh === "off") {
-            const file = v ? frameToFile(v) : null;
-            if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
-            await baldifyFrame(
-              file,
-              current.fallbackPrompt,
-              show,
-              undefined,
-              current.fallbackModel,
-            );
-          } else {
-            const controller = new AbortController();
-            loopRef.current = controller;
-            startBaldLoop({
-              getFrame: () => (mirrorRef.current ? frameToFile(mirrorRef.current) : null),
-              prompt: current.fallbackPrompt,
-              model: current.fallbackModel,
-              concurrency: current.fallbackRefresh === "fast" ? 2 : 1,
-              onFrame: show,
-              onError: (err) => {
-                if (cancelled || logged) return;
-                appendSessionLog({ at: Date.now(), status: "error", error: err.message });
-                setError(err.message);
-                setMirrorStatus("error");
-              },
-              signal: controller.signal,
-            });
-          }
-        } catch (e) {
-          if (!cancelled) {
-            appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
-            setError((e as Error).message);
-            setMirrorStatus("error");
-          }
-        }
+        // Usually already running since the countdown; this is the safety net.
+        void startFallbackWork();
         return;
       }
 
