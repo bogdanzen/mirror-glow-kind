@@ -500,7 +500,7 @@ function Kiosk() {
           />
           <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between px-[7vw] py-[8vh]">
+          <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between px-[7vw] py-[8vh]">
             <div>
               <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">Te vezi?</p>
               <h2 className="mt-4 max-w-[9ch] font-display text-[clamp(3.8rem,11vw,10rem)] leading-[0.88] text-foreground">
@@ -573,17 +573,17 @@ function Kiosk() {
           </div>
           <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
-          <div className="pointer-events-none absolute inset-x-[7vw] top-[7vh]">
+          <div className="pointer-events-none absolute inset-x-[7vw] top-[7vh] z-10">
             <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.38em] text-primary">Dacă mâine totul s-ar schimba?</p>
             <h2 className="mt-4 max-w-[10ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">Te-ai privi la fel?</h2>
           </div>
 
           {demo && mirrorStatus === "live" && (
-            <span className="absolute right-[4vw] top-[4vh] border border-hairline px-4 py-2 text-[clamp(0.7rem,1.2vw,1rem)] tracking-[0.3em] text-muted-foreground">
+            <span className="absolute right-[4vw] top-[4vh] z-10 border border-hairline px-4 py-2 text-[clamp(0.7rem,1.2vw,1rem)] tracking-[0.3em] text-muted-foreground">
               DEMO
             </span>
           )}
-          <p className="absolute bottom-[6vh] left-[7vw] max-w-[18ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Realitatea poate fi imprevizibilă.</p>
+          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[18ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Realitatea poate fi imprevizibilă.</p>
         </section>
       )}
 
@@ -603,10 +603,10 @@ function Kiosk() {
           <div className="video-grade video-grade-soft" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute bottom-[13vh] right-[7vw] w-[14vw]" />
-          <div className="absolute left-[7vw] top-[8vh] max-w-[78vw]">
+          <div className="absolute left-[7vw] top-[8vh] z-10 max-w-[78vw]">
             <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">Prevenția începe înainte să doară.</h2>
           </div>
-          <p className="absolute bottom-[8vh] left-[7vw] max-w-[24ch] text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
+          <p className="absolute bottom-[8vh] left-[7vw] z-10 max-w-[24ch] text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
             Fă-ți controalele.<br />Ascultă-ți corpul.<br />Ai grijă de tine.
           </p>
         </section>
