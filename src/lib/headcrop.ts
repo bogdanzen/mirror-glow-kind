@@ -87,20 +87,22 @@ export function fallbackHeadBox(frameWidth: number, frameHeight: number): HeadBo
 export function smoothBox(previous: HeadBox | null, next: HeadBox, factor = 0.35): HeadBox {
   if (!previous) return next;
   const mix = (a: number, b: number) => a + (b - a) * factor;
-  return {
+  const smoothed: HeadBox = {
     x: mix(previous.x, next.x),
     y: mix(previous.y, next.y),
     size: mix(previous.size, next.size),
-    face:
-      previous.face && next.face
-        ? {
-            x: mix(previous.face.x, next.face.x),
-            y: mix(previous.face.y, next.face.y),
-            width: mix(previous.face.width, next.face.width),
-            height: mix(previous.face.height, next.face.height),
-          }
-        : next.face,
   };
+  if (previous.face && next.face) {
+    smoothed.face = {
+      x: mix(previous.face.x, next.face.x),
+      y: mix(previous.face.y, next.face.y),
+      width: mix(previous.face.width, next.face.width),
+      height: mix(previous.face.height, next.face.height),
+    };
+  } else if (next.face) {
+    smoothed.face = next.face;
+  }
+  return smoothed;
 }
 
 /** Detects the head in a frame; returns null when nobody is visible. */
