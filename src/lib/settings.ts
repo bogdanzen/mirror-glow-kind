@@ -34,7 +34,7 @@ export type MirrorMessages = {
 export const DEFAULT_MESSAGES: MirrorMessages = {
   attractKicker: "Vertical Freedom prezintă",
   attractTitle: "TE VEZI?",
-  attractSubtitle: "Privește-te.\nDoar zece secunde.",
+  attractSubtitle: "Privește-te.\nDoar 5 secunde.",
   attractCta: "Atinge ecranul pentru a începe",
   consentTitle: "Înainte de a începe",
   consentBody:
@@ -43,7 +43,7 @@ export const DEFAULT_MESSAGES: MirrorMessages = {
   consentContinue: "Continuă",
   consentDecline: "Renunț",
   framingKicker: "Te vezi?",
-  framingTitle: "Privește-te 10 secunde.",
+  framingTitle: "Privește-te 5 secunde.",
   framingCaption: "Un moment doar al tău",
   mirrorKicker: "Dacă mâine totul s-ar schimba?",
   mirrorTitle: "Ce ai fi vrut să nu mai amâni?",
@@ -73,6 +73,8 @@ export type MirrorSettings = {
   demoMode: boolean;
   storageEnabled: boolean;
   pin: string;
+  /** Duration of the opening camera countdown. */
+  framingSeconds: number;
   mirrorSeconds: number;
   captureSeconds: number;
   thanksSeconds: number;
@@ -164,6 +166,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   demoMode: false,
   storageEnabled: false,
   pin: "0000",
+  framingSeconds: 5,
   mirrorSeconds: 40,
   captureSeconds: 30,
   thanksSeconds: 15,
@@ -251,6 +254,9 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
   };
   merged.falSeed = Math.round(clamp(merged.falSeed, 1, 2147483647, DEFAULT_SETTINGS.falSeed));
+  merged.framingSeconds = Math.round(
+    clamp(merged.framingSeconds, 2, 10, DEFAULT_SETTINGS.framingSeconds),
+  );
   merged.sdxlDetail = String(merged.sdxlDetail ?? "");
   merged.mirrorEngine = merged.mirrorEngine === "delayed" ? "delayed" : "portrait";
   merged.delayMs = Math.round(clamp(merged.delayMs, 500, 4000, DEFAULT_SETTINGS.delayMs));

@@ -527,9 +527,10 @@ export function AdminPanel({
           ))}
         </select>
 
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-5 gap-6">
           {(
             [
+              ["framingSeconds", "Countdown (s)"],
               ["mirrorSeconds", "Oglindă (s)"],
               ["captureSeconds", "Captură (s)"],
               ["thanksSeconds", "Mulțumim (s)"],
@@ -541,6 +542,8 @@ export function AdminPanel({
               <input
                 className={field}
                 type="number"
+                min={k === "framingSeconds" ? 2 : undefined}
+                max={k === "framingSeconds" ? 10 : undefined}
                 value={draft[k]}
                 onChange={(e) => set(k, Number(e.target.value))}
               />

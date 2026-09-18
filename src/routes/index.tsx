@@ -65,7 +65,7 @@ function Kiosk() {
   const [admin, setAdmin] = useState(false);
   const [demo, setDemo] = useState(true);
   const [consent, setConsent] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(10);
+  const [countdown, setCountdown] = useState<number | null>(5);
   const [presenceSeconds, setPresenceSeconds] = useState(20);
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
@@ -382,7 +382,7 @@ function Kiosk() {
     return stream;
   }, []);
 
-  // CAMERA INTRO: the visitor gets ten quiet seconds with their real reflection.
+  // CAMERA INTRO: the configured quiet countdown with their real reflection.
   useEffect(() => {
     if (screen !== "framing") return;
     let cancelled = false;
@@ -397,10 +397,10 @@ function Kiosk() {
           await previewRef.current.play().catch(() => undefined);
         }
         if (cancelled) return;
-        // Use the ten quiet seconds to already render the portrait.
+        // Use the countdown to already render the portrait.
         const current = settingsRef.current;
         if (current.fallbackMode && !current.demoMode) void startFallbackWork();
-        let n = 10;
+        let n = current.framingSeconds;
         setCountdown(n);
         interval = window.setInterval(() => {
           n -= 1;
@@ -578,7 +578,9 @@ function Kiosk() {
             {m.attractTitle}
           </h1>
           <p className="fade-in-slow relative mt-[5vh] max-w-[24ch] whitespace-pre-line text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug text-foreground/85">
-            {m.attractSubtitle}
+            {m.attractSubtitle
+              .replace(/zece secunde/i, `${settings.framingSeconds} secunde`)
+              .replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}
           </p>
           <span className="relative mt-[6vh] block h-px w-[22vmin] bg-primary" />
           <p className="breathe relative mt-[6vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
@@ -642,7 +644,7 @@ function Kiosk() {
             <div>
               <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">{m.framingKicker}</p>
               <h2 className="mt-4 max-w-[9ch] font-display text-[clamp(3.8rem,11vw,10rem)] leading-[0.88] text-foreground">
-                {m.framingTitle}
+                {m.framingTitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}
               </h2>
             </div>
             {countdown !== null && (
