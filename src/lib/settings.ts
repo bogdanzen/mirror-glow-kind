@@ -172,6 +172,11 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   fallbackPrompt: FALLBACK_PROMPT,
   fallbackRefresh: "normal",
   fallbackModel: "openai/gpt-image-2.5-flare",
+  fallbackProvider: "lovable",
+  falKey: "",
+  falModel: "fal-ai/fast-lcm-diffusion/image-to-image",
+  falStrength: 0.45,
+  falSteps: 6,
 };
 
 
