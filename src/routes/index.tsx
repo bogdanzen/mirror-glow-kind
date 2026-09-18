@@ -8,6 +8,7 @@ import {
   appendSessionLog,
   bumpSessionCounter,
   loadSettings,
+  recordModelTiming,
   saveSettings,
   type MirrorSettings,
 } from "@/lib/settings";
