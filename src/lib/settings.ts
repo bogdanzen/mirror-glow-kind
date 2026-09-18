@@ -123,6 +123,8 @@ export type MirrorSettings = {
   falSteps: number;
   /** Fixed seed: keeps every generated head the same person. */
   falSeed: number;
+  /** Extra detail appended to the fixed SDXL bald prompt. */
+  sdxlDetail: string;
   /** "portrait" = one held AI portrait, "delayed" = delayed video + pasted head. */
   mirrorEngine: "portrait" | "delayed";
   /** How far behind real time the delayed mirror runs. */
