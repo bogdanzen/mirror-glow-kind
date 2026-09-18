@@ -87,6 +87,13 @@ export function AdminPanel({
   const set = <K extends keyof MirrorSettings>(k: K, v: MirrorSettings[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
 
+  // Measured generation time per model, so the fastest one is obvious.
+  const timings = unlocked ? readModelTimings() : {};
+  const timing = (model: string) => {
+    const t = timings[model];
+    return t ? `${(t.avgMs / 1000).toFixed(1)} s` : "—";
+  };
+
   const apply = (next: MirrorSettings) => {
     saveSettings(next);
     onChange(next);
