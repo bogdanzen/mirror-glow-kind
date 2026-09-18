@@ -175,19 +175,38 @@
   width: 100%;
   overflow: visible;
   stroke: currentColor;
-  stroke-width: 1.4;
+  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
+.neon-butterfly .butterfly-outline {
+  stroke-width: 1.9;
+}
+
+.neon-butterfly .butterfly-inner {
+  stroke-width: 1.1;
+  opacity: 0.75;
+}
+
+.neon-butterfly .butterfly-vein {
+  stroke-width: 0.9;
+  opacity: 0.6;
+}
+
+.neon-butterfly .butterfly-spot {
+  stroke-width: 1.1;
+  opacity: 0.85;
+}
+
 .butterfly-wing {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: butterfly-wing 2.8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+  transform-origin: 100px 78px;
+  animation: butterfly-wing 3.4s cubic-bezier(0.37, 0, 0.63, 1) infinite;
 }
 
 .butterfly-wing-right {
-  animation-delay: -1.4s;
+  transform-origin: 100px 78px;
+  animation-name: butterfly-wing-right;
 }
 
 @keyframes mirror-fade {
