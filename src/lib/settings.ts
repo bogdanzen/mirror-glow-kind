@@ -196,6 +196,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   falStrength: 0.45,
   falSteps: 6,
   falSeed: 7331,
+  sdxlDetail: "",
   mirrorEngine: "portrait",
   delayMs: 2000,
   genFps: 2,
