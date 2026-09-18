@@ -38,7 +38,7 @@ export const DEFAULT_MESSAGES: MirrorMessages = {
   attractCta: "Atinge ecranul pentru a începe",
   consentTitle: "Înainte de a începe",
   consentBody:
-    "Imaginea ta este procesată live, în cloud, doar în memorie.\nNu se salvează nimic. Nimic nu te identifică.\nPoți pleca oricând — totul dispare în aceeași secundă.",
+    "Imaginea ta este procesată live, în cloud, doar în memorie.\nDecupajul cu capul tău este trimis unui furnizor de inteligență artificială (fal.ai) doar pentru transformare, fără să fie păstrat.\nNu se salvează nimic. Nimic nu te identifică.\nPoți pleca oricând — totul dispare în aceeași secundă.",
   consentCheckbox: "Am citit și sunt de acord.",
   consentContinue: "Continuă",
   consentDecline: "Renunț",
