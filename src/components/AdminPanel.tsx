@@ -726,9 +726,21 @@ export function AdminPanel({
                         }`}
                       >
                         {text}
+                        <span className="ml-2 text-xs opacity-70">{timing(value)}</span>
                       </button>
                     ))}
                   </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Durata afișată e media măsurată pe acest ecran, pentru o imagine.
+                  </p>
+
+                  <label className={label}>Detalii prompt (se adaugă la promptul fix de ras)</label>
+                  <textarea
+                    className={`${field} min-h-20 resize-none`}
+                    placeholder="ex: lumină rece, privire serioasă"
+                    value={draft.sdxlDetail}
+                    onChange={(e) => set("sdxlDetail", e.target.value)}
+                  />
 
                   <label className={label}>
                     Intensitate transformare: {draft.falStrength.toFixed(2)}
