@@ -200,6 +200,80 @@ function Kiosk() {
     setStatusDetail(current.messages.mirrorWorking);
     setMirrorStatus("publishing");
 
+    // DELAYED MIRROR: the camera runs a couple of seconds late and the head is
+    // regenerated bald in that window, then pasted back onto the real frame.
+    if (current.mirrorEngine === "delayed") {
+      try {
+        const [{ startDelayMirror }, { falHead, SDXL_HEAD_PROMPT, SDXL_NEGATIVE_PROMPT }] =
+          await Promise.all([import("@/lib/delaymirror"), import("@/lib/bald")]);
+        const camera = cameraRef.current ?? (await startCamera());
+        const feed = document.createElement("video");
+        feed.muted = true;
+        feed.playsInline = true;
+        feed.srcObject = camera;
+        await feed.play().catch(() => undefined);
+        feedRef.current = feed;
+        setDelayed(true);
+        const started = performance.now();
+        let logged = false;
+        delayRef.current = startDelayMirror({
+          video: feed,
+          canvas: mirrorCanvasRef.current,
+          delayMs: current.delayMs,
+          bufferFps: 15,
+          genFps: current.genFps,
+          cropSize: current.cropSize,
+          headMargin: current.headMargin,
+          feather: current.featherPx,
+          debug: current.headDebug,
+          generate: (file, signal) =>
+            falHead(
+              file,
+              SDXL_HEAD_PROMPT,
+              {
+                key: current.falKey,
+                model: current.falModel,
+                strength: current.falStrength,
+                steps: current.falSteps,
+                seed: current.falSeed,
+                size: current.cropSize,
+                negativePrompt: SDXL_NEGATIVE_PROMPT,
+              },
+              signal,
+            ),
+          onFirstHead: () => {
+            if (fallbackCancelRef.current) return;
+            setMirrorStatus("live");
+            if (!logged) {
+              logged = true;
+              appendSessionLog({
+                at: Date.now(),
+                status: "demo",
+                latencyMs: Math.round(performance.now() - started),
+              });
+            }
+          },
+          onStats: (stats) =>
+            setStatusDetail(
+              `${stats.renderFps} fps · cap nou la ${stats.lastLatencyMs} ms · ${
+                stats.detector ? "urmărire activă" : "fără detector"
+              }`,
+            ),
+          onError: (err) => {
+            if (fallbackCancelRef.current) return;
+            appendSessionLog({ at: Date.now(), status: "error", error: err.message });
+            setError(err.message);
+            setMirrorStatus("error");
+          },
+        });
+      } catch (e) {
+        appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+        setError((e as Error).message);
+        setMirrorStatus("error");
+      }
+      return;
+    }
+
     try {
       const { frameToFile, baldifyFrame, startBaldLoop, falFrame } = await import("@/lib/bald");
       const fal =
