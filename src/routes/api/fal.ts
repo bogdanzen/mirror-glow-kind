@@ -40,6 +40,13 @@ export const Route = createFileRoute("/api/fal")({
             num_images: 1,
             sync_mode: true,
             enable_safety_checker: false,
+            ...(negative ? { negative_prompt: negative } : {}),
+            // A fixed seed keeps every generated head consistent, so the
+            // delayed mirror does not flicker between different faces.
+            ...(Number.isFinite(seed) && seed > 0 ? { seed } : {}),
+            ...(Number.isFinite(size) && size > 0
+              ? { image_size: { width: size, height: size } }
+              : {}),
           }),
         });
 
