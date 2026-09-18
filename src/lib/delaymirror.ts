@@ -72,7 +72,8 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle {
-  const { video, canvas, generate } = options;
+  const { video, generate } = options;
+  let surface: HTMLCanvasElement | null = options.canvas ?? null;
   const controller = new AbortController();
   const { signal } = controller;
 
