@@ -500,7 +500,7 @@ function Kiosk() {
               consent ? "text-primary" : "text-muted-foreground/40"
             }`}
           >
-            Continuă
+            {m.consentContinue}
           </button>
 
           <div className="mt-[5vh] flex items-center justify-between text-[clamp(0.85rem,1.6vw,1.3rem)] text-muted-foreground">
