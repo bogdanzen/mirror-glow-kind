@@ -614,8 +614,8 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute left-[8vw] top-[22vh] w-[19vw]" />
           <NeonButterfly className="absolute bottom-[20vh] right-[9vw] w-[15vw]" delay="-3s" reverse />
-          <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">Realitatea poate fi imprevizibilă</p>
-          <h2 className="neon-title mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">ÎNCĂ POȚI ALEGE.</h2>
+          <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">{m.choiceKicker}</p>
+          <h2 className="neon-title mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">{m.choiceTitle}</h2>
         </section>
       )}
 
