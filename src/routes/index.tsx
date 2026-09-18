@@ -155,9 +155,88 @@ function Kiosk() {
     setPrevFallbackUrl("");
     fallbackUrlRef.current = "";
     finalFallbackRef.current = "";
+    fallbackStartedRef.current = false;
+    fallbackCancelRef.current = true;
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
+
+  /**
+   * Server portrait work. Started already during the ten-second countdown so
+   * the transformed face is on screen the moment the mirror opens.
+   */
+  const startFallbackWork = useCallback(async () => {
+    if (fallbackStartedRef.current) return;
+    fallbackStartedRef.current = true;
+    fallbackCancelRef.current = false;
+    const current = settingsRef.current;
+    setDemo(false);
+    setFallbackUrl("");
+    setPrevFallbackUrl("");
+    fallbackUrlRef.current = "";
+    finalFallbackRef.current = "";
+    setStatusDetail(current.messages.mirrorWorking);
+    setMirrorStatus("publishing");
+
+    try {
+      const { frameToFile, baldifyFrame, startBaldLoop } = await import("@/lib/bald");
+      // Whichever video element is currently showing the camera.
+      const pick = () => {
+        for (const v of [previewRef.current, mirrorRef.current]) {
+          if (v && v.videoWidth) return frameToFile(v);
+        }
+        return null;
+      };
+      // Let the camera settle and auto-expose before grabbing the frame.
+      await new Promise((r) => setTimeout(r, 1200));
+      const t0 = performance.now();
+      let logged = false;
+      const show = (url: string, isFinal: boolean) => {
+        if (fallbackCancelRef.current) return;
+        if (fallbackUrlRef.current) setPrevFallbackUrl(fallbackUrlRef.current);
+        fallbackUrlRef.current = url;
+        setFallbackUrl(url);
+        setMirrorStatus("live");
+        if (isFinal) finalFallbackRef.current = url;
+        if (isFinal && !logged) {
+          logged = true;
+          appendSessionLog({
+            at: Date.now(),
+            status: "demo",
+            latencyMs: Math.round(performance.now() - t0),
+          });
+        }
+      };
+
+      if (current.fallbackRefresh === "off") {
+        const file = pick();
+        if (!file) throw new Error("Nu am putut prelua imaginea de la cameră");
+        await baldifyFrame(file, current.fallbackPrompt, show, undefined, current.fallbackModel);
+      } else {
+        const controller = new AbortController();
+        loopRef.current = controller;
+        startBaldLoop({
+          getFrame: pick,
+          prompt: current.fallbackPrompt,
+          model: current.fallbackModel,
+          concurrency: current.fallbackRefresh === "fast" ? 2 : 1,
+          onFrame: show,
+          onError: (err) => {
+            if (fallbackCancelRef.current || logged) return;
+            appendSessionLog({ at: Date.now(), status: "error", error: err.message });
+            setError(err.message);
+            setMirrorStatus("error");
+          },
+          signal: controller.signal,
+        });
+      }
+    } catch (e) {
+      if (fallbackCancelRef.current) return;
+      appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+      setError((e as Error).message);
+      setMirrorStatus("error");
+    }
+  }, []);
 
   // Keep status fresh during the timed story. The final screen owns its
   // explicit 20-second presence check below.
