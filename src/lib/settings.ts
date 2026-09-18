@@ -212,6 +212,13 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.fallbackModel = FALLBACK_MODELS.includes(merged.fallbackModel as (typeof FALLBACK_MODELS)[number])
     ? merged.fallbackModel
     : DEFAULT_SETTINGS.fallbackModel;
+  merged.fallbackProvider = merged.fallbackProvider === "fal" ? "fal" : "lovable";
+  merged.falKey = String(merged.falKey ?? "");
+  merged.falModel = String(merged.falModel || DEFAULT_SETTINGS.falModel);
+  const strength = Number(merged.falStrength);
+  merged.falStrength = Number.isFinite(strength) ? Math.min(1, Math.max(0.1, strength)) : 0.45;
+  const falSteps = Math.round(Number(merged.falSteps));
+  merged.falSteps = Number.isFinite(falSteps) ? Math.min(20, Math.max(1, falSteps)) : 6;
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)
