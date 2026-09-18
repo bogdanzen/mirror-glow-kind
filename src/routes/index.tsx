@@ -639,15 +639,20 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute right-[7vw] top-[9vh] w-[24vw]" />
           <div className="relative">
-            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">Împreună pentru viață</p>
-            <h2 className="mt-3 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.82]">VERTICAL<br /><span className="text-primary">FREEDOM</span></h2>
-            <p className="mt-[4vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.4rem)] leading-snug text-foreground/85">Alege viața înainte să te oblige viața să alegi.</p>
+            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">{m.finalKicker}</p>
+            <h2 className="mt-3 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.82]">{m.finalTitleTop}<br /><span className="text-primary">{m.finalTitleBottom}</span></h2>
+            <p className="mt-[4vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.4rem)] leading-snug text-foreground/85">{m.finalSubtitle}</p>
           </div>
           <div className="relative mt-auto grid grid-cols-[minmax(0,1fr)_auto] items-end gap-[5vw]">
             <div className="min-w-0">
-              <p className="mb-[3vh] text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.28em] text-muted-foreground">Scanează și alege drumul tău</p>
+              <p className="mb-[3vh] text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.28em] text-muted-foreground">{m.finalQrLabel}</p>
               <div className="grid grid-cols-2 gap-x-[4vw] gap-y-[2vh] text-[clamp(0.9rem,1.7vw,1.5rem)]">
-                <span>Informează-te</span><span>Fă-ți controalele</span><span>Intră în comunitate</span><span>Susține prevenția</span>
+                {m.finalOptions
+                  .split("\n")
+                  .filter(Boolean)
+                  .map((option) => (
+                    <span key={option}>{option}</span>
+                  ))}
               </div>
               <button
                 onClick={() => {
