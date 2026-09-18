@@ -434,6 +434,8 @@ function Kiosk() {
     return () => window.clearInterval(id);
   }, [screen, goAttract]);
 
+  const m = settings.messages;
+
   return (
     <main className="relative h-dvh w-screen overflow-hidden bg-background text-foreground">
       <button
