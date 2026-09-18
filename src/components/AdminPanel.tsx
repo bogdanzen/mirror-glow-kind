@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  DEFAULT_MESSAGES,
   DEFAULT_SETTINGS,
   SCOPE_PIPELINES,
   appendSessionLog,
