@@ -281,6 +281,9 @@ function Kiosk() {
           await previewRef.current.play().catch(() => undefined);
         }
         if (cancelled) return;
+        // Use the ten quiet seconds to already render the portrait.
+        const current = settingsRef.current;
+        if (current.fallbackMode && !current.demoMode) void startFallbackWork();
         let n = 10;
         setCountdown(n);
         interval = window.setInterval(() => {
