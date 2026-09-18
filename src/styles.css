@@ -4,11 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * "The Mirror" design system.
- * Near-black warm background, warm off-white text, single coral accent.
- * Typography: Varela Round everywhere (loaded via <link> in __root.tsx).
- */
+/* Vertical Freedom: cinematic charcoal, warm porcelain and campaign pink. */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -41,30 +37,28 @@
 
 :root {
   --radius: 0rem;
-  /* Gala: ivory paper, ink type, gilded accent */
-  --background: oklch(0.985 0.006 85);
-  --foreground: oklch(0.24 0.018 60);
-  --card: oklch(0.97 0.008 85);
-  --card-foreground: oklch(0.24 0.018 60);
-  --popover: oklch(0.97 0.008 85);
-  --popover-foreground: oklch(0.24 0.018 60);
-  --primary: oklch(0.68 0.125 78);
-  --primary-foreground: oklch(0.99 0.004 85);
-  --secondary: oklch(0.94 0.012 85);
-  --secondary-foreground: oklch(0.32 0.02 70);
-  --muted: oklch(0.94 0.012 85);
-  --muted-foreground: oklch(0.52 0.022 75);
-  --accent: oklch(0.78 0.11 82);
-  --accent-foreground: oklch(0.24 0.018 60);
-  --destructive: oklch(0.55 0.18 25);
-  --destructive-foreground: oklch(0.99 0.004 85);
-  --hairline: oklch(0.87 0.025 82);
-  --border: oklch(0.87 0.025 82);
-  --input: oklch(0.87 0.025 82);
-  --ring: oklch(0.68 0.125 78);
-  --gold-1: oklch(0.86 0.09 90);
-  --gold-2: oklch(0.72 0.14 78);
-  --gold-3: oklch(0.55 0.11 62);
+  --background: oklch(0.105 0.012 348);
+  --foreground: oklch(0.955 0.012 345);
+  --card: oklch(0.145 0.016 348);
+  --card-foreground: oklch(0.955 0.012 345);
+  --popover: oklch(0.145 0.016 348);
+  --popover-foreground: oklch(0.955 0.012 345);
+  --primary: oklch(0.67 0.245 355);
+  --primary-foreground: oklch(0.98 0.008 345);
+  --secondary: oklch(0.22 0.025 348);
+  --secondary-foreground: oklch(0.94 0.015 345);
+  --muted: oklch(0.18 0.018 348);
+  --muted-foreground: oklch(0.69 0.03 348);
+  --accent: oklch(0.73 0.2 350);
+  --accent-foreground: oklch(0.11 0.012 348);
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-foreground: oklch(0.98 0.008 345);
+  --hairline: oklch(0.39 0.055 350 / 0.62);
+  --border: oklch(0.39 0.055 350 / 0.62);
+  --input: oklch(0.3 0.04 350);
+  --ring: oklch(0.67 0.245 355);
+  --qr-dark: #171015;
+  --qr-light: #f7edf2;
 }
 
 @layer base {
@@ -111,82 +105,89 @@
 
 /* Quick crossfade between consecutive AI portraits */
 @utility fade-in-quick {
-  animation: mirror-fade 400ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: mirror-fade 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @utility breathe {
-  animation: mirror-breathe 5.5s ease-in-out infinite;
+  animation: mirror-breathe 5.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 @utility drift {
-  animation: mirror-drift 28s ease-in-out infinite alternate;
+  animation: mirror-drift 28s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
 }
 
-/* Golden text: elegant gilded gradient */
-@utility gilded {
-  background-image: linear-gradient(
-    100deg,
-    var(--gold-3) 0%,
-    var(--gold-2) 22%,
-    var(--gold-1) 40%,
-    #fff7e2 48%,
-    var(--gold-1) 56%,
-    var(--gold-2) 76%,
-    var(--gold-3) 100%
-  );
-  background-size: 260% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gild-sweep 9s ease-in-out infinite;
+.neon-stage {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 50% 48%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 48%),
+    var(--background);
 }
 
-/* Slow golden ember rising */
-@utility ember {
-  animation: ember-rise var(--ember-duration, 18s) linear infinite;
+.video-stage {
+  isolation: isolate;
+  background: var(--background);
 }
 
-@utility veil {
-  animation: veil-sweep 14s ease-in-out infinite;
+.video-grade {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(to bottom, color-mix(in oklab, var(--background) 78%, transparent) 0%, transparent 30%, transparent 65%, color-mix(in oklab, var(--background) 76%, transparent) 100%),
+    radial-gradient(ellipse at center, transparent 42%, color-mix(in oklab, var(--background) 62%, transparent) 100%);
 }
 
-@keyframes gild-sweep {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+.video-grade-soft {
+  opacity: 0.72;
 }
 
-@keyframes ember-rise {
-  0% {
-    transform: translate3d(0, 12vh, 0) scale(0.6);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.9;
-  }
-  70% {
-    opacity: 0.55;
-  }
-  100% {
-    transform: translate3d(var(--ember-drift, 6vw), -92vh, 0) scale(1.15);
-    opacity: 0;
-  }
+.kiosk-noise {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.13;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
 }
 
-@keyframes veil-sweep {
-  0%,
-  100% {
-    transform: translate3d(-6%, 0, 0) scale(1.1);
-    opacity: 0.45;
-  }
-  50% {
-    transform: translate3d(6%, -3%, 0) scale(1.25);
-    opacity: 0.8;
-  }
+.neon-title {
+  color: var(--foreground);
+  text-shadow: 0 0 0.45em color-mix(in oklab, var(--primary) 42%, transparent);
+}
+
+.neon-butterfly {
+  z-index: 3;
+  color: var(--primary);
+  filter: drop-shadow(0 0 7px color-mix(in oklab, var(--primary) 78%, transparent));
+  animation: butterfly-flight 12s cubic-bezier(0.45, 0, 0.2, 1) infinite alternate;
+  transform-origin: center;
+}
+
+.neon-butterfly-reverse {
+  animation-direction: alternate-reverse;
+}
+
+.neon-butterfly svg {
+  width: 100%;
+  overflow: visible;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.butterfly-wing {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: butterfly-wing 2.8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+
+.butterfly-wing-right {
+  animation-delay: -1.4s;
 }
 
 @keyframes mirror-fade {
@@ -216,6 +217,33 @@
   }
   to {
     transform: translate3d(3%, 2%, 0) scale(1.14);
+  }
+}
+
+@keyframes butterfly-flight {
+  from {
+    transform: translate3d(-2vw, 2vh, 0) rotate(-4deg) scale(0.96);
+    opacity: 0.66;
+  }
+  to {
+    transform: translate3d(4vw, -3vh, 0) rotate(5deg) scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes butterfly-wing {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.72); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-slow,
+  .fade-in-quick,
+  .breathe,
+  .drift,
+  .neon-butterfly,
+  .butterfly-wing {
+    animation: none;
   }
 }
 
