@@ -8,6 +8,7 @@
 
 ## Done
 
+- [x] Opening countdown defaults to 5 seconds and is adjustable from 2–10 seconds in the control panel
 - [x] Official six-stage campaign timeline: 10-second reflection, 40-second AI portrait, choice, prevention, and final action screen
 - [x] Full-screen camera/AI presentation, black/hot-pink language, animated line butterflies, grain, QR options, and 20-second presence confirmation
 - [x] Single-owner warm-up coordinator (one download, one load, no storms)
