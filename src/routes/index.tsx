@@ -532,7 +532,7 @@ function Kiosk() {
             {countdown !== null && (
               <div className="self-end text-right">
                 <p className="font-display text-[clamp(7rem,22vw,20rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p>
-                <p className="text-[clamp(0.85rem,1.6vw,1.4rem)] uppercase tracking-[0.35em] text-foreground/70">Un moment doar al tău</p>
+                <p className="text-[clamp(0.85rem,1.6vw,1.4rem)] uppercase tracking-[0.35em] text-foreground/70">{m.framingCaption}</p>
               </div>
             )}
             {error && <p className="mt-6 text-primary">{error}</p>}
