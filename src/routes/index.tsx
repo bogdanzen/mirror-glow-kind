@@ -226,10 +226,11 @@ function Kiosk() {
           headMargin: current.headMargin,
           feather: current.featherPx,
           debug: current.headDebug,
-          generate: (file, signal) =>
-            falHead(
+          generate: async (file, signal) => {
+            const t = performance.now();
+            const url = await falHead(
               file,
-              SDXL_HEAD_PROMPT,
+              sdxlPrompt(current.sdxlDetail),
               {
                 key: current.falKey,
                 model: current.falModel,
