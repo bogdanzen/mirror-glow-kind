@@ -11,6 +11,8 @@ export type HeadBox = {
   x: number;
   y: number;
   size: number;
+  /** Detected face, relative to the square crop. Used to preserve real pixels. */
+  face?: { x: number; y: number; width: number; height: number };
 };
 
 const WASM_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
@@ -59,12 +61,19 @@ export function faceToHeadBox(
   const cy = face.originY + face.height / 2;
   const size = Math.max(face.width, face.height) * (1 + margin);
   // Faces sit low inside the skull; shift the square up so hair/scalp fits.
-  const y = cy - size * 0.58;
-  const x = cx - size / 2;
+  const finalSize = Math.min(size, Math.min(frameWidth, frameHeight));
+  const y = Math.max(0, Math.min(cy - finalSize * 0.58, frameHeight - finalSize));
+  const x = Math.max(0, Math.min(cx - finalSize / 2, frameWidth - finalSize));
   return {
-    x: Math.max(0, Math.min(x, frameWidth - size)),
-    y: Math.max(0, Math.min(y, frameHeight - size)),
-    size: Math.min(size, Math.min(frameWidth, frameHeight)),
+    x,
+    y,
+    size: finalSize,
+    face: {
+      x: face.originX - x,
+      y: face.originY - y,
+      width: face.width,
+      height: face.height,
+    },
   };
 }
 
@@ -78,11 +87,22 @@ export function fallbackHeadBox(frameWidth: number, frameHeight: number): HeadBo
 export function smoothBox(previous: HeadBox | null, next: HeadBox, factor = 0.35): HeadBox {
   if (!previous) return next;
   const mix = (a: number, b: number) => a + (b - a) * factor;
-  return {
+  const smoothed: HeadBox = {
     x: mix(previous.x, next.x),
     y: mix(previous.y, next.y),
     size: mix(previous.size, next.size),
   };
+  if (previous.face && next.face) {
+    smoothed.face = {
+      x: mix(previous.face.x, next.face.x),
+      y: mix(previous.face.y, next.face.y),
+      width: mix(previous.face.width, next.face.width),
+      height: mix(previous.face.height, next.face.height),
+    };
+  } else if (next.face) {
+    smoothed.face = next.face;
+  }
+  return smoothed;
 }
 
 /** Detects the head in a frame; returns null when nobody is visible. */

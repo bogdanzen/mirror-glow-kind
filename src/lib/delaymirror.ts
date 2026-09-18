@@ -204,7 +204,7 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
     if (!m) return;
     m.clearRect(0, 0, size, size);
     m.drawImage(head.img, 0, 0, size, size);
-    // Feathered oval so the paste has no visible border.
+    // First soften the outside of the generated head crop.
     const feather = Math.max(4, (options.feather / options.cropSize) * size);
     const grad = m.createRadialGradient(
       size / 2,
@@ -220,6 +220,49 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
     m.fillStyle = grad;
     m.fillRect(0, 0, size, size);
     m.globalCompositeOperation = "source-over";
+
+    // Preserve identity by removing the generated face from the overlay. The
+    // delayed camera frame below remains pixel-for-pixel visible through this
+    // opening; SDXL contributes only the scalp and hair around it.
+    if (box.face) {
+      const ratio = size / box.size;
+      const faceX = box.face.x * ratio;
+      const faceY = box.face.y * ratio;
+      const faceW = box.face.width * ratio;
+      const faceH = box.face.height * ratio;
+      const cx = faceX + faceW / 2;
+      // Begin just above the detected forehead and extend beyond the chin.
+      const cutTop = Math.max(0, faceY - faceH * 0.08);
+      const cutBottom = Math.min(size, faceY + faceH * 1.14);
+      const rx = Math.max(8, faceW * 0.62);
+      const ry = Math.max(8, (cutBottom - cutTop) * 0.58);
+      const cy = cutTop + (cutBottom - cutTop) / 2;
+      const edge = Math.max(3, Math.min(feather * 0.45, Math.min(rx, ry) * 0.2));
+
+      m.save();
+      m.globalCompositeOperation = "destination-out";
+      m.translate(cx, cy);
+      m.scale(rx / ry, 1);
+      const faceCut = m.createRadialGradient(0, 0, Math.max(1, ry - edge), 0, 0, ry);
+      faceCut.addColorStop(0, "rgba(0,0,0,1)");
+      faceCut.addColorStop(1, "rgba(0,0,0,0)");
+      m.fillStyle = faceCut;
+      m.beginPath();
+      m.arc(0, 0, ry, 0, Math.PI * 2);
+      m.fill();
+      m.restore();
+      m.globalCompositeOperation = "source-over";
+    } else {
+      // No confident detection: fail safely by showing only the generated
+      // crown, never a synthetic face.
+      m.globalCompositeOperation = "destination-in";
+      const crown = m.createLinearGradient(0, size * 0.24, 0, size * 0.5);
+      crown.addColorStop(0, "rgba(0,0,0,1)");
+      crown.addColorStop(1, "rgba(0,0,0,0)");
+      m.fillStyle = crown;
+      m.fillRect(0, 0, size, size * 0.5);
+      m.globalCompositeOperation = "source-over";
+    }
 
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -289,6 +332,15 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
       ctx.strokeStyle = "rgba(255,84,64,0.9)";
       ctx.lineWidth = 2;
       ctx.strokeRect(mapX(frame.box.x), mapY(frame.box.y), frame.box.size * scale, frame.box.size * scale);
+      if (frame.box.face) {
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.strokeRect(
+          mapX(frame.box.x + frame.box.face.x),
+          mapY(frame.box.y + frame.box.face.y),
+          frame.box.face.width * scale,
+          frame.box.face.height * scale,
+        );
+      }
       ctx.restore();
     }
   };
