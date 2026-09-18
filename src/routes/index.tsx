@@ -91,6 +91,9 @@ function Kiosk() {
   const sessionRef = useRef<MirrorSession | null>(null);
   /** Stops the repeating fallback transformation loop. */
   const loopRef = useRef<AbortController | null>(null);
+  /** The portrait work starts during the countdown, so it runs only once. */
+  const fallbackStartedRef = useRef(false);
+  const fallbackCancelRef = useRef(false);
   const idleRef = useRef<number>(Date.now());
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
