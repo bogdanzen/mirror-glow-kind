@@ -213,18 +213,16 @@ export function startBaldLoop(options: BaldLoopOptions): void {
       }
       try {
         const allowPartials = !firstDone && index === 0;
-        await baldifyFrame(
-          file,
-          prompt,
-          (url, isFinal) => {
-            if (signal.aborted) return;
-            if (isFinal) firstDone = true;
-            onFrame(url, isFinal);
-          },
-          signal,
-          model,
-          allowPartials,
-        );
+        const emit = (url: string, isFinal: boolean) => {
+          if (signal.aborted) return;
+          if (isFinal) firstDone = true;
+          onFrame(url, isFinal);
+        };
+        if (fal) {
+          await falFrame(file, prompt, fal, emit, signal);
+        } else {
+          await baldifyFrame(file, prompt, emit, signal, model, allowPartials);
+        }
         backoff = 2000;
       } catch (error) {
         if (signal.aborted) return;
