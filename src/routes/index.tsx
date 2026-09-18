@@ -422,8 +422,10 @@ function Kiosk() {
         await import("@/lib/bald");
       await new Promise((resolve) => setTimeout(resolve, 1200));
       if (controller.signal.aborted) return;
-      const source = mirrorRef.current ?? previewRef.current ?? attractRef.current;
-      if (!source?.videoWidth) throw new Error("Camera nu este pregătită pentru portretul final");
+      const source = [mirrorRef.current, feedRef.current, previewRef.current, attractRef.current].find(
+        (video) => Boolean(video?.videoWidth),
+      );
+      if (!source) throw new Error("Camera nu este pregătită pentru portretul final");
       const file = frameToFile(source);
       if (!file) throw new Error("Nu am putut prelua portretul final");
       const current = settingsRef.current;
