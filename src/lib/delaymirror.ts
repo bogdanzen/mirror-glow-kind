@@ -51,6 +51,10 @@ export type DelayMirrorOptions = {
 
 export type DelayMirrorHandle = {
   stop: () => void;
+  /** Hands the visible canvas over once the mirror screen is mounted. */
+  attach: (canvas: HTMLCanvasElement | null) => void;
+  /** Whether at least one generated head is available. */
+  ready: () => boolean;
   /** Current composed frame as a data URL, for the capture and QR. */
   snapshot: () => string;
 };
