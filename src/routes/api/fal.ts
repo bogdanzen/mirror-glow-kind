@@ -20,7 +20,13 @@ export const Route = createFileRoute("/api/fal")({
         const prompt = String(form.get("prompt") ?? "");
         const negative = String(form.get("negative_prompt") ?? "");
         const strength = Number(form.get("strength") ?? 0.45);
-        const steps = Number(form.get("steps") ?? 6);
+        const rawSteps = Number(form.get("steps") ?? 6);
+        // Lightning only accepts 1, 2, 4 or 8 steps; snap to the nearest one.
+        const steps = model.includes("lightning")
+          ? [1, 2, 4, 8].reduce((best, n) =>
+              Math.abs(n - rawSteps) < Math.abs(best - rawSteps) ? n : best,
+            )
+          : rawSteps;
         const seed = Number(form.get("seed") ?? 0);
         const size = Number(form.get("size") ?? 0);
 
