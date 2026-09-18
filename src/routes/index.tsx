@@ -155,6 +155,16 @@ function Kiosk() {
     if (session) void session.stop();
     loopRef.current?.abort();
     loopRef.current = null;
+    if (delayRef.current) {
+      finalFallbackRef.current = delayRef.current.snapshot() || finalFallbackRef.current;
+      delayRef.current.stop();
+      delayRef.current = null;
+    }
+    if (feedRef.current) {
+      feedRef.current.srcObject = null;
+      feedRef.current = null;
+    }
+    setDelayed(false);
   }, []);
 
   const goAttract = useCallback(() => {
