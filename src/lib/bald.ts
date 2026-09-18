@@ -140,7 +140,7 @@ export const FAL_MODELS = [
  * for GPT-image models confuses it and softens the result.
  */
 export const SDXL_HEAD_PROMPT =
-  "photorealistic image edit of this exact person, remove only the hair and create a completely bald smooth scalp, preserve the exact head shape, forehead, skin tone, camera angle and lighting, do not alter facial identity, expression, eyes, nose, mouth or jaw, natural skin texture, sharp documentary photograph";
+  "photorealistic image edit of this exact person with complete medical alopecia, completely bald smooth scalp, remove every strand of scalp hair and the entire hairline, remove both eyebrows completely, remove all eyelashes, remove beard, moustache, sideburns and every trace of facial hair or stubble, clean bare natural skin everywhere except the eyes, nose and lips, preserve the exact head shape, skin tone, camera angle and lighting, do not alter facial identity, expression, eyes, nose or mouth, natural skin texture, sharp serious clinical documentary photograph";
 
 /** The fixed base above, plus whatever detail the operator adds in the panel. */
 export function sdxlPrompt(detail?: string): string {
@@ -149,7 +149,7 @@ export function sdxlPrompt(detail?: string): string {
 }
 
 export const SDXL_NEGATIVE_PROMPT =
-  "hair, hairline, scalp stubble, wig, hat, different person, changed identity, changed expression, changed eyes, changed nose, changed mouth, changed jaw, cartoon, illustration, painting, distorted face, deformed, extra head, blurry, oversaturated, plastic skin";
+  "hair, hairline, scalp hair, eyebrows, eyelashes, beard, moustache, mustache, sideburns, facial hair, stubble, five o'clock shadow, wig, hat, different person, changed identity, changed expression, changed eyes, changed nose, changed mouth, changed jaw, cartoon, illustration, painting, distorted face, deformed, extra head, blurry, oversaturated, plastic skin";
 
 export type FalOptions = {
   key: string;

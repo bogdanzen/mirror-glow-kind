@@ -221,36 +221,40 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
     m.fillRect(0, 0, size, size);
     m.globalCompositeOperation = "source-over";
 
-    // Preserve identity by removing the generated face from the overlay. The
-    // delayed camera frame below remains pixel-for-pixel visible through this
-    // opening; SDXL contributes only the scalp and hair around it.
+    // Preserve only the identity-defining features from the camera. Keeping a
+    // full face-shaped opening also keeps the real eyebrows, beard and hairline,
+    // so punch out small openings for the eyes, nose and mouth instead. Every
+    // other pixel in the head area comes from the hairless SDXL result.
     if (box.face) {
       const ratio = size / box.size;
       const faceX = box.face.x * ratio;
       const faceY = box.face.y * ratio;
       const faceW = box.face.width * ratio;
       const faceH = box.face.height * ratio;
-      const cx = faceX + faceW / 2;
-      // Begin just above the detected forehead and extend beyond the chin.
-      const cutTop = Math.max(0, faceY - faceH * 0.08);
-      const cutBottom = Math.min(size, faceY + faceH * 1.14);
-      const rx = Math.max(8, faceW * 0.62);
-      const ry = Math.max(8, (cutBottom - cutTop) * 0.58);
-      const cy = cutTop + (cutBottom - cutTop) / 2;
-      const edge = Math.max(3, Math.min(feather * 0.45, Math.min(rx, ry) * 0.2));
+      const punchFeature = (cx: number, cy: number, rx: number, ry: number) => {
+        const edge = Math.max(2, Math.min(feather * 0.22, Math.min(rx, ry) * 0.35));
+        m.save();
+        m.globalCompositeOperation = "destination-out";
+        m.translate(cx, cy);
+        m.scale(rx / ry, 1);
+        const cut = m.createRadialGradient(0, 0, Math.max(1, ry - edge), 0, 0, ry);
+        cut.addColorStop(0, "rgba(0,0,0,1)");
+        cut.addColorStop(1, "rgba(0,0,0,0)");
+        m.fillStyle = cut;
+        m.beginPath();
+        m.arc(0, 0, ry, 0, Math.PI * 2);
+        m.fill();
+        m.restore();
+      };
 
-      m.save();
-      m.globalCompositeOperation = "destination-out";
-      m.translate(cx, cy);
-      m.scale(rx / ry, 1);
-      const faceCut = m.createRadialGradient(0, 0, Math.max(1, ry - edge), 0, 0, ry);
-      faceCut.addColorStop(0, "rgba(0,0,0,1)");
-      faceCut.addColorStop(1, "rgba(0,0,0,0)");
-      m.fillStyle = faceCut;
-      m.beginPath();
-      m.arc(0, 0, ry, 0, Math.PI * 2);
-      m.fill();
-      m.restore();
+      // Deliberately sit below the brow line. This keeps the real irises and
+      // eyelids, but lets the generated skin cover both eyebrows completely.
+      punchFeature(faceX + faceW * 0.32, faceY + faceH * 0.43, faceW * 0.16, faceH * 0.072);
+      punchFeature(faceX + faceW * 0.68, faceY + faceH * 0.43, faceW * 0.16, faceH * 0.072);
+      punchFeature(faceX + faceW * 0.5, faceY + faceH * 0.59, faceW * 0.13, faceH * 0.18);
+      // The mouth opening stops well above the chin, so moustache and beard
+      // pixels remain covered by the clean-shaven generated result.
+      punchFeature(faceX + faceW * 0.5, faceY + faceH * 0.77, faceW * 0.24, faceH * 0.095);
       m.globalCompositeOperation = "source-over";
     } else {
       // No confident detection: fail safely by showing only the generated
