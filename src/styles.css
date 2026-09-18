@@ -206,7 +206,6 @@
 
 .butterfly-wing-right {
   transform-origin: 100px 78px;
-  animation-name: butterfly-wing-right;
 }
 
 @keyframes mirror-fade {
