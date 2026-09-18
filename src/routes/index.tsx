@@ -308,6 +308,9 @@ function Kiosk() {
         setFallbackUrl(url);
         setMirrorStatus("live");
         if (isFinal) finalFallbackRef.current = url;
+        if (isFinal) {
+          recordModelTiming(fal ? current.falModel : current.fallbackModel, performance.now() - t0);
+        }
         if (isFinal && !logged) {
           logged = true;
           appendSessionLog({
