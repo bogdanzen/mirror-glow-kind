@@ -44,6 +44,7 @@ export function AdminPanel({
   onChange: (s: MirrorSettings) => void;
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<"setari" | "mesaje">("setari");
   const [pin, setPin] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [draft, setDraft] = useState<MirrorSettings>(settings);
