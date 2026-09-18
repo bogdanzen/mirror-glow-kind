@@ -490,7 +490,7 @@ function Kiosk() {
             >
               {consent ? "✓" : ""}
             </span>
-            Am citit și sunt de acord.
+            {m.consentCheckbox}
           </button>
 
           <button
