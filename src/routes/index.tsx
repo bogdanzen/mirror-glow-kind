@@ -204,7 +204,7 @@ function Kiosk() {
     // regenerated bald in that window, then pasted back onto the real frame.
     if (current.mirrorEngine === "delayed") {
       try {
-        const [{ startDelayMirror }, { falHead, SDXL_HEAD_PROMPT, SDXL_NEGATIVE_PROMPT }] =
+        const [{ startDelayMirror }, { falHead, sdxlPrompt, SDXL_NEGATIVE_PROMPT }] =
           await Promise.all([import("@/lib/delaymirror"), import("@/lib/bald")]);
         const camera = cameraRef.current ?? (await startCamera());
         const feed = document.createElement("video");
