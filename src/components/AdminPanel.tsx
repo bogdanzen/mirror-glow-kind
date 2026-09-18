@@ -789,6 +789,8 @@ export function AdminPanel({
             ))}
           </ul>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
