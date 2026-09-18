@@ -34,8 +34,8 @@ function Gdpr() {
         </p>
         <h2 className="text-foreground">Ce se procesează</h2>
         <p>
-          Camera transmite imaginea în timp real către o instanță proprie Daydream Scope, găzduită
-          pe un server GPU RunPod, care o transformă cadru cu cadru. Procesarea
+          Camera transmite imaginea în timp real către instanța privată a instalației, găzduită
+          pe un server GPU european, care o transformă cadru cu cadru. Procesarea
           are loc exclusiv în memoria de lucru (RAM). Cadrele nu sunt scrise pe disc și nu sunt
           păstrate după afișare.
         </p>

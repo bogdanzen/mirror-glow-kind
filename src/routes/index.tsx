@@ -575,7 +575,7 @@ function Kiosk() {
           <div className="kiosk-noise" aria-hidden />
           <div className="pointer-events-none absolute inset-x-[7vw] top-[7vh] z-10">
             <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.38em] text-primary">Dacă mâine totul s-ar schimba?</p>
-            <h2 className="mt-4 max-w-[10ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">Te-ai privi la fel?</h2>
+            <h2 className="mt-4 max-w-[11ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">Ce ai fi vrut să nu mai amâni?</h2>
           </div>
 
           {demo && mirrorStatus === "live" && (
@@ -583,7 +583,7 @@ function Kiosk() {
               DEMO
             </span>
           )}
-          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[18ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Realitatea poate fi imprevizibilă.</p>
+          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[22ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Vezi o posibilă versiune vulnerabilă a ta. Realitatea poate fi imprevizibilă.</p>
         </section>
       )}
 
