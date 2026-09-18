@@ -507,7 +507,7 @@ function Kiosk() {
             <a href="/gdpr" className="underline underline-offset-8">
               Notă de confidențialitate
             </a>
-            <button onClick={goAttract}>Renunț</button>
+            <button onClick={goAttract}>{m.consentDecline}</button>
           </div>
         </section>
       )}
