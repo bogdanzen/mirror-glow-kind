@@ -130,6 +130,106 @@ export function AdminPanel({
           Sesiuni astăzi: <span className="text-foreground">{readSessionCounter()}</span>
         </p>
 
+        <div className="mt-6 flex gap-8 hairline-b pb-3 text-sm uppercase tracking-[0.25em]">
+          {(
+            [
+              ["setari", "Setări"],
+              ["mesaje", "Mesaje"],
+            ] as const
+          ).map(([value, text]) => (
+            <button
+              key={value}
+              onClick={() => setTab(value)}
+              className={tab === value ? "text-primary" : "text-muted-foreground"}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+
+        {tab === "mesaje" && (
+          <>
+            {(
+              [
+                ["attractKicker", "Atract — supratitlu"],
+                ["attractTitle", "Atract — titlu"],
+                ["attractSubtitle", "Atract — subtitlu"],
+                ["attractCta", "Atract — îndemn"],
+                ["consentTitle", "Consimțământ — titlu"],
+                ["consentBody", "Consimțământ — text"],
+                ["consentCheckbox", "Consimțământ — bifă"],
+                ["consentContinue", "Consimțământ — buton"],
+                ["consentDecline", "Consimțământ — renunț"],
+                ["framingKicker", "Countdown — supratitlu"],
+                ["framingTitle", "Countdown — titlu"],
+                ["framingCaption", "Countdown — text mic"],
+                ["mirrorKicker", "Oglindă — supratitlu"],
+                ["mirrorTitle", "Oglindă — titlu"],
+                ["mirrorFooter", "Oglindă — text jos"],
+                ["mirrorWorking", "Oglindă — mesaj procesare"],
+                ["choiceKicker", "Alegere — supratitlu"],
+                ["choiceTitle", "Alegere — titlu"],
+                ["healthyTitle", "Prevenție — titlu"],
+                ["healthyBody", "Prevenție — text"],
+                ["finalKicker", "Final — supratitlu"],
+                ["finalTitleTop", "Final — titlu rând 1"],
+                ["finalTitleBottom", "Final — titlu rând 2"],
+                ["finalSubtitle", "Final — subtitlu"],
+                ["finalQrLabel", "Final — text QR"],
+                ["finalOptions", "Final — opțiuni (una pe rând)"],
+                ["finalPresence", "Final — buton prezență"],
+              ] as const
+            ).map(([key, text]) => {
+              const multiline =
+                draft.messages[key].includes("\n") || draft.messages[key].length > 60;
+              return (
+                <div key={key}>
+                  <label className={label}>{text}</label>
+                  {multiline ? (
+                    <textarea
+                      className={`${field} min-h-24 resize-none`}
+                      value={draft.messages[key]}
+                      onChange={(e) =>
+                        set("messages", { ...draft.messages, [key]: e.target.value })
+                      }
+                    />
+                  ) : (
+                    <input
+                      className={field}
+                      value={draft.messages[key]}
+                      onChange={(e) =>
+                        set("messages", { ...draft.messages, [key]: e.target.value })
+                      }
+                    />
+                  )}
+                </div>
+              );
+            })}
+            <div className="mt-10 flex gap-10 text-lg">
+              <button
+                className="text-primary underline underline-offset-8"
+                onClick={() => apply(draft)}
+              >
+                Salvează mesajele
+              </button>
+              <button
+                className="underline underline-offset-8"
+                onClick={() => {
+                  const next = { ...draft, messages: DEFAULT_MESSAGES };
+                  setDraft(next);
+                  apply(next);
+                }}
+              >
+                Revino la textele originale
+              </button>
+            </div>
+            {status && <p className="mt-8 text-sm text-muted-foreground">{status}</p>}
+          </>
+        )}
+
+        {tab === "setari" && (
+          <>
+
         {(
           <>
             <label className={label}>GPU RunPod (Scope)</label>
