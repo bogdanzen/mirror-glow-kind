@@ -34,7 +34,7 @@ export type MirrorMessages = {
 export const DEFAULT_MESSAGES: MirrorMessages = {
   attractKicker: "Vertical Freedom prezintă",
   attractTitle: "TE VEZI?",
-  attractSubtitle: "Privește-te.\nDoar zece secunde.",
+  attractSubtitle: "Privește-te.\nDoar 5 secunde.",
   attractCta: "Atinge ecranul pentru a începe",
   consentTitle: "Înainte de a începe",
   consentBody:

@@ -578,7 +578,9 @@ function Kiosk() {
             {m.attractTitle}
           </h1>
           <p className="fade-in-slow relative mt-[5vh] max-w-[24ch] whitespace-pre-line text-[clamp(1.1rem,2.8vw,2.6rem)] leading-snug text-foreground/85">
-            {m.attractSubtitle}
+            {m.attractSubtitle
+              .replace(/zece secunde/i, `${settings.framingSeconds} secunde`)
+              .replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}
           </p>
           <span className="relative mt-[6vh] block h-px w-[22vmin] bg-primary" />
           <p className="breathe relative mt-[6vh] text-[clamp(1.1rem,2.6vw,2.4rem)] text-primary">
