@@ -7,6 +7,7 @@ import {
   clearSessionLog,
   readSessionCounter,
   readSessionLog,
+  readModelTimings,
   saveSettings,
   type MirrorSettings,
   type SessionLogEntry,
