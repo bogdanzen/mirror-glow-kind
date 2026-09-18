@@ -243,6 +243,18 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.falStrength = Number.isFinite(strength) ? Math.min(1, Math.max(0.1, strength)) : 0.45;
   const falSteps = Math.round(Number(merged.falSteps));
   merged.falSteps = Number.isFinite(falSteps) ? Math.min(20, Math.max(1, falSteps)) : 6;
+  const clamp = (value: unknown, min: number, max: number, fallback: number) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  };
+  merged.falSeed = Math.round(clamp(merged.falSeed, 1, 2147483647, DEFAULT_SETTINGS.falSeed));
+  merged.mirrorEngine = merged.mirrorEngine === "delayed" ? "delayed" : "portrait";
+  merged.delayMs = Math.round(clamp(merged.delayMs, 500, 4000, DEFAULT_SETTINGS.delayMs));
+  merged.genFps = clamp(merged.genFps, 0.5, 4, DEFAULT_SETTINGS.genFps);
+  merged.cropSize = Math.round(clamp(merged.cropSize, 512, 1024, DEFAULT_SETTINGS.cropSize));
+  merged.headMargin = clamp(merged.headMargin, 0.2, 1.6, DEFAULT_SETTINGS.headMargin);
+  merged.featherPx = Math.round(clamp(merged.featherPx, 0, 200, DEFAULT_SETTINGS.featherPx));
+  merged.headDebug = Boolean(merged.headDebug);
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)
