@@ -304,7 +304,7 @@ function Kiosk() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [screen, startCamera]);
+  }, [screen, startCamera, startFallbackWork]);
 
   // MIRROR: live AI stream. Never restarts because an unrelated setting changed.
   useEffect(() => {
