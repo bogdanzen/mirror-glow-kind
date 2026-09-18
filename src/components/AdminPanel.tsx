@@ -565,6 +565,111 @@ export function AdminPanel({
           </button>
           {draft.fallbackMode && (
             <>
+              <label className={label}>Tip oglindă</label>
+              <div className="flex flex-wrap gap-3">
+                {(
+                  [
+                    ["portrait", "Portret fix (o poză transformată)"],
+                    ["delayed", "Oglindă întârziată (video + cap generat)"],
+                  ] as const
+                ).map(([value, text]) => (
+                  <button
+                    key={value}
+                    onClick={() => set("mirrorEngine", value)}
+                    className={`border px-5 py-3 text-left ${
+                      draft.mirrorEngine === value
+                        ? "border-primary text-primary"
+                        : "border-foreground/20 text-muted-foreground"
+                    }`}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+
+              {draft.mirrorEngine === "delayed" && (
+                <>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Video-ul de la cameră rulează cu întârziere; între timp capul este decupat,
+                    generat fără păr și lipit înapoi peste înregistrarea reală. Necesită motorul
+                    fal.ai (SDXL Lightning).
+                  </p>
+                  <label className={label}>
+                    Întârziere video: {(draft.delayMs / 1000).toFixed(1)} s
+                  </label>
+                  <input
+                    type="range"
+                    min={500}
+                    max={4000}
+                    step={100}
+                    value={draft.delayMs}
+                    onChange={(e) => set("delayMs", Number(e.target.value))}
+                    className="w-full accent-[--color-primary]"
+                  />
+                  <label className={label}>Capete generate pe secundă: {draft.genFps}</label>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={4}
+                    step={0.5}
+                    value={draft.genFps}
+                    onChange={(e) => set("genFps", Number(e.target.value))}
+                    className="w-full accent-[--color-primary]"
+                  />
+                  <label className={label}>Decupaj cap</label>
+                  <div className="flex gap-3">
+                    {[768, 1024].map((value) => (
+                      <button
+                        key={value}
+                        onClick={() => set("cropSize", value)}
+                        className={`border px-5 py-3 ${
+                          draft.cropSize === value
+                            ? "border-primary text-primary"
+                            : "border-foreground/20 text-muted-foreground"
+                        }`}
+                      >
+                        {value}px
+                      </button>
+                    ))}
+                  </div>
+                  <label className={label}>
+                    Spațiu în jurul capului: {draft.headMargin.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min={0.2}
+                    max={1.6}
+                    step={0.05}
+                    value={draft.headMargin}
+                    onChange={(e) => set("headMargin", Number(e.target.value))}
+                    className="w-full accent-[--color-primary]"
+                  />
+                  <label className={label}>Margine estompată: {draft.featherPx}px</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={200}
+                    step={5}
+                    value={draft.featherPx}
+                    onChange={(e) => set("featherPx", Number(e.target.value))}
+                    className="w-full accent-[--color-primary]"
+                  />
+                  <label className={label}>Sămânță fixă (același chip): {draft.falSeed}</label>
+                  <input
+                    className={field}
+                    type="number"
+                    value={draft.falSeed}
+                    onChange={(e) => set("falSeed", Number(e.target.value))}
+                  />
+                  <button className="text-left" onClick={() => set("headDebug", !draft.headDebug)}>
+                    Afișează urmărirea capului:{" "}
+                    <span className={draft.headDebug ? "text-primary" : "text-muted-foreground"}>
+                      {draft.headDebug ? "pornit" : "oprit"}
+                    </span>
+                  </button>
+                </>
+              )}
+
               <label className={label}>Motor imagine</label>
               <div className="flex gap-3">
                 {(
