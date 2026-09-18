@@ -179,7 +179,16 @@ function Kiosk() {
     setMirrorStatus("publishing");
 
     try {
-      const { frameToFile, baldifyFrame, startBaldLoop } = await import("@/lib/bald");
+      const { frameToFile, baldifyFrame, startBaldLoop, falFrame } = await import("@/lib/bald");
+      const fal =
+        current.fallbackProvider === "fal"
+          ? {
+              key: current.falKey,
+              model: current.falModel,
+              strength: current.falStrength,
+              steps: current.falSteps,
+            }
+          : undefined;
       // Whichever video element is currently showing the camera.
       const pick = () => {
         for (const v of [previewRef.current, mirrorRef.current]) {
