@@ -18,8 +18,11 @@ export const Route = createFileRoute("/api/fal")({
 
         const model = String(form.get("model") ?? "fal-ai/fast-lcm-diffusion/image-to-image");
         const prompt = String(form.get("prompt") ?? "");
+        const negative = String(form.get("negative_prompt") ?? "");
         const strength = Number(form.get("strength") ?? 0.45);
         const steps = Number(form.get("steps") ?? 6);
+        const seed = Number(form.get("seed") ?? 0);
+        const size = Number(form.get("size") ?? 0);
 
         const bytes = new Uint8Array(await image.arrayBuffer());
         let binary = "";
@@ -37,6 +40,13 @@ export const Route = createFileRoute("/api/fal")({
             num_images: 1,
             sync_mode: true,
             enable_safety_checker: false,
+            ...(negative ? { negative_prompt: negative } : {}),
+            // A fixed seed keeps every generated head consistent, so the
+            // delayed mirror does not flicker between different faces.
+            ...(Number.isFinite(seed) && seed > 0 ? { seed } : {}),
+            ...(Number.isFinite(size) && size > 0
+              ? { image_size: { width: size, height: size } }
+              : {}),
           }),
         });
 

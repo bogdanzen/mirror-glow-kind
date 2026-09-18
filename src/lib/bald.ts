@@ -129,17 +129,62 @@ export async function baldifyFrame(
 
 /** Fast diffusion models on fal.ai (image-to-image, sub-second class). */
 export const FAL_MODELS = [
+  "fal-ai/fast-lightning-sdxl/image-to-image",
   "fal-ai/fast-lcm-diffusion/image-to-image",
   "fal-ai/fast-sdxl/image-to-image",
   "fal-ai/flux/schnell/image-to-image",
 ] as const;
+
+/**
+ * SDXL follows short, concrete prompts; the long documentary prompt written
+ * for GPT-image models confuses it and softens the result.
+ */
+export const SDXL_HEAD_PROMPT =
+  "photorealistic portrait of the same person, completely bald, smooth hairless scalp, no eyebrows, no eyelashes, clean shaven, pale tired skin, natural skin texture, same face, same lighting, same background, sharp focus, documentary photo";
+
+export const SDXL_NEGATIVE_PROMPT =
+  "hair, hairline, stubble, wig, hat, eyebrows, beard, moustache, cartoon, illustration, painting, distorted face, deformed, extra head, blurry, oversaturated, plastic skin";
 
 export type FalOptions = {
   key: string;
   model: string;
   strength: number;
   steps: number;
+  /** Fixed seed keeps consecutive heads consistent. */
+  seed?: number;
+  /** Square output size, matching the crop. */
+  size?: number;
+  negativePrompt?: string;
 };
+
+/** One flash-model pass over a head crop; resolves with the image URL. */
+export async function falHead(
+  file: File,
+  prompt: string,
+  fal: FalOptions,
+  signal?: AbortSignal,
+): Promise<string> {
+  const fd = new FormData();
+  fd.append("image", file);
+  fd.append("prompt", prompt);
+  fd.append("model", fal.model);
+  fd.append("strength", String(fal.strength));
+  fd.append("steps", String(fal.steps));
+  if (fal.key) fd.append("key", fal.key);
+  if (fal.seed) fd.append("seed", String(fal.seed));
+  if (fal.size) fd.append("size", String(fal.size));
+  if (fal.negativePrompt) fd.append("negative_prompt", fal.negativePrompt);
+  const res = await fetch("/api/fal", { method: "POST", body: fd, ...(signal ? { signal } : {}) });
+  if (!res.ok) {
+    throw new BaldError(
+      `fal.ai ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`,
+      res.status,
+    );
+  }
+  const json = (await res.json()) as { url?: string };
+  if (!json.url) throw new BaldError("fal.ai nu a returnat imagine");
+  return json.url;
+}
 
 /** One pass through the fal.ai flash model; returns a single final image. */
 export async function falFrame(

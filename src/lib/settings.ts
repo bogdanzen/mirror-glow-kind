@@ -38,7 +38,7 @@ export const DEFAULT_MESSAGES: MirrorMessages = {
   attractCta: "Atinge ecranul pentru a începe",
   consentTitle: "Înainte de a începe",
   consentBody:
-    "Imaginea ta este procesată live, în cloud, doar în memorie.\nNu se salvează nimic. Nimic nu te identifică.\nPoți pleca oricând — totul dispare în aceeași secundă.",
+    "Imaginea ta este procesată live, în cloud, doar în memorie.\nDecupajul cu capul tău este trimis unui furnizor de inteligență artificială (fal.ai) doar pentru transformare, fără să fie păstrat.\nNu se salvează nimic. Nimic nu te identifică.\nPoți pleca oricând — totul dispare în aceeași secundă.",
   consentCheckbox: "Am citit și sunt de acord.",
   consentContinue: "Continuă",
   consentDecline: "Renunț",
@@ -121,6 +121,22 @@ export type MirrorSettings = {
   falStrength: number;
   /** Diffusion steps for the flash model (fewer = faster). */
   falSteps: number;
+  /** Fixed seed: keeps every generated head the same person. */
+  falSeed: number;
+  /** "portrait" = one held AI portrait, "delayed" = delayed video + pasted head. */
+  mirrorEngine: "portrait" | "delayed";
+  /** How far behind real time the delayed mirror runs. */
+  delayMs: number;
+  /** Generated heads per second in the delayed mirror. */
+  genFps: number;
+  /** Square head crop sent to the model. */
+  cropSize: number;
+  /** Extra room around the detected face. */
+  headMargin: number;
+  /** Soft edge of the pasted head, in crop pixels. */
+  featherPx: number;
+  /** Draws the tracked head box and live stats on the mirror. */
+  headDebug: boolean;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
@@ -174,13 +190,21 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   fallbackModel: "openai/gpt-image-2.5-flare",
   fallbackProvider: "lovable",
   falKey: "",
-  falModel: "fal-ai/fast-lcm-diffusion/image-to-image",
+  falModel: "fal-ai/fast-lightning-sdxl/image-to-image",
   falStrength: 0.45,
   falSteps: 6,
+  falSeed: 7331,
+  mirrorEngine: "portrait",
+  delayMs: 2000,
+  genFps: 2,
+  cropSize: 1024,
+  headMargin: 0.85,
+  featherPx: 70,
+  headDebug: false,
 };
 
 
-const KEY = "mirror.settings.v8";
+const KEY = "mirror.settings.v10";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -219,6 +243,18 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.falStrength = Number.isFinite(strength) ? Math.min(1, Math.max(0.1, strength)) : 0.45;
   const falSteps = Math.round(Number(merged.falSteps));
   merged.falSteps = Number.isFinite(falSteps) ? Math.min(20, Math.max(1, falSteps)) : 6;
+  const clamp = (value: unknown, min: number, max: number, fallback: number) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  };
+  merged.falSeed = Math.round(clamp(merged.falSeed, 1, 2147483647, DEFAULT_SETTINGS.falSeed));
+  merged.mirrorEngine = merged.mirrorEngine === "delayed" ? "delayed" : "portrait";
+  merged.delayMs = Math.round(clamp(merged.delayMs, 500, 4000, DEFAULT_SETTINGS.delayMs));
+  merged.genFps = clamp(merged.genFps, 0.5, 4, DEFAULT_SETTINGS.genFps);
+  merged.cropSize = Math.round(clamp(merged.cropSize, 512, 1024, DEFAULT_SETTINGS.cropSize));
+  merged.headMargin = clamp(merged.headMargin, 0.2, 1.6, DEFAULT_SETTINGS.headMargin);
+  merged.featherPx = Math.round(clamp(merged.featherPx, 0, 200, DEFAULT_SETTINGS.featherPx));
+  merged.headDebug = Boolean(merged.headDebug);
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)

@@ -39,6 +39,13 @@ function Gdpr() {
           are loc exclusiv în memoria de lucru (RAM). Cadrele nu sunt scrise pe disc și nu sunt
           păstrate după afișare.
         </p>
+        <p>
+          Când instalația folosește varianta rapidă, doar un decupaj pătrat cu capul tău este
+          trimis, prin serverul nostru, către furnizorul de inteligență artificială fal.ai, care
+          returnează imaginea transformată. Decupajul este folosit exclusiv pentru această
+          transformare și nu este păstrat de noi. Restul cadrului (corp, haine, fundal) rămâne
+          înregistrarea reală și nu părăsește dispozitivul.
+        </p>
         <h2 className="text-foreground">Ce se stochează</h2>
         <p>
           Nimic, în mod implicit. Singura excepție: dacă apeși explicit „Păstrează imaginea”, acea

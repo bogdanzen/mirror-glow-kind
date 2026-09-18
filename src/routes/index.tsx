@@ -88,6 +88,18 @@ function Kiosk() {
   const mirrorRef = useRef<HTMLVideoElement | null>(null);
   const healthyRef = useRef<HTMLVideoElement | null>(null);
 
+  /** Delayed mirror: canvas that shows the composed picture. */
+  const mirrorCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const delayRef = useRef<{
+    stop: () => void;
+    attach: (c: HTMLCanvasElement | null) => void;
+    ready: () => boolean;
+    snapshot: () => string;
+  } | null>(null);
+  /** Off-screen video that feeds the delayed mirror from the countdown on. */
+  const feedRef = useRef<HTMLVideoElement | null>(null);
+  const [delayed, setDelayed] = useState(false);
+
   const sessionRef = useRef<MirrorSession | null>(null);
   /** Stops the repeating fallback transformation loop. */
   const loopRef = useRef<AbortController | null>(null);
@@ -143,6 +155,16 @@ function Kiosk() {
     if (session) void session.stop();
     loopRef.current?.abort();
     loopRef.current = null;
+    if (delayRef.current) {
+      finalFallbackRef.current = delayRef.current.snapshot() || finalFallbackRef.current;
+      delayRef.current.stop();
+      delayRef.current = null;
+    }
+    if (feedRef.current) {
+      feedRef.current.srcObject = null;
+      feedRef.current = null;
+    }
+    setDelayed(false);
   }, []);
 
   const goAttract = useCallback(() => {
@@ -177,6 +199,80 @@ function Kiosk() {
     finalFallbackRef.current = "";
     setStatusDetail(current.messages.mirrorWorking);
     setMirrorStatus("publishing");
+
+    // DELAYED MIRROR: the camera runs a couple of seconds late and the head is
+    // regenerated bald in that window, then pasted back onto the real frame.
+    if (current.mirrorEngine === "delayed") {
+      try {
+        const [{ startDelayMirror }, { falHead, SDXL_HEAD_PROMPT, SDXL_NEGATIVE_PROMPT }] =
+          await Promise.all([import("@/lib/delaymirror"), import("@/lib/bald")]);
+        const camera = cameraRef.current ?? (await startCamera());
+        const feed = document.createElement("video");
+        feed.muted = true;
+        feed.playsInline = true;
+        feed.srcObject = camera;
+        await feed.play().catch(() => undefined);
+        feedRef.current = feed;
+        setDelayed(true);
+        const started = performance.now();
+        let logged = false;
+        delayRef.current = startDelayMirror({
+          video: feed,
+          canvas: mirrorCanvasRef.current,
+          delayMs: current.delayMs,
+          bufferFps: 15,
+          genFps: current.genFps,
+          cropSize: current.cropSize,
+          headMargin: current.headMargin,
+          feather: current.featherPx,
+          debug: current.headDebug,
+          generate: (file, signal) =>
+            falHead(
+              file,
+              SDXL_HEAD_PROMPT,
+              {
+                key: current.falKey,
+                model: current.falModel,
+                strength: current.falStrength,
+                steps: current.falSteps,
+                seed: current.falSeed,
+                size: current.cropSize,
+                negativePrompt: SDXL_NEGATIVE_PROMPT,
+              },
+              signal,
+            ),
+          onFirstHead: () => {
+            if (fallbackCancelRef.current) return;
+            setMirrorStatus("live");
+            if (!logged) {
+              logged = true;
+              appendSessionLog({
+                at: Date.now(),
+                status: "demo",
+                latencyMs: Math.round(performance.now() - started),
+              });
+            }
+          },
+          onStats: (stats) =>
+            setStatusDetail(
+              `${stats.renderFps} fps · cap nou la ${stats.lastLatencyMs} ms · ${
+                stats.detector ? "urmărire activă" : "fără detector"
+              }`,
+            ),
+          onError: (err) => {
+            if (fallbackCancelRef.current) return;
+            appendSessionLog({ at: Date.now(), status: "error", error: err.message });
+            setError(err.message);
+            setMirrorStatus("error");
+          },
+        });
+      } catch (e) {
+        appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+        setError((e as Error).message);
+        setMirrorStatus("error");
+      }
+      return;
+    }
 
     try {
       const { frameToFile, baldifyFrame, startBaldLoop, falFrame } = await import("@/lib/bald");
@@ -555,8 +651,17 @@ function Kiosk() {
       {screen === "mirror" && (
         <section className="video-stage relative h-full w-full bg-background">
           <div className="absolute inset-0 overflow-hidden">
+            {delayed && (
+              <canvas
+                ref={(node) => {
+                  mirrorCanvasRef.current = node;
+                  delayRef.current?.attach(node);
+                }}
+                className="absolute inset-0 h-full w-full scale-x-[-1]"
+              />
+            )}
 
-            <video
+            {!delayed && <video
               ref={mirrorRef}
               muted
               playsInline
@@ -568,7 +673,7 @@ function Kiosk() {
                     ? 1
                     : 0,
               }}
-            />
+            />}
             {prevFallbackUrl && (
               <img
                 src={prevFallbackUrl}
