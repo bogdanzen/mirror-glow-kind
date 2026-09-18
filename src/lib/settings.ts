@@ -121,6 +121,22 @@ export type MirrorSettings = {
   falStrength: number;
   /** Diffusion steps for the flash model (fewer = faster). */
   falSteps: number;
+  /** Fixed seed: keeps every generated head the same person. */
+  falSeed: number;
+  /** "portrait" = one held AI portrait, "delayed" = delayed video + pasted head. */
+  mirrorEngine: "portrait" | "delayed";
+  /** How far behind real time the delayed mirror runs. */
+  delayMs: number;
+  /** Generated heads per second in the delayed mirror. */
+  genFps: number;
+  /** Square head crop sent to the model. */
+  cropSize: number;
+  /** Extra room around the detected face. */
+  headMargin: number;
+  /** Soft edge of the pasted head, in crop pixels. */
+  featherPx: number;
+  /** Draws the tracked head box and live stats on the mirror. */
+  headDebug: boolean;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
