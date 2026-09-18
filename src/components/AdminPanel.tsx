@@ -710,6 +710,7 @@ export function AdminPanel({
                   <div className="flex flex-wrap gap-3">
                     {(
                       [
+                        ["fal-ai/fast-lightning-sdxl/image-to-image", "SDXL Lightning (recomandat)"],
                         ["fal-ai/fast-lcm-diffusion/image-to-image", "LCM (cel mai rapid)"],
                         ["fal-ai/fast-sdxl/image-to-image", "SDXL rapid"],
                         ["fal-ai/flux/schnell/image-to-image", "FLUX schnell"],
