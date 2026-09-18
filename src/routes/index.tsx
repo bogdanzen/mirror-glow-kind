@@ -385,7 +385,7 @@ function Kiosk() {
       loopRef.current?.abort();
       loopRef.current = null;
     };
-  }, [screen, startCamera, teardownStream]);
+  }, [screen, startCamera, teardownStream, startFallbackWork]);
 
 
   // Only start counting the mirror time once the image is actually visible,
