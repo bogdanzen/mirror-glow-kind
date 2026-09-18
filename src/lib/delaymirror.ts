@@ -81,6 +81,7 @@ export function startDelayMirror(options: DelayMirrorOptions): DelayMirrorHandle
   const heads: Head[] = [];
   let smoothed: HeadBox | null = null;
   let detectorReady = false;
+  let lastDetectionAt = 0;
   let lastLatency = 0;
   let renderFps = 0;
   let previousHead: Head | null = null;
