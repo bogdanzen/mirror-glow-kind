@@ -196,7 +196,7 @@ const sleep = (ms: number, signal: AbortSignal) =>
  * few seconds instead of freezing on the first result.
  */
 export function startBaldLoop(options: BaldLoopOptions): void {
-  const { getFrame, prompt, model, onFrame, onError, signal } = options;
+  const { getFrame, prompt, model, onFrame, onError, signal, fal } = options;
   const workers = Math.min(2, Math.max(1, options.concurrency ?? 2));
   let firstDone = false;
   let stopped = false;
