@@ -108,6 +108,10 @@
   animation: mirror-fade 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@utility portrait-reveal {
+  animation: portrait-reveal 2600ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
 @utility breathe {
   animation: mirror-breathe 5.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
@@ -141,6 +145,20 @@
 
 .video-grade-soft {
   opacity: 0.72;
+}
+
+.attract-camera {
+  opacity: 0.56;
+  filter: saturate(0.72) contrast(1.08);
+}
+
+.butterfly-film {
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  filter: saturate(1.18) drop-shadow(0 0 12px color-mix(in oklab, var(--primary) 72%, transparent));
 }
 
 .kiosk-noise {
@@ -219,6 +237,11 @@
   }
 }
 
+@keyframes portrait-reveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes mirror-breathe {
   0%,
   100% {
@@ -258,6 +281,7 @@
 @media (prefers-reduced-motion: reduce) {
   .fade-in-slow,
   .fade-in-quick,
+  .portrait-reveal,
   .breathe,
   .drift,
   .neon-butterfly,

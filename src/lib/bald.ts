@@ -151,6 +151,12 @@ export function sdxlPrompt(detail?: string): string {
 export const SDXL_NEGATIVE_PROMPT =
   "hair, hairline, scalp hair, eyebrows, eyelashes, beard, moustache, mustache, sideburns, facial hair, stubble, five o'clock shadow, wig, hat, different person, changed identity, changed expression, changed eyes, changed nose, changed mouth, changed jaw, cartoon, illustration, painting, distorted face, deformed, extra head, blurry, oversaturated, plastic skin";
 
+export const SMILE_PROMPT =
+  "Photorealistic image edit of this exact person smiling naturally and warmly. Preserve the exact identity, face shape, eyes, nose, hair, eyebrows, skin tone, age, clothing, head pose, camera angle, background and lighting. Change only the expression into a genuine calm smile with natural cheeks and eyes. Healthy, dignified, sharp documentary portrait, realistic skin texture, no beauty filter, no stylisation, no distortion.";
+
+export const SMILE_NEGATIVE_PROMPT =
+  "bald, alopecia, missing hair, missing eyebrows, beard removed, different person, changed identity, changed face shape, exaggerated grin, uncanny teeth, distorted face, deformed, cartoon, illustration, painting, blurry, plastic skin";
+
 export type FalOptions = {
   key: string;
   model: string;
@@ -207,6 +213,9 @@ export async function falFrame(
   fd.append("strength", String(fal.strength));
   fd.append("steps", String(fal.steps));
   if (fal.key) fd.append("key", fal.key);
+  if (fal.seed) fd.append("seed", String(fal.seed));
+  if (fal.size) fd.append("size", String(fal.size));
+  if (fal.negativePrompt) fd.append("negative_prompt", fal.negativePrompt);
   const res = await fetch("/api/fal", { method: "POST", body: fd, ...(signal ? { signal } : {}) });
   if (!res.ok) {
     throw new BaldError(
