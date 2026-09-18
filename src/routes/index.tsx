@@ -651,8 +651,17 @@ function Kiosk() {
       {screen === "mirror" && (
         <section className="video-stage relative h-full w-full bg-background">
           <div className="absolute inset-0 overflow-hidden">
+            {delayed && (
+              <canvas
+                ref={(node) => {
+                  mirrorCanvasRef.current = node;
+                  delayRef.current?.attach(node);
+                }}
+                className="absolute inset-0 h-full w-full scale-x-[-1]"
+              />
+            )}
 
-            <video
+            {!delayed && <video
               ref={mirrorRef}
               muted
               playsInline
