@@ -127,6 +127,47 @@ export async function baldifyFrame(
   onFrame(dataUrl(b64), true);
 }
 
+/** Fast diffusion models on fal.ai (image-to-image, sub-second class). */
+export const FAL_MODELS = [
+  "fal-ai/fast-lcm-diffusion/image-to-image",
+  "fal-ai/fast-sdxl/image-to-image",
+  "fal-ai/flux/schnell/image-to-image",
+] as const;
+
+export type FalOptions = {
+  key: string;
+  model: string;
+  strength: number;
+  steps: number;
+};
+
+/** One pass through the fal.ai flash model; returns a single final image. */
+export async function falFrame(
+  file: File,
+  prompt: string,
+  fal: FalOptions,
+  onFrame: (url: string, isFinal: boolean) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const fd = new FormData();
+  fd.append("image", file);
+  fd.append("prompt", prompt);
+  fd.append("model", fal.model);
+  fd.append("strength", String(fal.strength));
+  fd.append("steps", String(fal.steps));
+  if (fal.key) fd.append("key", fal.key);
+  const res = await fetch("/api/fal", { method: "POST", body: fd, ...(signal ? { signal } : {}) });
+  if (!res.ok) {
+    throw new BaldError(
+      `fal.ai ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`,
+      res.status,
+    );
+  }
+  const json = (await res.json()) as { url?: string };
+  if (!json.url) throw new BaldError("fal.ai nu a returnat imagine");
+  onFrame(json.url, true);
+}
+
 export type BaldLoopOptions = {
   /** Returns a fresh camera frame, or null while the camera is not ready. */
   getFrame: () => File | null;
