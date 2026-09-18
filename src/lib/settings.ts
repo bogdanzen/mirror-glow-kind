@@ -74,7 +74,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   mirrorSeconds: 40,
   captureSeconds: 30,
   thanksSeconds: 15,
-  idleTimeoutSeconds: 45,
+  idleTimeoutSeconds: 20,
   campaignLine: "PREVENȚIA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
   delta: 0.45,

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QrCode } from "@/components/QrCode";
 import { AdminPanel } from "@/components/AdminPanel";
-import { saveCapture } from "@/lib/captures";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import {
   DEFAULT_SETTINGS,
@@ -67,8 +66,6 @@ function Kiosk() {
   const [consent, setConsent] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(10);
   const [presenceSeconds, setPresenceSeconds] = useState(20);
-  const [captureUrl, setCaptureUrl] = useState<string>("");
-  const [captureId, setCaptureId] = useState<string>("");
   const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
   const [mirrorStatus, setMirrorStatus] = useState<MirrorStatus>("creating");
@@ -151,8 +148,6 @@ function Kiosk() {
     setConsent(false);
     setCountdown(null);
     setPresenceSeconds(20);
-    setCaptureUrl("");
-    setCaptureId("");
     setFallbackUrl("");
     setPrevFallbackUrl("");
     fallbackUrlRef.current = "";
@@ -161,23 +156,15 @@ function Kiosk() {
     setScreen("attract");
   }, [stopCamera, teardownStream]);
 
-  // Inactivity watchdog
+  // Keep status fresh during the timed story. The final screen owns its
+  // explicit 20-second presence check below.
   useEffect(() => {
     const touch = () => (idleRef.current = Date.now());
     window.addEventListener("pointerdown", touch);
-    const id = window.setInterval(() => {
-      if (screen === "attract" || admin) return;
-      if (screen === "mirror" && mirrorStatus !== "live") {
-        idleRef.current = Date.now();
-        return;
-      }
-      if (Date.now() - idleRef.current > settings.idleTimeoutSeconds * 1000) goAttract();
-    }, 1000);
     return () => {
       window.removeEventListener("pointerdown", touch);
-      window.clearInterval(id);
     };
-  }, [screen, admin, mirrorStatus, settings.idleTimeoutSeconds, goAttract]);
+  }, []);
 
   // Hidden admin: 5 rapid taps top-left
   const tapsRef = useRef<number[]>([]);
@@ -424,31 +411,6 @@ function Kiosk() {
     return () => window.clearInterval(id);
   }, [screen, goAttract]);
 
-  // Freeze a frame when entering capture, upscaled for the 4K presentation.
-  useEffect(() => {
-    if (screen !== "capture") return;
-    if (fallbackUrl) {
-      setCaptureUrl(finalFallbackRef.current || fallbackUrl);
-      teardownStream();
-      return;
-    }
-    const v = mirrorRef.current;
-    if (!v || !v.videoWidth) return;
-    const target = 2048;
-    const scale = Math.min(target / v.videoWidth, target / v.videoHeight);
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(v.videoWidth * scale);
-    canvas.height = Math.round(v.videoHeight * scale);
-    const ctx = canvas.getContext("2d")!;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-    setCaptureUrl(canvas.toDataURL("image/jpeg", 0.92));
-    teardownStream();
-  }, [screen, stopCamera, teardownStream, fallbackUrl]);
-
-  const campaign = settings.campaignLine;
-
   return (
     <main className="relative h-dvh w-screen overflow-hidden bg-background text-foreground">
       <button
@@ -538,7 +500,7 @@ function Kiosk() {
           />
           <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between px-[7vw] py-[8vh]">
+          <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between px-[7vw] py-[8vh]">
             <div>
               <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.38em] text-primary">Te vezi?</p>
               <h2 className="mt-4 max-w-[9ch] font-display text-[clamp(3.8rem,11vw,10rem)] leading-[0.88] text-foreground">
@@ -611,17 +573,17 @@ function Kiosk() {
           </div>
           <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
-          <div className="pointer-events-none absolute inset-x-[7vw] top-[7vh]">
+          <div className="pointer-events-none absolute inset-x-[7vw] top-[7vh] z-10">
             <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.38em] text-primary">Dacă mâine totul s-ar schimba?</p>
-            <h2 className="mt-4 max-w-[10ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">Te-ai privi la fel?</h2>
+            <h2 className="mt-4 max-w-[11ch] font-display text-[clamp(3.6rem,10vw,9rem)] leading-[0.9]">Ce ai fi vrut să nu mai amâni?</h2>
           </div>
 
           {demo && mirrorStatus === "live" && (
-            <span className="absolute right-[4vw] top-[4vh] border border-hairline px-4 py-2 text-[clamp(0.7rem,1.2vw,1rem)] tracking-[0.3em] text-muted-foreground">
+            <span className="absolute right-[4vw] top-[4vh] z-10 border border-hairline px-4 py-2 text-[clamp(0.7rem,1.2vw,1rem)] tracking-[0.3em] text-muted-foreground">
               DEMO
             </span>
           )}
-          <p className="absolute bottom-[6vh] left-[7vw] max-w-[18ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Realitatea poate fi imprevizibilă.</p>
+          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[22ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Vezi o posibilă versiune vulnerabilă a ta. Realitatea poate fi imprevizibilă.</p>
         </section>
       )}
 
@@ -632,7 +594,6 @@ function Kiosk() {
           <NeonButterfly className="absolute bottom-[20vh] right-[9vw] w-[15vw]" delay="-3s" reverse />
           <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">Realitatea poate fi imprevizibilă</p>
           <h2 className="neon-title mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">ÎNCĂ POȚI ALEGE.</h2>
-          <p className="mt-[5vh] text-[clamp(1rem,2.3vw,2rem)] text-foreground/75">Atinge oglinda. Aici începe schimbarea.</p>
         </section>
       )}
 
@@ -642,10 +603,10 @@ function Kiosk() {
           <div className="video-grade video-grade-soft" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
           <NeonButterfly className="absolute bottom-[13vh] right-[7vw] w-[14vw]" />
-          <div className="absolute left-[7vw] top-[8vh] max-w-[78vw]">
+          <div className="absolute left-[7vw] top-[8vh] z-10 max-w-[78vw]">
             <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">Prevenția începe înainte să doară.</h2>
           </div>
-          <p className="absolute bottom-[8vh] left-[7vw] max-w-[24ch] text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
+          <p className="absolute bottom-[8vh] left-[7vw] z-10 max-w-[24ch] text-[clamp(1rem,2.2vw,2rem)] leading-relaxed text-foreground/85">
             Fă-ți controalele.<br />Ascultă-ți corpul.<br />Ai grijă de tine.
           </p>
         </section>

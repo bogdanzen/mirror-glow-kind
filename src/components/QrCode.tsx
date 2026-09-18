@@ -6,10 +6,13 @@ export function QrCode({ value, size = 220 }: { value: string; size?: number }) 
 
   useEffect(() => {
     if (!ref.current || !value) return;
+    const styles = window.getComputedStyle(document.documentElement);
+    const dark = styles.getPropertyValue("--qr-dark").trim();
+    const light = styles.getPropertyValue("--qr-light").trim();
     void QRCode.toCanvas(ref.current, value, {
       width: size,
       margin: 1,
-      color: { dark: "#141210", light: "#F2EBDD" },
+      color: { dark, light },
     });
   }, [value, size]);
 
