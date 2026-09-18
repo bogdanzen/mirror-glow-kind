@@ -661,7 +661,7 @@ function Kiosk() {
                 }}
                 className="mt-[5vh] border-y border-primary/50 py-[2vh] text-[clamp(1rem,2vw,1.8rem)] text-primary"
               >
-                Mai ești aici? Atinge ecranul
+                {m.finalPresence}
               </button>
               <p className="mt-3 text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">Resetare automată în {presenceSeconds} secunde</p>
             </div>
