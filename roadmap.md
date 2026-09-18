@@ -8,6 +8,7 @@
 
 ## Done
 
+- [x] Slow crossfade from the bald portrait into the choice portrait; choice copy moved clear of the face; campaign logos added to first and final screens.
 - [x] Camera feed on the home screen with transparent butterfly-and-particle video; smiling AI choice portrait; countdown pre-generation and slower bald reveal
 - [x] Opening countdown defaults to 5 seconds and is adjustable from 2–10 seconds in the control panel
 - [x] Official six-stage campaign timeline: configurable 2–10-second reflection, 40-second AI portrait, choice, prevention, and final action screen

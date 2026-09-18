@@ -24,6 +24,8 @@ import type { WarmState } from "@/lib/scope";
 import { CancerRibbon, NeonButterfly } from "@/components/NeonButterfly";
 import { ButterflyVideo } from "@/components/ButterflyVideo";
 import { DiagOverlay } from "@/components/DiagOverlay";
+import verticalFreedomLogo from "@/assets/vertical-freedom-logo.png.asset.json";
+import lionsClujLogo from "@/assets/lions-cluj-logo.png.asset.json";
 
 
 export const Route = createFileRoute("/")({
@@ -57,6 +59,23 @@ type Screen =
   | "healthy"
   | "capture";
 
+function CampaignLogos() {
+  return (
+    <div className="pointer-events-none absolute inset-x-[6vw] top-[4vh] z-20 flex items-start justify-between">
+      <img
+        src={verticalFreedomLogo.url}
+        alt="Vertical Freedom"
+        className="h-auto w-[clamp(8.5rem,25vw,24rem)] object-contain"
+      />
+      <img
+        src={lionsClujLogo.url}
+        alt="Lions Club Cluj-Napoca"
+        className="h-auto w-[clamp(4.5rem,12vw,11rem)] object-contain"
+      />
+    </div>
+  );
+}
+
 function Kiosk() {
   // Start from defaults so the server and the first client render agree;
   // stored settings are applied right after hydration.
@@ -74,6 +93,7 @@ function Kiosk() {
   const [statusDetail, setStatusDetail] = useState("");
   const [fallbackUrl, setFallbackUrl] = useState("");
   const [smileUrl, setSmileUrl] = useState("");
+  const [choiceBridgeUrl, setChoiceBridgeUrl] = useState("");
   /** Previous portrait, kept underneath so refreshes crossfade. */
   const [prevFallbackUrl, setPrevFallbackUrl] = useState("");
   const fallbackUrlRef = useRef("");
@@ -183,6 +203,7 @@ function Kiosk() {
     setFallbackUrl("");
     setPrevFallbackUrl("");
     setSmileUrl("");
+    setChoiceBridgeUrl("");
     fallbackUrlRef.current = "";
     finalFallbackRef.current = "";
     fallbackStartedRef.current = false;
@@ -586,6 +607,8 @@ function Kiosk() {
   useEffect(() => {
     if (screen !== "mirror" || mirrorStatus !== "live") return;
     const id = window.setTimeout(() => {
+      const delayedFrame = delayRef.current?.snapshot() ?? "";
+      setChoiceBridgeUrl(delayedFrame || finalFallbackRef.current || fallbackUrlRef.current);
       setScreen("choice");
     }, settings.mirrorSeconds * 1000);
     return () => window.clearTimeout(id);
@@ -654,6 +677,7 @@ function Kiosk() {
           <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
           <ButterflyVideo className="butterfly-film absolute inset-0" />
+          <CampaignLogos />
           <p className="relative mb-[3vh] text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">
             {m.attractKicker}
           </p>
@@ -820,16 +844,26 @@ function Kiosk() {
       )}
 
       {screen === "choice" && (
-        <section className="video-stage relative flex h-full w-full flex-col items-center justify-center px-[8vw] text-center">
-          <video ref={choiceRef} muted playsInline className="absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
+        <section className="video-stage relative h-full w-full">
+          {choiceBridgeUrl && (
+            <img
+              src={choiceBridgeUrl}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+            />
+          )}
+          <video ref={choiceRef} muted playsInline className="choice-portrait-enter absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
           {smileUrl && (
-            <img src={smileUrl} alt="Portretul vizitatorului zâmbind" className="portrait-reveal absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
+            <img src={smileUrl} alt="Portretul vizitatorului zâmbind" className="choice-portrait-enter absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
           )}
           <div className="video-grade" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
           <ButterflyVideo className="butterfly-film absolute inset-0 opacity-70" />
-          <p className="relative z-10 text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">{m.choiceKicker}</p>
-          <h2 className="neon-title relative z-10 mt-[3vh] font-display text-[clamp(4rem,13vw,12rem)] leading-[0.88]">{m.choiceTitle}</h2>
+          <div className="absolute left-[6vw] top-[6vh] z-10 max-w-[42vw] text-left">
+            <p className="text-[clamp(0.8rem,1.5vw,1.3rem)] uppercase tracking-[0.42em] text-muted-foreground">{m.choiceKicker}</p>
+            <h2 className="neon-title mt-[2vh] font-display text-[clamp(3.2rem,9vw,8.5rem)] leading-[0.88]">{m.choiceTitle}</h2>
+          </div>
         </section>
       )}
 
@@ -851,8 +885,9 @@ function Kiosk() {
       {screen === "capture" && (
         <section className="neon-stage fade-in-slow relative flex h-full flex-col px-[7vw] py-[7vh]">
           <div className="kiosk-noise" aria-hidden />
-          <NeonButterfly className="absolute right-[7vw] top-[9vh] w-[24vw]" />
-          <div className="relative">
+          <CampaignLogos />
+          <NeonButterfly className="absolute right-[7vw] top-[18vh] w-[24vw]" />
+          <div className="relative mt-[12vh]">
             <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">{m.finalKicker}</p>
             <h2 className="mt-3 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.82]">{m.finalTitleTop}<br /><span className="text-primary">{m.finalTitleBottom}</span></h2>
             <p className="mt-[4vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.4rem)] leading-snug text-foreground/85">{m.finalSubtitle}</p>
