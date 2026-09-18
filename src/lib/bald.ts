@@ -213,6 +213,9 @@ export async function falFrame(
   fd.append("strength", String(fal.strength));
   fd.append("steps", String(fal.steps));
   if (fal.key) fd.append("key", fal.key);
+  if (fal.seed) fd.append("seed", String(fal.seed));
+  if (fal.size) fd.append("size", String(fal.size));
+  if (fal.negativePrompt) fd.append("negative_prompt", fal.negativePrompt);
   const res = await fetch("/api/fal", { method: "POST", body: fd, ...(signal ? { signal } : {}) });
   if (!res.ok) {
     throw new BaldError(
