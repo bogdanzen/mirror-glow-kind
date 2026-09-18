@@ -605,7 +605,7 @@ function Kiosk() {
               DEMO
             </span>
           )}
-          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[22ch] text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">Vezi o posibilă versiune vulnerabilă a ta. Realitatea poate fi imprevizibilă.</p>
+          <p className="absolute bottom-[6vh] left-[7vw] z-10 max-w-[22ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/75">{m.mirrorFooter}</p>
         </section>
       )}
 
