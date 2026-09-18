@@ -673,7 +673,7 @@ function Kiosk() {
                     ? 1
                     : 0,
               }}
-            />
+            />}
             {prevFallbackUrl && (
               <img
                 src={prevFallbackUrl}
