@@ -251,6 +251,7 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
   };
   merged.falSeed = Math.round(clamp(merged.falSeed, 1, 2147483647, DEFAULT_SETTINGS.falSeed));
+  merged.sdxlDetail = String(merged.sdxlDetail ?? "");
   merged.mirrorEngine = merged.mirrorEngine === "delayed" ? "delayed" : "portrait";
   merged.delayMs = Math.round(clamp(merged.delayMs, 500, 4000, DEFAULT_SETTINGS.delayMs));
   merged.genFps = clamp(merged.genFps, 0.5, 4, DEFAULT_SETTINGS.genFps);
