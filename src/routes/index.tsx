@@ -127,6 +127,8 @@ function Kiosk() {
 
   /** Pseudo-live 1 FPS loop through the provider chain. */
   const frameLoopRef = useRef<import("@/lib/frameloop").FrameLoop | null>(null);
+  /** Sharpest raw frame of the session, used for the takeaway photo. */
+  const bestRawRef = useRef<Blob | null>(null);
   const [premiumId, setPremiumId] = useState("");
   const [premiumBusy, setPremiumBusy] = useState(false);
 
@@ -191,6 +193,13 @@ function Kiosk() {
       finalFallbackRef.current = delayRef.current.snapshot() || finalFallbackRef.current;
       delayRef.current.stop();
       delayRef.current = null;
+    }
+    if (frameLoopRef.current) {
+      // Keep the sharpest raw frame for the premium capture before stopping.
+      bestRawRef.current = frameLoopRef.current.bestRaw();
+      finalFallbackRef.current = frameLoopRef.current.snapshot() || finalFallbackRef.current;
+      frameLoopRef.current.stop();
+      frameLoopRef.current = null;
     }
     if (feedRef.current) {
       feedRef.current.srcObject = null;
