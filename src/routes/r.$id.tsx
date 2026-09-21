@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getCapture } from "@/lib/captures";
+import { track } from "@/lib/metrics";
 
 export const Route = createFileRoute("/r/$id")({
   head: () => ({
@@ -27,10 +28,18 @@ function Result() {
   const { id } = useParams({ from: "/r/$id" });
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [donate, setDonate] = useState("");
+  const [session, setSession] = useState("");
 
   useEffect(() => {
     setDataUrl(getCapture(id)?.dataUrl ?? null);
     setReady(true);
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get("s") ?? "";
+    const url = params.get("d") ?? "";
+    setSession(sid);
+    setDonate(/^https?:\/\//.test(url) ? url : "");
+    track("qr_scan", { device: "phone", ...(sid ? { sessionId: sid } : {}) });
   }, [id]);
 
   return (
