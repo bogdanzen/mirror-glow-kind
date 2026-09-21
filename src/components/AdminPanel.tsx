@@ -245,6 +245,34 @@ export function AdminPanel({
 
         {tab === "setari" && (
           <>
+            <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">
+              Campanie și statistici
+            </h2>
+            <label className={label}>Numele acestui totem</label>
+            <input
+              className={field}
+              value={draft.kioskName}
+              onChange={(e) => set("kioskName", e.target.value)}
+              placeholder="Totem 1"
+            />
+            <label className={label}>Link donații (se deschide de pe telefon)</label>
+            <input
+              className={field}
+              value={draft.donateUrl}
+              onChange={(e) => set("donateUrl", e.target.value)}
+              placeholder="https://..."
+            />
+            <div className="mt-6 flex flex-wrap gap-4">
+              <a
+                href="/dashboard"
+                target="_blank"
+                rel="noreferrer"
+                className="border border-primary px-5 py-3 text-sm uppercase tracking-[0.15em] text-primary"
+              >
+                Deschide statisticile
+              </a>
+            </div>
+
 
         {(
           <>
