@@ -159,6 +159,10 @@ export function AdminPanel({
           ))}
         </div>
 
+        {tab === "furnizori" && (
+          <ProvidersTab draft={draft} set={set} onSave={() => apply(draft)} />
+        )}
+
         {tab === "mesaje" && (
           <>
             {(
