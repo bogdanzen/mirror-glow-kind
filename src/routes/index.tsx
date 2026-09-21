@@ -225,6 +225,9 @@ function Kiosk() {
     smileStartedRef.current = false;
     smileAbortRef.current?.abort();
     smileAbortRef.current = null;
+    bestRawRef.current = null;
+    setPremiumId("");
+    setPremiumBusy(false);
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
@@ -1043,7 +1046,14 @@ function Kiosk() {
               <p className="mt-3 text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">Resetare automată în {presenceSeconds} secunde</p>
             </div>
             <div className="flex shrink-0 flex-col items-center gap-5">
-              <div className="bg-foreground p-3"><QrCode value={origin} size={180} /></div>
+              <div className="bg-foreground p-3">
+                <QrCode value={premiumId ? `${origin}/r/${premiumId}` : origin} size={180} />
+              </div>
+              {premiumBusy && (
+                <p className="breathe text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">
+                  Se procesează…
+                </p>
+              )}
               <CancerRibbon className="h-[14vh] w-auto text-primary" />
             </div>
           </div>
