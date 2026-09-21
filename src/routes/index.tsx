@@ -125,6 +125,11 @@ function Kiosk() {
   const feedRef = useRef<HTMLVideoElement | null>(null);
   const [delayed, setDelayed] = useState(false);
 
+  /** Pseudo-live 1 FPS loop through the provider chain. */
+  const frameLoopRef = useRef<import("@/lib/frameloop").FrameLoop | null>(null);
+  const [premiumId, setPremiumId] = useState("");
+  const [premiumBusy, setPremiumBusy] = useState(false);
+
   const sessionRef = useRef<MirrorSession | null>(null);
   /** Stops the repeating fallback transformation loop. */
   const loopRef = useRef<AbortController | null>(null);
@@ -231,6 +236,56 @@ function Kiosk() {
     finalFallbackRef.current = "";
     setStatusDetail(current.messages.mirrorWorking);
     setMirrorStatus("publishing");
+
+    // PSEUDO-LIVE: one frame per second through the provider chain, crossfaded.
+    if (current.mirrorEngine === "frames") {
+      try {
+        const [{ startFrameLoop }, { sdxlPrompt, SDXL_NEGATIVE_PROMPT }] = await Promise.all([
+          import("@/lib/frameloop"),
+          import("@/lib/bald"),
+        ]);
+        const camera = cameraRef.current ?? (await startCamera());
+        const feed = document.createElement("video");
+        feed.muted = true;
+        feed.playsInline = true;
+        feed.srcObject = camera;
+        await feed.play().catch(() => undefined);
+        feedRef.current = feed;
+        setDelayed(true);
+        frameLoopRef.current = startFrameLoop({
+          video: feed,
+          canvas: mirrorCanvasRef.current,
+          chain: [current.loopProvider, ...current.fallbackChain],
+          config: {
+            podUrl: current.podUrl,
+            podToken: current.podToken,
+            timeoutMs: current.frameTimeoutMs,
+          },
+          prompt: sdxlPrompt(current.sdxlDetail),
+          negativePrompt: SDXL_NEGATIVE_PROMPT,
+          denoise: current.frameDenoise,
+          seed: current.frameSeed,
+          size: current.frameSize,
+          intervalMs: current.frameIntervalMs,
+          crossfadeMs: 600,
+          onFirstFrame: (latencyMs) => {
+            if (fallbackCancelRef.current) return;
+            setMirrorStatus("live");
+            appendSessionLog({ at: Date.now(), status: "demo", latencyMs });
+          },
+          onProvider: (provider, reason) => {
+            setDemo(provider === "demo");
+            setStatusDetail(`furnizor: ${provider} (${reason})`);
+          },
+          onError: (err) => setStatusDetail(err.message),
+        });
+      } catch (e) {
+        appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+        setError((e as Error).message);
+        setMirrorStatus("error");
+      }
+      return;
+    }
 
     // DELAYED MIRROR: the camera runs a couple of seconds late and the head is
     // regenerated bald in that window, then pasted back onto the real frame.
