@@ -649,6 +649,9 @@ function Kiosk() {
         if (session.processedStream && mirrorRef.current) {
           mirrorRef.current.srcObject = session.processedStream;
           await mirrorRef.current.play().catch(() => undefined);
+          // Let the "scope" provider sample this processed video once a second.
+          const { setScopeVideo } = await import("@/lib/providers/scope");
+          setScopeVideo(mirrorRef.current);
         }
         setMirrorStatus("live");
         void startSmileWork();
