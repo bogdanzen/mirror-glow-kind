@@ -702,6 +702,70 @@ function Kiosk() {
     return undefined;
   }, [screen, teardownStream]);
 
+  // PREMIUM CAPTURE: one high-quality pass over the sharpest raw frame.
+  useEffect(() => {
+    if (screen !== "capture") return;
+    const raw = bestRawRef.current;
+    if (!raw || premiumId || premiumBusy) return;
+    let cancelled = false;
+    setPremiumBusy(true);
+    void (async () => {
+      try {
+        const [{ runProviderOnce }, { sdxlPrompt, SDXL_NEGATIVE_PROMPT }, { saveCapture }] =
+          await Promise.all([
+            import("@/lib/providers/registry"),
+            import("@/lib/bald"),
+            import("@/lib/captures"),
+          ]);
+        const current = settingsRef.current;
+        const { blob } = await runProviderOnce(
+          current.premiumProvider,
+          raw,
+          {
+            prompt: sdxlPrompt(current.sdxlDetail),
+            negativePrompt: SDXL_NEGATIVE_PROMPT,
+            denoise: current.frameDenoise,
+            seed: current.frameSeed,
+            size: 1024,
+            premium: true,
+          },
+          {
+            podUrl: current.podUrl,
+            podToken: current.podToken,
+            // Premium is one-shot and may legitimately take ~20 s.
+            timeoutMs: Math.max(current.frameTimeoutMs, 30000),
+          },
+        );
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("Imaginea nu a putut fi citită"));
+          reader.readAsDataURL(blob);
+        });
+        if (cancelled) return;
+        setPremiumId(saveCapture(dataUrl));
+      } catch (e) {
+        if (!cancelled) {
+          appendSessionLog({
+            at: Date.now(),
+            status: "error",
+            error: `Captură premium: ${(e as Error).message}`,
+          });
+          // Fall back to the last mirror frame so the QR still works.
+          if (finalFallbackRef.current) {
+            const { saveCapture } = await import("@/lib/captures");
+            setPremiumId(saveCapture(finalFallbackRef.current));
+          }
+        }
+      } finally {
+        if (!cancelled) setPremiumBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [screen, premiumId, premiumBusy]);
+
   // Final presence check. Any interaction confirms the visitor is still here.
   useEffect(() => {
     if (screen !== "capture") return;
