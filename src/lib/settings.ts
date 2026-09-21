@@ -1,4 +1,13 @@
 import { FALLBACK_MODELS, FALLBACK_PROMPT } from "./bald";
+import type { ProviderId } from "./providers/types";
+
+export const PROVIDER_IDS: ProviderId[] = [
+  "runpod",
+  "scope",
+  "fal-hair",
+  "perfectcorp",
+  "demo",
+];
 
 /** Every visible line of copy, editable from the admin panel. */
 export type MirrorMessages = {
@@ -127,8 +136,26 @@ export type MirrorSettings = {
   falSeed: number;
   /** Extra detail appended to the fixed SDXL bald prompt. */
   sdxlDetail: string;
-  /** "portrait" = one held AI portrait, "delayed" = delayed video + pasted head. */
-  mirrorEngine: "portrait" | "delayed";
+  /**
+   * "frames" = pseudo-live loop at 1 FPS through the provider chain,
+   * "portrait" = one held AI portrait, "delayed" = delayed video + pasted head.
+   */
+  mirrorEngine: "frames" | "portrait" | "delayed";
+  /** Provider that drives the 1 FPS loop. */
+  loopProvider: ProviderId;
+  /** Ordered automatic fallback chain; "demo" is always appended. */
+  fallbackChain: ProviderId[];
+  /** Provider used for the high-quality QR takeaway photo. */
+  premiumProvider: ProviderId;
+  /** Our own GPU box (client-side token: it gates our box, not a third party). */
+  podUrl: string;
+  podToken: string;
+  /** Loop timing and image parameters. */
+  frameIntervalMs: number;
+  frameTimeoutMs: number;
+  frameSize: number;
+  frameDenoise: number;
+  frameSeed: number;
   /** How far behind real time the delayed mirror runs. */
   delayMs: number;
   /** Generated heads per second in the delayed mirror. */
