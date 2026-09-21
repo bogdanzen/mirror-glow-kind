@@ -23,6 +23,7 @@ import {
 import type { WarmState } from "@/lib/scope";
 import { CancerRibbon, NeonButterfly } from "@/components/NeonButterfly";
 import { ButterflyVideo } from "@/components/ButterflyVideo";
+import { currentSession, startSession, track } from "@/lib/metrics";
 import { DiagOverlay } from "@/components/DiagOverlay";
 import verticalFreedomLogo from "@/assets/vertical-freedom-logo.png.asset.json";
 import lionsClujLogo from "@/assets/lions-cluj-logo.png.asset.json";
@@ -177,6 +178,26 @@ function Kiosk() {
     };
   }, [prewarmOn, pipeline]);
 
+
+  // Anonymous funnel metrics: only which step was reached, nothing personal.
+  useEffect(() => {
+    if (!hydrated || screen === "attract") return;
+    const kiosk = settingsRef.current.kioskName;
+    if (screen === "consent") {
+      startSession();
+      track("start", { kiosk });
+      track("consent", { kiosk });
+      return;
+    }
+    const step = {
+      framing: "framing",
+      mirror: "mirror",
+      choice: "choice",
+      healthy: "prevention",
+      capture: "final",
+    }[screen] as "framing" | "mirror" | "choice" | "prevention" | "final";
+    track(step, { kiosk });
+  }, [screen, hydrated]);
 
   const stopCamera = useCallback(() => {
     cameraRef.current?.getTracks().forEach((t) => t.stop());
