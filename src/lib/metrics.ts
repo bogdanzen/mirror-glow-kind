@@ -65,7 +65,7 @@ export function track(event: MirrorEventName, options: TrackOptions = {}) {
   };
   void supabase
     .from("mirror_events")
-    .insert(row)
+    .insert(row as never)
     .then(undefined, () => undefined);
 }
 
