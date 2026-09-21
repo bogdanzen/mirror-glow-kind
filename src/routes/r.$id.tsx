@@ -66,6 +66,22 @@ function Result() {
           </p>
         </>
       )}
+      {donate && (
+        <a
+          href={donate}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() =>
+            track("donate_click", {
+              device: "phone",
+              ...(session ? { sessionId: session } : {}),
+            })
+          }
+          className="w-full max-w-md bg-primary py-6 text-2xl text-background"
+        >
+          Donează
+        </a>
+      )}
       <Link to="/" className="text-muted-foreground underline underline-offset-8">
         Înapoi
       </Link>
