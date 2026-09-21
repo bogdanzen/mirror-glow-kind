@@ -562,7 +562,8 @@ function Kiosk() {
         if (cancelled) return;
         // Use the countdown to already render the portrait.
         const current = settingsRef.current;
-        if (current.fallbackMode && !current.demoMode) void startFallbackWork();
+        if ((current.fallbackMode || current.mirrorEngine === "frames") && !current.demoMode)
+          void startFallbackWork();
         let n = current.framingSeconds;
         setCountdown(n);
         interval = window.setInterval(() => {
@@ -905,7 +906,7 @@ function Kiosk() {
                   mirrorCanvasRef.current = node;
                   delayRef.current?.attach(node);
                 }}
-                className="absolute inset-0 h-full w-full scale-x-[-1]"
+                className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
               />
             )}
 
