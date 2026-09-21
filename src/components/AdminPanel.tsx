@@ -116,7 +116,7 @@ export function AdminPanel({
             </button>
             <button
               onClick={() => (pin === settings.pin ? setUnlocked(true) : setPin(""))}
-              className="text-primary underline underline-offset-8"
+              className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
             >
               Deblochează
             </button>
@@ -223,13 +223,13 @@ export function AdminPanel({
             })}
             <div className="mt-10 flex gap-10 text-lg">
               <button
-                className="text-primary underline underline-offset-8"
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
                 onClick={() => apply(draft)}
               >
                 Salvează mesajele
               </button>
               <button
-                className="underline underline-offset-8"
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
                 onClick={() => {
                   const next = { ...draft, messages: DEFAULT_MESSAGES };
                   setDraft(next);
@@ -245,6 +245,34 @@ export function AdminPanel({
 
         {tab === "setari" && (
           <>
+            <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">
+              Campanie și statistici
+            </h2>
+            <label className={label}>Numele acestui totem</label>
+            <input
+              className={field}
+              value={draft.kioskName}
+              onChange={(e) => set("kioskName", e.target.value)}
+              placeholder="Totem 1"
+            />
+            <label className={label}>Link donații (se deschide de pe telefon)</label>
+            <input
+              className={field}
+              value={draft.donateUrl}
+              onChange={(e) => set("donateUrl", e.target.value)}
+              placeholder="https://..."
+            />
+            <div className="mt-6 flex flex-wrap gap-4">
+              <a
+                href="/dashboard"
+                target="_blank"
+                rel="noreferrer"
+                className="border border-primary px-5 py-3 text-sm uppercase tracking-[0.15em] text-primary"
+              >
+                Deschide statisticile
+              </a>
+            </div>
+
 
         {(
           <>
@@ -265,7 +293,7 @@ export function AdminPanel({
             </p>
             <div className="flex flex-wrap gap-8 py-2 text-base">
               <button
-                className="text-primary underline underline-offset-8"
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
                 onClick={() => {
                   setPodMsg("se pornește…");
                   void startRunpodPod({ data: { pipeline: draft.scopePipeline } })
@@ -279,7 +307,7 @@ export function AdminPanel({
                 Pornește GPU
               </button>
               <button
-                className="text-muted-foreground underline underline-offset-8"
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
                 onClick={() => {
                   void runpodState()
                     .then(setRunpod)
@@ -290,7 +318,7 @@ export function AdminPanel({
                 Reîmprospătează
               </button>
               <button
-                className="text-muted-foreground underline underline-offset-8"
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
                 disabled={!runpod?.pod}
                 onClick={() => {
                   if (!runpod?.pod) return;
@@ -304,7 +332,7 @@ export function AdminPanel({
                 Oprește
               </button>
               <button
-                className="text-muted-foreground underline underline-offset-8"
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
                 disabled={!runpod?.pod}
                 onClick={() => {
                   if (!runpod?.pod) return;
@@ -344,7 +372,7 @@ export function AdminPanel({
             )}
             <div className="flex flex-wrap gap-8 py-2 text-base">
               <button
-                className="text-primary underline underline-offset-8"
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
                 onClick={() => {
                   setPodMsg("se repară (pod nou + model curat)…");
                   void resetMirrorWarm();
@@ -566,7 +594,7 @@ export function AdminPanel({
 
         <div className="mt-10 flex flex-col gap-4 text-lg">
           <button
-            className="text-left"
+            className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base"
             onClick={() => set("demoMode", !draft.demoMode)}
           >
             Mod DEMO:{" "}
@@ -574,7 +602,7 @@ export function AdminPanel({
               {draft.demoMode ? "pornit" : "oprit"}
             </span>
           </button>
-          <button className="text-left" onClick={() => set("fallbackMode", !draft.fallbackMode)}>
+          <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("fallbackMode", !draft.fallbackMode)}>
             Mod rezervă (portret AI pe server, fără GPU):{" "}
             <span className={draft.fallbackMode ? "text-primary" : "text-muted-foreground"}>
               {draft.fallbackMode ? "pornit" : "oprit"}
@@ -678,7 +706,7 @@ export function AdminPanel({
                     value={draft.falSeed}
                     onChange={(e) => set("falSeed", Number(e.target.value))}
                   />
-                  <button className="text-left" onClick={() => set("headDebug", !draft.headDebug)}>
+                  <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("headDebug", !draft.headDebug)}>
                     Afișează urmărirea capului:{" "}
                     <span className={draft.headDebug ? "text-primary" : "text-muted-foreground"}>
                       {draft.headDebug ? "pornit" : "oprit"}
@@ -846,20 +874,20 @@ export function AdminPanel({
               />
             </>
           )}
-          <button className="text-left" onClick={() => set("diagnostics", !draft.diagnostics)}>
+          <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("diagnostics", !draft.diagnostics)}>
             Mod diagnostic (verbose):{" "}
             <span className={draft.diagnostics ? "text-primary" : "text-muted-foreground"}>
               {draft.diagnostics ? "pornit" : "oprit"}
             </span>
           </button>
-          <button className="text-left" onClick={() => set("prewarm", !draft.prewarm)}>
+          <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("prewarm", !draft.prewarm)}>
             Pre-încălzire GPU:{" "}
             <span className={draft.prewarm ? "text-primary" : "text-muted-foreground"}>
               {draft.prewarm ? "pornită" : "oprită"}
             </span>
           </button>
           <button
-            className="text-left"
+            className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base"
             onClick={() => set("storageEnabled", !draft.storageEnabled)}
           >
             Salvare imagine (24h):{" "}
@@ -879,7 +907,7 @@ export function AdminPanel({
             placeholder={settings.pin}
           />
           <button
-            className="whitespace-nowrap text-primary underline underline-offset-8"
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary whitespace-nowrap"
             onClick={() => {
               if (newPin.length >= 4) {
                 const next = { ...draft, pin: newPin };
@@ -894,11 +922,11 @@ export function AdminPanel({
         </div>
 
         <div className="mt-12 flex flex-wrap gap-10 text-lg">
-          <button className="text-primary underline underline-offset-8" onClick={() => apply(draft)}>
+          <button className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary" onClick={() => apply(draft)}>
             Salvează
           </button>
           <button
-            className="underline underline-offset-8"
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
             onClick={async () => {
               setStatus("Se testează…");
               const started = performance.now();
@@ -943,7 +971,7 @@ export function AdminPanel({
             Testează conexiunea
           </button>
           <button
-            className="underline underline-offset-8"
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
             onClick={() => {
               apply({ ...DEFAULT_SETTINGS, pin: draft.pin });
               setDraft({ ...DEFAULT_SETTINGS, pin: draft.pin });
@@ -952,7 +980,7 @@ export function AdminPanel({
             Resetează setările
           </button>
           <button
-            className="underline underline-offset-8"
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
             onClick={() => {
               setStatus("Se pre-încălzește GPU-ul…");
               void prewarmMirror(draft, (_s, detail) => detail && setStatus(`Pre-încălzire: ${detail}`))
@@ -963,7 +991,7 @@ export function AdminPanel({
             Pre-încălzește GPU
           </button>
           <button
-            className="underline underline-offset-8"
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
             onClick={() => window.location.reload()}
           >
             Repornește aplicația
@@ -974,7 +1002,7 @@ export function AdminPanel({
           <div className="flex items-center justify-between">
             <h2 className="text-lg">Diagnostic live</h2>
             <button
-              className="text-sm text-muted-foreground underline underline-offset-8"
+              className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
               onClick={() => clearDiag()}
             >
               Golește
@@ -996,7 +1024,7 @@ export function AdminPanel({
           <div className="flex items-center justify-between">
             <h2 className="text-lg">Jurnal sesiuni (ultimele 50)</h2>
             <button
-              className="text-sm text-muted-foreground underline underline-offset-8"
+              className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
               onClick={() => {
                 clearSessionLog();
                 setLog([]);

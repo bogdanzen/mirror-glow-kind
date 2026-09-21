@@ -35,3 +35,4 @@
 - Releu Cloudflare TURN: chei create + salvate (CLOUDFLARE_TURN_KEY_ID / _API_TOKEN); aplicatia emite
   credentiale de scurta durata in src/lib/turn.functions.ts si le ataseaza conexiunii din browser.
 - ramas: primul cadru procesat verificat pe masina utilizatorului (5 sesiuni la rand, primul cadru <= 5s).
+- [x] Dashboard /dashboard: vizitatori, scanari QR, donatii, abandonuri, agregare pe totemuri; evenimente anonime in cloud; panou reorganizat cu butoane reale
