@@ -1,4 +1,13 @@
 import { FALLBACK_MODELS, FALLBACK_PROMPT } from "./bald";
+import type { ProviderId } from "./providers/types";
+
+export const PROVIDER_IDS: ProviderId[] = [
+  "runpod",
+  "scope",
+  "fal-hair",
+  "perfectcorp",
+  "demo",
+];
 
 /** Every visible line of copy, editable from the admin panel. */
 export type MirrorMessages = {
@@ -127,8 +136,26 @@ export type MirrorSettings = {
   falSeed: number;
   /** Extra detail appended to the fixed SDXL bald prompt. */
   sdxlDetail: string;
-  /** "portrait" = one held AI portrait, "delayed" = delayed video + pasted head. */
-  mirrorEngine: "portrait" | "delayed";
+  /**
+   * "frames" = pseudo-live loop at 1 FPS through the provider chain,
+   * "portrait" = one held AI portrait, "delayed" = delayed video + pasted head.
+   */
+  mirrorEngine: "frames" | "portrait" | "delayed";
+  /** Provider that drives the 1 FPS loop. */
+  loopProvider: ProviderId;
+  /** Ordered automatic fallback chain; "demo" is always appended. */
+  fallbackChain: ProviderId[];
+  /** Provider used for the high-quality QR takeaway photo. */
+  premiumProvider: ProviderId;
+  /** Our own GPU box (client-side token: it gates our box, not a third party). */
+  podUrl: string;
+  podToken: string;
+  /** Loop timing and image parameters. */
+  frameIntervalMs: number;
+  frameTimeoutMs: number;
+  frameSize: number;
+  frameDenoise: number;
+  frameSeed: number;
   /** How far behind real time the delayed mirror runs. */
   delayMs: number;
   /** Generated heads per second in the delayed mirror. */
@@ -200,7 +227,17 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   falSteps: 6,
   falSeed: 7331,
   sdxlDetail: "",
-  mirrorEngine: "portrait",
+  mirrorEngine: "frames",
+  loopProvider: "runpod",
+  fallbackChain: ["runpod", "fal-hair", "demo"],
+  premiumProvider: "perfectcorp",
+  podUrl: "",
+  podToken: "",
+  frameIntervalMs: 1000,
+  frameTimeoutMs: 8000,
+  frameSize: 512,
+  frameDenoise: 0.45,
+  frameSeed: 7331,
   delayMs: 2000,
   genFps: 2,
   cropSize: 1024,
@@ -210,7 +247,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v10";
+const KEY = "mirror.settings.v11";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -258,7 +295,32 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
     clamp(merged.framingSeconds, 2, 10, DEFAULT_SETTINGS.framingSeconds),
   );
   merged.sdxlDetail = String(merged.sdxlDetail ?? "");
-  merged.mirrorEngine = merged.mirrorEngine === "delayed" ? "delayed" : "portrait";
+  merged.mirrorEngine = (["frames", "delayed", "portrait"] as const).includes(
+    merged.mirrorEngine as "frames",
+  )
+    ? merged.mirrorEngine
+    : DEFAULT_SETTINGS.mirrorEngine;
+  const provider = (value: unknown, fallback: ProviderId): ProviderId =>
+    PROVIDER_IDS.includes(value as ProviderId) ? (value as ProviderId) : fallback;
+  merged.loopProvider = provider(merged.loopProvider, DEFAULT_SETTINGS.loopProvider);
+  merged.premiumProvider = provider(merged.premiumProvider, DEFAULT_SETTINGS.premiumProvider);
+  const chain = (Array.isArray(merged.fallbackChain) ? merged.fallbackChain : [])
+    .filter((id): id is ProviderId => PROVIDER_IDS.includes(id as ProviderId));
+  merged.fallbackChain = chain.length ? chain : [...DEFAULT_SETTINGS.fallbackChain];
+  if (!merged.fallbackChain.includes("demo")) merged.fallbackChain.push("demo");
+  merged.podUrl = String(merged.podUrl ?? "").trim();
+  merged.podToken = String(merged.podToken ?? "").trim();
+  merged.frameIntervalMs = Math.round(
+    clamp(merged.frameIntervalMs, 400, 5000, DEFAULT_SETTINGS.frameIntervalMs),
+  );
+  merged.frameTimeoutMs = Math.round(
+    clamp(merged.frameTimeoutMs, 1000, 60000, DEFAULT_SETTINGS.frameTimeoutMs),
+  );
+  merged.frameSize = Math.round(clamp(merged.frameSize, 256, 1024, DEFAULT_SETTINGS.frameSize));
+  merged.frameDenoise = clamp(merged.frameDenoise, 0.1, 1, DEFAULT_SETTINGS.frameDenoise);
+  merged.frameSeed = Math.round(
+    clamp(merged.frameSeed, 1, 2147483647, DEFAULT_SETTINGS.frameSeed),
+  );
   merged.delayMs = Math.round(clamp(merged.delayMs, 500, 4000, DEFAULT_SETTINGS.delayMs));
   merged.genFps = clamp(merged.genFps, 0.5, 4, DEFAULT_SETTINGS.genFps);
   merged.cropSize = Math.round(clamp(merged.cropSize, 512, 1024, DEFAULT_SETTINGS.cropSize));

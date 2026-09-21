@@ -125,6 +125,13 @@ function Kiosk() {
   const feedRef = useRef<HTMLVideoElement | null>(null);
   const [delayed, setDelayed] = useState(false);
 
+  /** Pseudo-live 1 FPS loop through the provider chain. */
+  const frameLoopRef = useRef<import("@/lib/frameloop").FrameLoop | null>(null);
+  /** Sharpest raw frame of the session, used for the takeaway photo. */
+  const bestRawRef = useRef<Blob | null>(null);
+  const [premiumId, setPremiumId] = useState("");
+  const [premiumBusy, setPremiumBusy] = useState(false);
+
   const sessionRef = useRef<MirrorSession | null>(null);
   /** Stops the repeating fallback transformation loop. */
   const loopRef = useRef<AbortController | null>(null);
@@ -187,6 +194,13 @@ function Kiosk() {
       delayRef.current.stop();
       delayRef.current = null;
     }
+    if (frameLoopRef.current) {
+      // Keep the sharpest raw frame for the premium capture before stopping.
+      bestRawRef.current = frameLoopRef.current.bestRaw();
+      finalFallbackRef.current = frameLoopRef.current.snapshot() || finalFallbackRef.current;
+      frameLoopRef.current.stop();
+      frameLoopRef.current = null;
+    }
     if (feedRef.current) {
       feedRef.current.srcObject = null;
       feedRef.current = null;
@@ -211,6 +225,9 @@ function Kiosk() {
     smileStartedRef.current = false;
     smileAbortRef.current?.abort();
     smileAbortRef.current = null;
+    bestRawRef.current = null;
+    setPremiumId("");
+    setPremiumBusy(false);
     setError("");
     setScreen("attract");
   }, [stopCamera, teardownStream]);
@@ -231,6 +248,56 @@ function Kiosk() {
     finalFallbackRef.current = "";
     setStatusDetail(current.messages.mirrorWorking);
     setMirrorStatus("publishing");
+
+    // PSEUDO-LIVE: one frame per second through the provider chain, crossfaded.
+    if (current.mirrorEngine === "frames") {
+      try {
+        const [{ startFrameLoop }, { sdxlPrompt, SDXL_NEGATIVE_PROMPT }] = await Promise.all([
+          import("@/lib/frameloop"),
+          import("@/lib/bald"),
+        ]);
+        const camera = cameraRef.current ?? (await startCamera());
+        const feed = document.createElement("video");
+        feed.muted = true;
+        feed.playsInline = true;
+        feed.srcObject = camera;
+        await feed.play().catch(() => undefined);
+        feedRef.current = feed;
+        setDelayed(true);
+        frameLoopRef.current = startFrameLoop({
+          video: feed,
+          canvas: mirrorCanvasRef.current,
+          chain: [current.loopProvider, ...current.fallbackChain],
+          config: {
+            podUrl: current.podUrl,
+            podToken: current.podToken,
+            timeoutMs: current.frameTimeoutMs,
+          },
+          prompt: sdxlPrompt(current.sdxlDetail),
+          negativePrompt: SDXL_NEGATIVE_PROMPT,
+          denoise: current.frameDenoise,
+          seed: current.frameSeed,
+          size: current.frameSize,
+          intervalMs: current.frameIntervalMs,
+          crossfadeMs: 600,
+          onFirstFrame: (latencyMs) => {
+            if (fallbackCancelRef.current) return;
+            setMirrorStatus("live");
+            appendSessionLog({ at: Date.now(), status: "demo", latencyMs });
+          },
+          onProvider: (provider, reason) => {
+            setDemo(provider === "demo");
+            setStatusDetail(`furnizor: ${provider} (${reason})`);
+          },
+          onError: (err) => setStatusDetail(err.message),
+        });
+      } catch (e) {
+        appendSessionLog({ at: Date.now(), status: "error", error: (e as Error).message });
+        setError((e as Error).message);
+        setMirrorStatus("error");
+      }
+      return;
+    }
 
     // DELAYED MIRROR: the camera runs a couple of seconds late and the head is
     // regenerated bald in that window, then pasted back onto the real frame.
@@ -495,7 +562,8 @@ function Kiosk() {
         if (cancelled) return;
         // Use the countdown to already render the portrait.
         const current = settingsRef.current;
-        if (current.fallbackMode && !current.demoMode) void startFallbackWork();
+        if ((current.fallbackMode || current.mirrorEngine === "frames") && !current.demoMode)
+          void startFallbackWork();
         let n = current.framingSeconds;
         setCountdown(n);
         interval = window.setInterval(() => {
@@ -544,7 +612,7 @@ function Kiosk() {
 
       // FALLBACK: no GPU. One frame is re-rendered on the server as a
       // photorealistic bald portrait and held on screen.
-      if (current.fallbackMode) {
+      if (current.fallbackMode || current.mirrorEngine === "frames") {
         setDemo(false);
         if (mirrorRef.current) {
           mirrorRef.current.srcObject = camera;
@@ -581,6 +649,9 @@ function Kiosk() {
         if (session.processedStream && mirrorRef.current) {
           mirrorRef.current.srcObject = session.processedStream;
           await mirrorRef.current.play().catch(() => undefined);
+          // Let the "scope" provider sample this processed video once a second.
+          const { setScopeVideo } = await import("@/lib/providers/scope");
+          setScopeVideo(mirrorRef.current);
         }
         setMirrorStatus("live");
         void startSmileWork();
@@ -637,6 +708,70 @@ function Kiosk() {
     }
     return undefined;
   }, [screen, teardownStream]);
+
+  // PREMIUM CAPTURE: one high-quality pass over the sharpest raw frame.
+  useEffect(() => {
+    if (screen !== "capture") return;
+    const raw = bestRawRef.current;
+    if (!raw || premiumId || premiumBusy) return;
+    let cancelled = false;
+    setPremiumBusy(true);
+    void (async () => {
+      try {
+        const [{ runProviderOnce }, { sdxlPrompt, SDXL_NEGATIVE_PROMPT }, { saveCapture }] =
+          await Promise.all([
+            import("@/lib/providers/registry"),
+            import("@/lib/bald"),
+            import("@/lib/captures"),
+          ]);
+        const current = settingsRef.current;
+        const { blob } = await runProviderOnce(
+          current.premiumProvider,
+          raw,
+          {
+            prompt: sdxlPrompt(current.sdxlDetail),
+            negativePrompt: SDXL_NEGATIVE_PROMPT,
+            denoise: current.frameDenoise,
+            seed: current.frameSeed,
+            size: 1024,
+            premium: true,
+          },
+          {
+            podUrl: current.podUrl,
+            podToken: current.podToken,
+            // Premium is one-shot and may legitimately take ~20 s.
+            timeoutMs: Math.max(current.frameTimeoutMs, 30000),
+          },
+        );
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("Imaginea nu a putut fi citită"));
+          reader.readAsDataURL(blob);
+        });
+        if (cancelled) return;
+        setPremiumId(saveCapture(dataUrl));
+      } catch (e) {
+        if (!cancelled) {
+          appendSessionLog({
+            at: Date.now(),
+            status: "error",
+            error: `Captură premium: ${(e as Error).message}`,
+          });
+          // Fall back to the last mirror frame so the QR still works.
+          if (finalFallbackRef.current) {
+            const { saveCapture } = await import("@/lib/captures");
+            setPremiumId(saveCapture(finalFallbackRef.current));
+          }
+        }
+      } finally {
+        if (!cancelled) setPremiumBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [screen, premiumId, premiumBusy]);
 
   // Final presence check. Any interaction confirms the visitor is still here.
   useEffect(() => {
@@ -774,7 +909,7 @@ function Kiosk() {
                   mirrorCanvasRef.current = node;
                   delayRef.current?.attach(node);
                 }}
-                className="absolute inset-0 h-full w-full scale-x-[-1]"
+                className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
               />
             )}
 
@@ -915,7 +1050,14 @@ function Kiosk() {
               <p className="mt-3 text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">Resetare automată în {presenceSeconds} secunde</p>
             </div>
             <div className="flex shrink-0 flex-col items-center gap-5">
-              <div className="bg-foreground p-3"><QrCode value={origin} size={180} /></div>
+              <div className="bg-foreground p-3">
+                <QrCode value={premiumId ? `${origin}/r/${premiumId}` : origin} size={180} />
+              </div>
+              {premiumBusy && (
+                <p className="breathe text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">
+                  Se procesează…
+                </p>
+              )}
               <CancerRibbon className="h-[14vh] w-auto text-primary" />
             </div>
           </div>
