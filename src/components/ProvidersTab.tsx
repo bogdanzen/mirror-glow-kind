@@ -189,7 +189,7 @@ export function ProvidersTab({
         {PROVIDER_IDS.filter((id) => !draft.fallbackChain.includes(id)).map((id) => (
           <button
             key={id}
-            className="text-muted-foreground underline underline-offset-8"
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
             onClick={() => set("fallbackChain", [...draft.fallbackChain, id])}
           >
             + {PROVIDER_LABELS[id]}
@@ -279,7 +279,7 @@ export function ProvidersTab({
         {PROVIDER_IDS.map((id) => (
           <span key={id} className="flex items-center gap-3">
             <button
-              className="text-primary underline underline-offset-8"
+              className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
               disabled={busy === id}
               onClick={() => void test(id)}
             >
@@ -315,7 +315,7 @@ export function ProvidersTab({
       </div>
 
       <div className="mt-10">
-        <button className="text-primary underline underline-offset-8 text-lg" onClick={onSave}>
+        <button className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary text-lg" onClick={onSave}>
           Salvează furnizorii
         </button>
       </div>
