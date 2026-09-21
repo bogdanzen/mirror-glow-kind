@@ -1072,7 +1072,18 @@ function Kiosk() {
             </div>
             <div className="flex shrink-0 flex-col items-center gap-5">
               <div className="bg-foreground p-3">
-                <QrCode value={premiumId ? `${origin}/r/${premiumId}` : origin} size={180} />
+                <QrCode
+                  value={
+                    premiumId
+                      ? `${origin}/r/${premiumId}?s=${currentSession()}${
+                          settings.donateUrl
+                            ? `&d=${encodeURIComponent(settings.donateUrl)}`
+                            : ""
+                        }`
+                      : origin
+                  }
+                  size={180}
+                />
               </div>
               {premiumBusy && (
                 <p className="breathe text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">

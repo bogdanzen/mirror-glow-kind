@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as GdprRouteImport } from './routes/gdpr'
 import { Route as ApiBaldRouteImport } from './routes/api/bald'
 import { Route as ApiFalRouteImport } from './routes/api/fal'
@@ -19,6 +20,11 @@ import { Route as RIdRouteImport } from './routes/r.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GdprRoute = GdprRouteImport.update({
@@ -49,6 +55,7 @@ const RIdRoute = RIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/gdpr': typeof GdprRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/gdpr': typeof GdprRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/gdpr': typeof GdprRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
@@ -75,12 +84,26 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/gdpr' | '/api/bald' | '/api/fal' | '/api/mirror-frame' | '/r/$id'
+    | '/'
+    | '/dashboard'
+    | '/gdpr'
+    | '/api/bald'
+    | '/api/fal'
+    | '/api/mirror-frame'
+    | '/r/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/gdpr' | '/api/bald' | '/api/fal' | '/api/mirror-frame' | '/r/$id'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/gdpr'
+    | '/api/bald'
+    | '/api/fal'
+    | '/api/mirror-frame'
+    | '/r/$id'
   id:
     | '__root__'
     | '/'
+    | '/dashboard'
     | '/gdpr'
     | '/api/bald'
     | '/api/fal'
@@ -90,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   GdprRoute: typeof GdprRoute
   ApiBaldRoute: typeof ApiBaldRoute
   ApiFalRoute: typeof ApiFalRoute
@@ -104,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gdpr': {
@@ -146,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   GdprRoute: GdprRoute,
   ApiBaldRoute: ApiBaldRoute,
   ApiFalRoute: ApiFalRoute,
