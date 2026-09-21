@@ -612,7 +612,7 @@ function Kiosk() {
 
       // FALLBACK: no GPU. One frame is re-rendered on the server as a
       // photorealistic bald portrait and held on screen.
-      if (current.fallbackMode) {
+      if (current.fallbackMode || current.mirrorEngine === "frames") {
         setDemo(false);
         if (mirrorRef.current) {
           mirrorRef.current.srcObject = camera;
