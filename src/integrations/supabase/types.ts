@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      mirror_events: {
+        Row: {
+          created_at: string
+          device: string
+          event: string
+          id: string
+          kiosk: string | null
+          meta: Json
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          device?: string
+          event: string
+          id?: string
+          kiosk?: string | null
+          meta?: Json
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          device?: string
+          event?: string
+          id?: string
+          kiosk?: string | null
+          meta?: Json
+          session_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
