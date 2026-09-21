@@ -168,6 +168,10 @@ export type MirrorSettings = {
   featherPx: number;
   /** Draws the tracked head box and live stats on the mirror. */
   headDebug: boolean;
+  /** Name of this totem, shown in the statistics page. */
+  kioskName: string;
+  /** External donation link opened from the phone page. */
+  donateUrl: string;
 };
 
 // Doar Krea rulează acum: celelalte pipeline-uri ar descărca modele inutile.
