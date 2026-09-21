@@ -27,6 +27,7 @@ import {
 } from "@/lib/mirror";
 import { reloadMirrorResolution } from "@/lib/mirror";
 import { PinPad } from "@/components/PinPad";
+import { ProvidersTab } from "@/components/ProvidersTab";
 import type { WarmState } from "@/lib/scope";
 import { clearDiag, subscribeDiag, type DiagEntry } from "@/lib/diag";
 import { mirrorTurnCredentials } from "@/lib/turn.functions";
@@ -45,7 +46,7 @@ export function AdminPanel({
   onChange: (s: MirrorSettings) => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"setari" | "mesaje">("setari");
+  const [tab, setTab] = useState<"setari" | "mesaje" | "furnizori">("setari");
   const [pin, setPin] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [draft, setDraft] = useState<MirrorSettings>(settings);
@@ -144,6 +145,7 @@ export function AdminPanel({
           {(
             [
               ["setari", "Setări"],
+              ["furnizori", "Furnizori"],
               ["mesaje", "Mesaje"],
             ] as const
           ).map(([value, text]) => (
