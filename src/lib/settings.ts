@@ -248,6 +248,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   headMargin: 0.85,
   featherPx: 70,
   headDebug: false,
+  kioskName: "Totem 1",
+  donateUrl: "",
 };
 
 
@@ -331,6 +333,8 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.headMargin = clamp(merged.headMargin, 0.2, 1.6, DEFAULT_SETTINGS.headMargin);
   merged.featherPx = Math.round(clamp(merged.featherPx, 0, 200, DEFAULT_SETTINGS.featherPx));
   merged.headDebug = Boolean(merged.headDebug);
+  merged.kioskName = String(merged.kioskName || DEFAULT_SETTINGS.kioskName).slice(0, 60);
+  merged.donateUrl = String(merged.donateUrl ?? "").trim();
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)
