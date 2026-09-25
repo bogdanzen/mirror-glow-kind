@@ -58,7 +58,8 @@ type Screen =
   | "mirror"
   | "choice"
   | "healthy"
-  | "capture";
+  | "capture"
+  | "donate";
 
 function CampaignLogos() {
   return (
@@ -420,8 +421,16 @@ function Kiosk() {
       await new Promise((r) => setTimeout(r, 1200));
       const t0 = performance.now();
       let logged = false;
+      // The first generated portrait is noticeably worse: skip partial
+      // previews always, and drop the first finished image when refreshing.
+      let skipFirst = current.fallbackRefresh !== "off";
       const show = (url: string, isFinal: boolean) => {
         if (fallbackCancelRef.current) return;
+        if (!isFinal) return;
+        if (skipFirst) {
+          skipFirst = false;
+          return;
+        }
         if (fallbackUrlRef.current) setPrevFallbackUrl(fallbackUrlRef.current);
         fallbackUrlRef.current = url;
         setFallbackUrl(url);
@@ -796,8 +805,8 @@ function Kiosk() {
 
   // Final presence check. Any interaction confirms the visitor is still here.
   useEffect(() => {
-    if (screen !== "capture") return;
-    setPresenceSeconds(20);
+    if (screen !== "capture" && screen !== "donate") return;
+    setPresenceSeconds(screen === "donate" ? 45 : 20);
     const id = window.setInterval(() => {
       setPresenceSeconds((seconds) => {
         if (seconds <= 1) {
@@ -1068,6 +1077,12 @@ function Kiosk() {
               >
                 {m.finalPresence}
               </button>
+              <button
+                onClick={() => setScreen("donate")}
+                className="ml-[3vw] mt-[5vh] border border-primary px-[3vw] py-[2vh] text-[clamp(1rem,2vw,1.8rem)] uppercase tracking-[0.2em] text-primary"
+              >
+                Donează acum
+              </button>
               <p className="mt-3 text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">Resetare automată în {presenceSeconds} secunde</p>
             </div>
             <div className="flex shrink-0 flex-col items-center gap-5">
@@ -1096,6 +1111,29 @@ function Kiosk() {
         </section>
       )}
 
+      {screen === "donate" && (
+        <section className="neon-stage fade-in-slow relative flex h-full flex-col items-center px-[7vw] py-[7vh] text-center">
+          <div className="kiosk-noise" aria-hidden />
+          <CampaignLogos />
+          <div className="relative mt-[14vh]">
+            <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">Vertical Freedom</p>
+            <h2 className="mt-4 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.85]">DONEAZĂ<br /><span className="text-primary">ACUM.</span></h2>
+            <p className="mx-auto mt-[4vh] max-w-[26ch] text-[clamp(1.2rem,2.6vw,2.4rem)] leading-snug text-foreground/85">Scanează codul cu telefonul și susține prevenția cancerului.</p>
+          </div>
+          <div className="relative mt-[6vh] bg-foreground p-4">
+            <QrCode
+              value={`${origin}/doneaza?s=${currentSession()}&k=${encodeURIComponent(settings.kioskName)}&d=${encodeURIComponent(settings.donateUrl)}`}
+              size={320}
+            />
+          </div>
+          <p className="relative mt-[3vh] text-[clamp(0.9rem,1.7vw,1.5rem)] text-muted-foreground">{settings.donateUrl.replace(/^https?:\/\//, "")}</p>
+          <div className="relative mt-auto flex items-end justify-between self-stretch">
+            <button onClick={() => setScreen("capture")} className="border border-hairline px-[3vw] py-[2vh] text-[clamp(1rem,2vw,1.8rem)] uppercase tracking-[0.2em]">Înapoi</button>
+            <p className="text-[clamp(0.75rem,1.3vw,1.1rem)] text-muted-foreground">Resetare automată în {presenceSeconds} secunde</p>
+            <CancerRibbon className="h-[14vh] w-auto text-primary" />
+          </div>
+        </section>
+      )}
 
       {settings.diagnostics && !admin && (
         <>
