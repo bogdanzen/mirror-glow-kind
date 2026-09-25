@@ -224,16 +224,16 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   fallbackPrompt: FALLBACK_PROMPT,
   fallbackRefresh: "normal",
   fallbackModel: "openai/gpt-image-2.5-flare",
-  fallbackProvider: "lovable",
+  fallbackProvider: "fal",
   falKey: "",
   falModel: "fal-ai/fast-lightning-sdxl/image-to-image",
-  falStrength: 0.45,
-  falSteps: 6,
+  falStrength: 0.6,
+  falSteps: 4,
   falSeed: 7331,
   sdxlDetail: "",
-  mirrorEngine: "frames",
-  loopProvider: "runpod",
-  fallbackChain: ["runpod", "fal-hair", "demo"],
+  mirrorEngine: "delayed",
+  loopProvider: "fal-hair",
+  fallbackChain: ["fal-hair", "demo"],
   premiumProvider: "perfectcorp",
   podUrl: "",
   podToken: "",
@@ -253,7 +253,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v11";
+const KEY = "mirror.settings.v12";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
