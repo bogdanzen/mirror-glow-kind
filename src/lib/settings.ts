@@ -249,7 +249,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   featherPx: 70,
   headDebug: false,
   kioskName: "Totem 1",
-  donateUrl: "",
+  donateUrl: "https://verticalfreedom.org/doneaza",
 };
 
 
@@ -334,7 +334,7 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.featherPx = Math.round(clamp(merged.featherPx, 0, 200, DEFAULT_SETTINGS.featherPx));
   merged.headDebug = Boolean(merged.headDebug);
   merged.kioskName = String(merged.kioskName || DEFAULT_SETTINGS.kioskName).slice(0, 60);
-  merged.donateUrl = String(merged.donateUrl ?? "").trim();
+  merged.donateUrl = String(merged.donateUrl || DEFAULT_SETTINGS.donateUrl).trim();
   merged.scopePipeline = String(merged.scopePipeline || DEFAULT_SETTINGS.scopePipeline);
   const longEdge = Math.round(Number(merged.outputLongEdge));
   merged.outputLongEdge = Number.isFinite(longEdge)

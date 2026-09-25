@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BaniRouteImport } from './routes/bani'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DoneazaRouteImport } from './routes/doneaza'
 import { Route as GdprRouteImport } from './routes/gdpr'
 import { Route as ApiBaldRouteImport } from './routes/api/bald'
 import { Route as ApiFalRouteImport } from './routes/api/fal'
@@ -22,9 +24,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BaniRoute = BaniRouteImport.update({
+  id: '/bani',
+  path: '/bani',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DoneazaRoute = DoneazaRouteImport.update({
+  id: '/doneaza',
+  path: '/doneaza',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GdprRoute = GdprRouteImport.update({
@@ -55,7 +67,9 @@ const RIdRoute = RIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bani': typeof BaniRoute
   '/dashboard': typeof DashboardRoute
+  '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
@@ -64,7 +78,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bani': typeof BaniRoute
   '/dashboard': typeof DashboardRoute
+  '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
@@ -74,7 +90,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bani': typeof BaniRoute
   '/dashboard': typeof DashboardRoute
+  '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
@@ -85,7 +103,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/bani'
     | '/dashboard'
+    | '/doneaza'
     | '/gdpr'
     | '/api/bald'
     | '/api/fal'
@@ -94,7 +114,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bani'
     | '/dashboard'
+    | '/doneaza'
     | '/gdpr'
     | '/api/bald'
     | '/api/fal'
@@ -103,7 +125,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/bani'
     | '/dashboard'
+    | '/doneaza'
     | '/gdpr'
     | '/api/bald'
     | '/api/fal'
@@ -113,7 +137,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BaniRoute: typeof BaniRoute
   DashboardRoute: typeof DashboardRoute
+  DoneazaRoute: typeof DoneazaRoute
   GdprRoute: typeof GdprRoute
   ApiBaldRoute: typeof ApiBaldRoute
   ApiFalRoute: typeof ApiFalRoute
@@ -130,11 +156,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bani': {
+      id: '/bani'
+      path: '/bani'
+      fullPath: '/bani'
+      preLoaderRoute: typeof BaniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/doneaza': {
+      id: '/doneaza'
+      path: '/doneaza'
+      fullPath: '/doneaza'
+      preLoaderRoute: typeof DoneazaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gdpr': {
@@ -177,7 +217,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BaniRoute: BaniRoute,
   DashboardRoute: DashboardRoute,
+  DoneazaRoute: DoneazaRoute,
   GdprRoute: GdprRoute,
   ApiBaldRoute: ApiBaldRoute,
   ApiFalRoute: ApiFalRoute,

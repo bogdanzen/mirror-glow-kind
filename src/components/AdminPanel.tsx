@@ -255,7 +255,7 @@ export function AdminPanel({
               onChange={(e) => set("kioskName", e.target.value)}
               placeholder="Totem 1"
             />
-            <label className={label}>Link donații (se deschide de pe telefon)</label>
+            <label className={label}>Link donații (ecranul „Donează acum” și telefonul)</label>
             <input
               className={field}
               value={draft.donateUrl}
@@ -270,6 +270,14 @@ export function AdminPanel({
                 className="border border-primary px-5 py-3 text-sm uppercase tracking-[0.15em] text-primary"
               >
                 Deschide statisticile
+              </a>
+              <a
+                href="/bani"
+                target="_blank"
+                rel="noreferrer"
+                className="border border-primary px-5 py-3 text-sm uppercase tracking-[0.15em] text-primary"
+              >
+                Donații pe totemuri
               </a>
             </div>
 

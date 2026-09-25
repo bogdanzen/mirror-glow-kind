@@ -99,6 +99,27 @@ export type Totals = {
   kiosks: { name: string; sessions: number }[];
 };
 
+export type KioskMoney = { name: string; sessions: number; qrScans: number; donations: number };
+
+/** Per-totem donation activity. A donation belongs to the totem its session started on. */
+export function donationsByKiosk(rows: MirrorEventRow[]): KioskMoney[] {
+  const sessionKiosk = new Map<string, string>();
+  for (const r of rows) if (r.event === "start") sessionKiosk.set(r.session_id, r.kiosk || "Totem");
+  const out = new Map<string, KioskMoney>();
+  const get = (name: string) => {
+    const v = out.get(name) ?? { name, sessions: 0, qrScans: 0, donations: 0 };
+    out.set(name, v);
+    return v;
+  };
+  for (const r of rows) {
+    const name = sessionKiosk.get(r.session_id) || r.kiosk || "Necunoscut";
+    if (r.event === "start") get(name).sessions += 1;
+    if (r.event === "qr_scan") get(name).qrScans += 1;
+    if (r.event === "donate_click") get(name).donations += 1;
+  }
+  return [...out.values()].sort((a, b) => b.donations - a.donations);
+}
+
 export function summarize(rows: MirrorEventRow[]): Totals {
   const bySession = new Map<string, Set<string>>();
   const kiosks = new Map<string, Set<string>>();
