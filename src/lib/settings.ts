@@ -224,14 +224,14 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   fallbackPrompt: FALLBACK_PROMPT,
   fallbackRefresh: "normal",
   fallbackModel: "openai/gpt-image-2.5-flare",
-  fallbackProvider: "fal",
+  fallbackProvider: "lovable",
   falKey: "",
   falModel: "fal-ai/fast-lightning-sdxl/image-to-image",
   falStrength: 0.6,
   falSteps: 4,
   falSeed: 7331,
   sdxlDetail: "",
-  mirrorEngine: "delayed",
+  mirrorEngine: "portrait",
   loopProvider: "fal-hair",
   fallbackChain: ["fal-hair", "demo"],
   premiumProvider: "perfectcorp",
@@ -253,7 +253,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v12";
+const KEY = "mirror.settings.v13";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
