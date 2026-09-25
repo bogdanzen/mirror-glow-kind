@@ -190,6 +190,7 @@ function Kiosk() {
       track("consent", { kiosk });
       return;
     }
+    if (screen === "donate") return;
     const step = {
       framing: "framing",
       mirror: "mirror",

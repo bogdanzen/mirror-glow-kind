@@ -32,11 +32,9 @@ function Doneaza() {
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const target = safeUrl(p.get("d"));
-    track("donate_click", {
-      sessionId: p.get("s") || undefined,
-      kiosk: p.get("k") || undefined,
-      device: "phone",
-    });
+    const s = p.get("s");
+    const k = p.get("k");
+    track("donate_click", { device: "phone", ...(s ? { sessionId: s } : {}), ...(k ? { kiosk: k } : {}) });
     const id = window.setTimeout(() => window.location.replace(target), 400);
     return () => window.clearTimeout(id);
   }, []);
