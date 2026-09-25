@@ -424,7 +424,7 @@ function Kiosk() {
       let logged = false;
       // The first generated portrait is noticeably worse: skip partial
       // previews always, and drop the first finished image when refreshing.
-      let skipFirst = current.fallbackRefresh !== "off";
+      let skipFirst = false;
       const show = (url: string, isFinal: boolean) => {
         if (fallbackCancelRef.current) return;
         if (!isFinal) return;
