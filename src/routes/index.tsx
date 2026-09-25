@@ -1046,7 +1046,6 @@ function Kiosk() {
           <video ref={healthyRef} muted playsInline className="absolute inset-0 h-full w-full scale-x-[-1] object-cover" />
           <div className="video-grade video-grade-soft" aria-hidden />
           <div className="kiosk-noise" aria-hidden />
-          <NeonButterfly className="absolute bottom-[13vh] right-[7vw] w-[14vw]" />
           <div className="absolute left-[7vw] top-[8vh] z-10 max-w-[78vw]">
             <h2 className="font-display text-[clamp(3.2rem,9vw,8rem)] leading-[0.9] text-foreground">{m.healthyTitle}</h2>
           </div>
@@ -1060,7 +1059,6 @@ function Kiosk() {
         <section className="neon-stage fade-in-slow relative flex h-full flex-col px-[7vw] py-[7vh]">
           <div className="kiosk-noise" aria-hidden />
           <CampaignLogos />
-          <NeonButterfly className="absolute right-[7vw] top-[18vh] w-[24vw]" />
           <div className="relative mt-[12vh]">
             <p className="text-[clamp(0.8rem,1.4vw,1.2rem)] uppercase tracking-[0.45em] text-primary">{m.finalKicker}</p>
             <h2 className="mt-3 font-display text-[clamp(4rem,12vw,11rem)] leading-[0.82]">{m.finalTitleTop}<br /><span className="text-primary">{m.finalTitleBottom}</span></h2>
