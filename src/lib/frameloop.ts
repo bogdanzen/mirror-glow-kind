@@ -101,26 +101,59 @@ export function startFrameLoop(options: FrameLoopOptions): FrameLoop {
     return blob;
   };
 
+  const mask = document.createElement("canvas");
   const render = () => {
     if (stopped) return;
     raf = requestAnimationFrame(render);
     const target = canvas;
-    if (!target || !current) return;
-    if (target.width !== size || target.height !== size) {
-      target.width = size;
-      target.height = size;
+    const video = options.video;
+    if (!target || !video.videoWidth) return;
+    const rect = target.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cw = Math.max(320, Math.round(rect.width * dpr));
+    const ch = Math.max(320, Math.round(rect.height * dpr));
+    if (target.width !== cw || target.height !== ch) {
+      target.width = cw;
+      target.height = ch;
     }
     const ctx = target.getContext("2d");
     if (!ctx) return;
-    const t = Math.min(1, (performance.now() - switchedAt) / crossfadeMs);
-    ctx.clearRect(0, 0, size, size);
-    if (previous) {
-      ctx.globalAlpha = 1;
-      ctx.drawImage(previous, 0, 0, size, size);
+    // Reality first: the live camera, cover-fit, always visible.
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const scale = Math.max(cw / vw, ch / vh);
+    const dx = (cw - vw * scale) / 2;
+    const dy = (ch - vh * scale) / 2;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(video, dx, dy, vw * scale, vh * scale);
+    if (!current) return;
+    // Generated head goes back exactly where it was cropped, circular feather.
+    const side = Math.min(vw, vh);
+    const sx = (vw - side) / 2;
+    const sy = Math.max(0, (vh - side) / 2 - side * 0.08);
+    const px = Math.round(side * scale);
+    if (mask.width !== px) {
+      mask.width = px;
+      mask.height = px;
     }
-    ctx.globalAlpha = previous ? t : 1;
-    ctx.drawImage(current, 0, 0, size, size);
-    ctx.globalAlpha = 1;
+    const m = mask.getContext("2d");
+    if (!m) return;
+    const t = Math.min(1, (performance.now() - switchedAt) / crossfadeMs);
+    m.globalCompositeOperation = "source-over";
+    m.clearRect(0, 0, px, px);
+    if (previous) m.drawImage(previous, 0, 0, px, px);
+    m.globalAlpha = previous ? t : 1;
+    m.drawImage(current, 0, 0, px, px);
+    m.globalAlpha = 1;
+    const r = px / 2;
+    const g = m.createRadialGradient(r, r * 0.92, r * 0.5, r, r * 0.92, r * 0.98);
+    g.addColorStop(0, "rgba(0,0,0,1)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    m.globalCompositeOperation = "destination-in";
+    m.fillStyle = g;
+    m.fillRect(0, 0, px, px);
+    m.globalCompositeOperation = "source-over";
+    ctx.drawImage(mask, dx + sx * scale, dy + sy * scale);
     if (t >= 1 && previous) {
       previous.close();
       previous = null;
