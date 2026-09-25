@@ -21,7 +21,7 @@ import {
   type MirrorStatus,
 } from "@/lib/mirror";
 import type { WarmState } from "@/lib/scope";
-import { CancerRibbon, NeonButterfly } from "@/components/NeonButterfly";
+import { CancerRibbon } from "@/components/NeonButterfly";
 import { ButterflyVideo } from "@/components/ButterflyVideo";
 import { currentSession, startSession, track } from "@/lib/metrics";
 import { DiagOverlay } from "@/components/DiagOverlay";
