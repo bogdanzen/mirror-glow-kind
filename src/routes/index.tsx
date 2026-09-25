@@ -593,8 +593,10 @@ function Kiosk() {
         if (cancelled) return;
         // Use the countdown to already render the portrait.
         const current = settingsRef.current;
-        if ((current.fallbackMode || current.mirrorEngine === "frames") && !current.demoMode)
+        if ((current.fallbackMode || current.mirrorEngine === "frames") && !current.demoMode) {
           void startFallbackWork();
+          void startSmileWork();
+        }
         let n = current.framingSeconds;
         setCountdown(n);
         interval = window.setInterval(() => {
@@ -886,7 +888,12 @@ function Kiosk() {
 
           <button
             disabled={!consent}
-            onClick={() => setScreen("framing")}
+            onClick={() => {
+              // Warm the camera the moment consent is given, so processing
+              // can start with the first tick of the countdown.
+              void startCamera().catch(() => undefined);
+              setScreen("framing");
+            }}
             className={`mt-[7vh] w-full hairline-t hairline-b py-[3vh] text-[clamp(1.4rem,3.4vw,3rem)] ${
               consent ? "text-primary" : "text-muted-foreground/40"
             }`}
