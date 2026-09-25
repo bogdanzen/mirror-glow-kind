@@ -46,7 +46,7 @@ export function AdminPanel({
   onChange: (s: MirrorSettings) => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"setari" | "mesaje" | "furnizori">("setari");
+  const [tab, setTab] = useState<"setari" | "transformare" | "furnizori" | "gpu" | "mesaje" | "jurnal">("setari");
   const [pin, setPin] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [draft, setDraft] = useState<MirrorSettings>(settings);
@@ -141,12 +141,15 @@ export function AdminPanel({
           Sesiuni astăzi: <span className="text-foreground">{readSessionCounter()}</span>
         </p>
 
-        <div className="mt-6 flex gap-8 hairline-b pb-3 text-sm uppercase tracking-[0.25em]">
+        <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 hairline-b pb-3 text-sm uppercase tracking-[0.25em]">
           {(
             [
-              ["setari", "Setări"],
-              ["furnizori", "Furnizori"],
+              ["setari", "General"],
+              ["transformare", "Transformare"],
+              ["furnizori", "Bucla 1 FPS"],
               ["mesaje", "Mesaje"],
+              ["gpu", "GPU live"],
+              ["jurnal", "Jurnal"],
             ] as const
           ).map(([value, text]) => (
             <button
@@ -245,9 +248,7 @@ export function AdminPanel({
 
         {tab === "setari" && (
           <>
-            <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">
-              Campanie și statistici
-            </h2>
+            <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">Campanie și statistici</h2>
             <label className={label}>Numele acestui totem</label>
             <input
               className={field}
@@ -280,281 +281,7 @@ export function AdminPanel({
                 Donații pe totemuri
               </a>
             </div>
-
-
-        {(
-          <>
-            <label className={label}>GPU RunPod (Scope)</label>
-            <p className="py-3 text-base text-muted-foreground">
-              {runpod === null
-                ? "se verifică…"
-                : !runpod.configured
-                  ? "cheie RunPod lipsă"
-                  : runpod.pod
-                    ? `${runpod.pod.desiredStatus} · ${runpod.pod.gpu || "GPU"} · ${
-                        runpod.pod.costPerHr != null ? `${runpod.pod.costPerHr} $/h` : ""
-                      }`
-                    : "niciun pod pornit"}
-              {runpod?.error ? ` · ${runpod.error}` : ""}
-              {runpod?.region ? ` · ${runpod.region}` : ""}
-              {podMsg ? ` · ${podMsg}` : ""}
-            </p>
-            <div className="flex flex-wrap gap-8 py-2 text-base">
-              <button
-                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
-                onClick={() => {
-                  setPodMsg("se pornește…");
-                  void startRunpodPod({ data: { pipeline: draft.scopePipeline } })
-                    .then((r) => {
-                      setRunpod(r);
-                      setPodMsg(r.error ?? "pornit");
-                    })
-                    .catch((e: Error) => setPodMsg(e.message));
-                }}
-              >
-                Pornește GPU
-              </button>
-              <button
-                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
-                onClick={() => {
-                  void runpodState()
-                    .then(setRunpod)
-                    .catch(() => undefined);
-                  setPodMsg("");
-                }}
-              >
-                Reîmprospătează
-              </button>
-              <button
-                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
-                disabled={!runpod?.pod}
-                onClick={() => {
-                  if (!runpod?.pod) return;
-                  setPodMsg("se oprește…");
-                  void stopRunpodPod({ data: { id: runpod.pod.id } }).then((r) => {
-                    setPodMsg(r.error ?? "oprit");
-                    void runpodState().then(setRunpod);
-                  });
-                }}
-              >
-                Oprește
-              </button>
-              <button
-                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
-                disabled={!runpod?.pod}
-                onClick={() => {
-                  if (!runpod?.pod) return;
-                  setPodMsg("se șterge…");
-                  void stopRunpodPod({ data: { id: runpod.pod.id, terminate: true } }).then((r) => {
-                    setPodMsg(r.error ?? "șters");
-                    void runpodState().then(setRunpod);
-                  });
-                }}
-              >
-                Șterge pod
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              GPU-ul se taxează la oră cât timp rulează. Oprește-l după eveniment.
-            </p>
-
-            <label className={label}>Stare pregătire</label>
-            <p
-              className={`py-3 text-base ${
-                warm.stage === "ready"
-                  ? "text-primary"
-                  : warm.fatal
-                    ? "text-primary"
-                    : "text-muted-foreground"
-              }`}
-            >
-              {warm.stage === "ready"
-                ? "PREGĂTIT — sesiunile pornesc instant"
-                : `${warm.stage.toUpperCase()}${warm.detail ? ` · ${warm.detail}` : ""}`}
-            </p>
-            {warm.fatal && (
-              <p className="text-xs text-primary">
-                Fișierele modelului sunt corupte. Folosește „Repară modelul” — pod-ul și discul sunt
-                recreate curat, iar modelul se descarcă o singură dată.
-              </p>
-            )}
-            <div className="flex flex-wrap gap-8 py-2 text-base">
-              <button
-                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
-                onClick={() => {
-                  setPodMsg("se repară (pod nou + model curat)…");
-                  void resetMirrorWarm();
-                  void repairRunpodPod({ data: { pipeline: draft.scopePipeline } })
-                    .then((r) => {
-                      setRunpod(r);
-                      setPodMsg(r.error ?? "pod nou creat — pornește pre-încălzirea");
-                    })
-                    .catch((e: Error) => setPodMsg(e.message));
-                }}
-              >
-                Repară modelul
-              </button>
-            </div>
-
-            <label className={label}>Pipeline Scope</label>
-            <select
-              className={field}
-              value={draft.scopePipeline}
-              onChange={(e) => set("scopePipeline", e.target.value)}
-            >
-              {SCOPE_PIPELINES.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-
-            <label className={label}>Releu video Cloudflare (automat)</label>
-            <div className="flex items-center gap-6">
-              <button
-                className="border border-hairline px-6 py-3 text-xs uppercase tracking-[0.2em]"
-                onClick={() => {
-                  setTurnMsg("verific releul…");
-                  void mirrorTurnCredentials({ data: { ttl: 600 } })
-                    .then((r) =>
-                      setTurnMsg(
-                        r.ok
-                          ? `releu activ · ${r.iceServers.length} servere ICE · valabil ${Math.round(r.ttl / 60)} min`
-                          : `releu indisponibil: ${r.error}`,
-                      ),
-                    )
-                    .catch((e: Error) => setTurnMsg(`releu indisponibil: ${e.message}`));
-                }}
-              >
-                Testează releul
-              </button>
-              <span className="text-xs text-muted-foreground">{turnMsg}</span>
-            </div>
-
-            <label className={label}>Releu TURN manual (opțional)</label>
-            <input
-              className={field}
-              placeholder="turn:host:3478"
-              value={draft.turnUrl}
-              onChange={(e) => set("turnUrl", e.target.value)}
-            />
-            <div className="grid grid-cols-2 gap-6">
-              <input
-                className={field}
-                placeholder="utilizator"
-                value={draft.turnUsername}
-                onChange={(e) => set("turnUsername", e.target.value)}
-              />
-              <input
-                className={field}
-                placeholder="parolă"
-                value={draft.turnCredential}
-                onChange={(e) => set("turnCredential", e.target.value)}
-              />
-            </div>
-          </>
-        )}
-
-        <label className={label}>Pași de denoising (latență)</label>
-        <input
-          className={field}
-          value={draft.scopeDenoiseSteps.join(", ")}
-          onChange={(e) =>
-            set(
-              "scopeDenoiseSteps",
-              e.target.value
-                .split(",")
-                .map((v) => Number(v.trim()))
-                .filter((v) => Number.isFinite(v) && v > 0),
-            )
-          }
-        />
-        <p className="text-xs text-muted-foreground">
-          Mai puțini pași = latență mai mică. Implicit 650, 500.
-        </p>
-
-        <label className={label}>Claritate (latura lungă a imaginii AI)</label>
-        <input
-          className={field}
-          type="number"
-          min={320}
-          max={1280}
-          step={16}
-          value={draft.outputLongEdge}
-          onChange={(e) => set("outputLongEdge", Number(e.target.value))}
-        />
-        <p className="text-xs text-muted-foreground">
-          Latura scurtă se calculează automat din raportul ecranului, deci imaginea nu mai este
-          deformată. Mai mare = mai clar, dar mai lent.
-        </p>
-
-        <label className={label}>Libertate față de chip (noise)</label>
-        <input
-          className={field}
-          type="number"
-          min={0}
-          max={1}
-          step={0.05}
-          value={draft.noiseScale}
-          onChange={(e) => set("noiseScale", Number(e.target.value))}
-        />
-        <p className="text-xs text-muted-foreground">
-          Valori mici = imagine mai stabilă și mai fidelă. Implicit 0.35.
-        </p>
-
-        <button
-          className="mt-6 hairline-t hairline-b w-full py-4 text-left text-primary"
-          onClick={() => {
-            apply(draft);
-            setStatus("Reîncarc modelul la rezoluția ecranului…");
-            void reloadMirrorResolution(draft)
-              .then(() => setStatus("Model reîncărcat la rezoluția ecranului."))
-              .catch((e: Error) => setStatus(`Reîncărcare eșuată: ${e.message}`));
-          }}
-        >
-          Reîncarcă modelul la rezoluția ecranului (fără repornirea mașinii)
-        </button>
-
-
-
-
-        <label className={label}>Prompt</label>
-        <textarea
-          className={`${field} h-28`}
-          value={draft.prompt}
-          onChange={(e) => set("prompt", e.target.value)}
-        />
-
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <label className={label}>Lățime</label>
-            <input
-              className={field}
-              type="number"
-              value={draft.width}
-              onChange={(e) => set("width", Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className={label}>Înălțime</label>
-            <input
-              className={field}
-              type="number"
-              value={draft.height}
-              onChange={(e) => set("height", Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className={label}>FPS</label>
-            <input
-              className={field}
-              type="number"
-              value={draft.fps}
-              onChange={(e) => set("fps", Number(e.target.value))}
-            />
-          </div>
-        </div>
-
+            <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">Cameră și durate</h2>
         <label className={label}>Cameră</label>
         <select
           className={field}
@@ -599,8 +326,8 @@ export function AdminPanel({
           value={draft.campaignLine}
           onChange={(e) => set("campaignLine", e.target.value)}
         />
-
-        <div className="mt-10 flex flex-col gap-4 text-lg">
+            <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">Comportament</h2>
+        <div className="mt-6 flex flex-col gap-4 text-lg">
           <button
             className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base"
             onClick={() => set("demoMode", !draft.demoMode)}
@@ -610,8 +337,65 @@ export function AdminPanel({
               {draft.demoMode ? "pornit" : "oprit"}
             </span>
           </button>
+          <button
+            className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base"
+            onClick={() => set("storageEnabled", !draft.storageEnabled)}
+          >
+            Salvare imagine (24h):{" "}
+            <span className={draft.storageEnabled ? "text-primary" : "text-muted-foreground"}>
+              {draft.storageEnabled ? "pornită" : "oprită"}
+            </span>
+          </button>
+        </div>
+            <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">Securitate</h2>
+        <label className={label}>PIN nou</label>
+        <div className="flex gap-6">
+          <input
+            className={field}
+            value={newPin}
+            inputMode="numeric"
+            onChange={(e) => setNewPin(e.target.value)}
+            placeholder={settings.pin}
+          />
+          <button
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary whitespace-nowrap"
+            onClick={() => {
+              if (newPin.length >= 4) {
+                const next = { ...draft, pin: newPin };
+                setDraft(next);
+                apply(next);
+                setNewPin("");
+              }
+            }}
+          >
+            Schimbă
+          </button>
+        </div>
+        <div className="mt-8 flex flex-wrap gap-6 text-lg">
+          <button
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
+            onClick={() => {
+              apply({ ...DEFAULT_SETTINGS, pin: draft.pin });
+              setDraft({ ...DEFAULT_SETTINGS, pin: draft.pin });
+            }}
+          >
+            Resetează setările
+          </button>
+          <button
+            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
+            onClick={() => window.location.reload()}
+          >
+            Repornește aplicația
+          </button>
+        </div>
+          </>
+        )}
+        {tab === "transformare" && (
+          <>
+            <p className="mt-8 text-sm text-muted-foreground">Fluxul recomandat: transformarea pe server, fără GPU. Alegi tipul oglinzii, apoi motorul; apar doar setările lui.</p>
+        <div className="mt-6 flex flex-col gap-4 text-lg">
           <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("fallbackMode", !draft.fallbackMode)}>
-            Mod rezervă (portret AI pe server, fără GPU):{" "}
+            Transformare AI (fără GPU):{" "}
             <span className={draft.fallbackMode ? "text-primary" : "text-muted-foreground"}>
               {draft.fallbackMode ? "pornit" : "oprit"}
             </span>
@@ -874,7 +658,7 @@ export function AdminPanel({
                 </>
               )}
 
-              <label className={label}>Prompt mod rezervă</label>
+              <label className={label}>Prompt portret pe server</label>
               <textarea
                 className={`${field} min-h-32 resize-none`}
                 value={draft.fallbackPrompt}
@@ -882,57 +666,288 @@ export function AdminPanel({
               />
             </>
           )}
-          <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("diagnostics", !draft.diagnostics)}>
-            Mod diagnostic (verbose):{" "}
-            <span className={draft.diagnostics ? "text-primary" : "text-muted-foreground"}>
-              {draft.diagnostics ? "pornit" : "oprit"}
-            </span>
-          </button>
+        </div>
+          </>
+        )}
+        {tab === "gpu" && (
+          <>
+            <p className="mt-8 text-sm text-muted-foreground">Oglinda video în timp real pe mașina GPU (RunPod / Scope). Folosită doar când transformarea pe server e oprită. Se taxează la oră.</p>
+        {(
+          <>
+            <label className={label}>GPU RunPod (Scope)</label>
+            <p className="py-3 text-base text-muted-foreground">
+              {runpod === null
+                ? "se verifică…"
+                : !runpod.configured
+                  ? "cheie RunPod lipsă"
+                  : runpod.pod
+                    ? `${runpod.pod.desiredStatus} · ${runpod.pod.gpu || "GPU"} · ${
+                        runpod.pod.costPerHr != null ? `${runpod.pod.costPerHr} $/h` : ""
+                      }`
+                    : "niciun pod pornit"}
+              {runpod?.error ? ` · ${runpod.error}` : ""}
+              {runpod?.region ? ` · ${runpod.region}` : ""}
+              {podMsg ? ` · ${podMsg}` : ""}
+            </p>
+            <div className="flex flex-wrap gap-8 py-2 text-base">
+              <button
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
+                onClick={() => {
+                  setPodMsg("se pornește…");
+                  void startRunpodPod({ data: { pipeline: draft.scopePipeline } })
+                    .then((r) => {
+                      setRunpod(r);
+                      setPodMsg(r.error ?? "pornit");
+                    })
+                    .catch((e: Error) => setPodMsg(e.message));
+                }}
+              >
+                Pornește GPU
+              </button>
+              <button
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
+                onClick={() => {
+                  void runpodState()
+                    .then(setRunpod)
+                    .catch(() => undefined);
+                  setPodMsg("");
+                }}
+              >
+                Reîmprospătează
+              </button>
+              <button
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
+                disabled={!runpod?.pod}
+                onClick={() => {
+                  if (!runpod?.pod) return;
+                  setPodMsg("se oprește…");
+                  void stopRunpodPod({ data: { id: runpod.pod.id } }).then((r) => {
+                    setPodMsg(r.error ?? "oprit");
+                    void runpodState().then(setRunpod);
+                  });
+                }}
+              >
+                Oprește
+              </button>
+              <button
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-muted-foreground"
+                disabled={!runpod?.pod}
+                onClick={() => {
+                  if (!runpod?.pod) return;
+                  setPodMsg("se șterge…");
+                  void stopRunpodPod({ data: { id: runpod.pod.id, terminate: true } }).then((r) => {
+                    setPodMsg(r.error ?? "șters");
+                    void runpodState().then(setRunpod);
+                  });
+                }}
+              >
+                Șterge pod
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              GPU-ul se taxează la oră cât timp rulează. Oprește-l după eveniment.
+            </p>
+
+            <label className={label}>Stare pregătire</label>
+            <p
+              className={`py-3 text-base ${
+                warm.stage === "ready"
+                  ? "text-primary"
+                  : warm.fatal
+                    ? "text-primary"
+                    : "text-muted-foreground"
+              }`}
+            >
+              {warm.stage === "ready"
+                ? "PREGĂTIT — sesiunile pornesc instant"
+                : `${warm.stage.toUpperCase()}${warm.detail ? ` · ${warm.detail}` : ""}`}
+            </p>
+            {warm.fatal && (
+              <p className="text-xs text-primary">
+                Fișierele modelului sunt corupte. Folosește „Repară modelul” — pod-ul și discul sunt
+                recreate curat, iar modelul se descarcă o singură dată.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-8 py-2 text-base">
+              <button
+                className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary"
+                onClick={() => {
+                  setPodMsg("se repară (pod nou + model curat)…");
+                  void resetMirrorWarm();
+                  void repairRunpodPod({ data: { pipeline: draft.scopePipeline } })
+                    .then((r) => {
+                      setRunpod(r);
+                      setPodMsg(r.error ?? "pod nou creat — pornește pre-încălzirea");
+                    })
+                    .catch((e: Error) => setPodMsg(e.message));
+                }}
+              >
+                Repară modelul
+              </button>
+            </div>
+
+            <label className={label}>Pipeline Scope</label>
+            <select
+              className={field}
+              value={draft.scopePipeline}
+              onChange={(e) => set("scopePipeline", e.target.value)}
+            >
+              {SCOPE_PIPELINES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+
+            <label className={label}>Releu video Cloudflare (automat)</label>
+            <div className="flex items-center gap-6">
+              <button
+                className="border border-hairline px-6 py-3 text-xs uppercase tracking-[0.2em]"
+                onClick={() => {
+                  setTurnMsg("verific releul…");
+                  void mirrorTurnCredentials({ data: { ttl: 600 } })
+                    .then((r) =>
+                      setTurnMsg(
+                        r.ok
+                          ? `releu activ · ${r.iceServers.length} servere ICE · valabil ${Math.round(r.ttl / 60)} min`
+                          : `releu indisponibil: ${r.error}`,
+                      ),
+                    )
+                    .catch((e: Error) => setTurnMsg(`releu indisponibil: ${e.message}`));
+                }}
+              >
+                Testează releul
+              </button>
+              <span className="text-xs text-muted-foreground">{turnMsg}</span>
+            </div>
+
+            <label className={label}>Releu TURN manual (opțional)</label>
+            <input
+              className={field}
+              placeholder="turn:host:3478"
+              value={draft.turnUrl}
+              onChange={(e) => set("turnUrl", e.target.value)}
+            />
+            <div className="grid grid-cols-2 gap-6">
+              <input
+                className={field}
+                placeholder="utilizator"
+                value={draft.turnUsername}
+                onChange={(e) => set("turnUsername", e.target.value)}
+              />
+              <input
+                className={field}
+                placeholder="parolă"
+                value={draft.turnCredential}
+                onChange={(e) => set("turnCredential", e.target.value)}
+              />
+            </div>
+          </>
+        )}
+        <label className={label}>Pași de denoising (latență)</label>
+        <input
+          className={field}
+          value={draft.scopeDenoiseSteps.join(", ")}
+          onChange={(e) =>
+            set(
+              "scopeDenoiseSteps",
+              e.target.value
+                .split(",")
+                .map((v) => Number(v.trim()))
+                .filter((v) => Number.isFinite(v) && v > 0),
+            )
+          }
+        />
+        <p className="text-xs text-muted-foreground">
+          Mai puțini pași = latență mai mică. Implicit 650, 500.
+        </p>
+
+        <label className={label}>Claritate (latura lungă a imaginii AI)</label>
+        <input
+          className={field}
+          type="number"
+          min={320}
+          max={1280}
+          step={16}
+          value={draft.outputLongEdge}
+          onChange={(e) => set("outputLongEdge", Number(e.target.value))}
+        />
+        <p className="text-xs text-muted-foreground">
+          Latura scurtă se calculează automat din raportul ecranului, deci imaginea nu mai este
+          deformată. Mai mare = mai clar, dar mai lent.
+        </p>
+
+        <label className={label}>Libertate față de chip (noise)</label>
+        <input
+          className={field}
+          type="number"
+          min={0}
+          max={1}
+          step={0.05}
+          value={draft.noiseScale}
+          onChange={(e) => set("noiseScale", Number(e.target.value))}
+        />
+        <p className="text-xs text-muted-foreground">
+          Valori mici = imagine mai stabilă și mai fidelă. Implicit 0.35.
+        </p>
+
+        <button
+          className="mt-6 hairline-t hairline-b w-full py-4 text-left text-primary"
+          onClick={() => {
+            apply(draft);
+            setStatus("Reîncarc modelul la rezoluția ecranului…");
+            void reloadMirrorResolution(draft)
+              .then(() => setStatus("Model reîncărcat la rezoluția ecranului."))
+              .catch((e: Error) => setStatus(`Reîncărcare eșuată: ${e.message}`));
+          }}
+        >
+          Reîncarcă modelul la rezoluția ecranului (fără repornirea mașinii)
+        </button>
+        <label className={label}>Prompt</label>
+        <textarea
+          className={`${field} h-28`}
+          value={draft.prompt}
+          onChange={(e) => set("prompt", e.target.value)}
+        />
+
+        <div className="grid grid-cols-3 gap-6">
+          <div>
+            <label className={label}>Lățime</label>
+            <input
+              className={field}
+              type="number"
+              value={draft.width}
+              onChange={(e) => set("width", Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className={label}>Înălțime</label>
+            <input
+              className={field}
+              type="number"
+              value={draft.height}
+              onChange={(e) => set("height", Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className={label}>FPS</label>
+            <input
+              className={field}
+              type="number"
+              value={draft.fps}
+              onChange={(e) => set("fps", Number(e.target.value))}
+            />
+          </div>
+        </div>
+        <div className="mt-6 flex flex-col gap-4 text-lg">
           <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("prewarm", !draft.prewarm)}>
             Pre-încălzire GPU:{" "}
             <span className={draft.prewarm ? "text-primary" : "text-muted-foreground"}>
               {draft.prewarm ? "pornită" : "oprită"}
             </span>
           </button>
-          <button
-            className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base"
-            onClick={() => set("storageEnabled", !draft.storageEnabled)}
-          >
-            Salvare imagine (24h):{" "}
-            <span className={draft.storageEnabled ? "text-primary" : "text-muted-foreground"}>
-              {draft.storageEnabled ? "pornită" : "oprită"}
-            </span>
-          </button>
         </div>
-
-        <label className={label}>PIN nou</label>
-        <div className="flex gap-6">
-          <input
-            className={field}
-            value={newPin}
-            inputMode="numeric"
-            onChange={(e) => setNewPin(e.target.value)}
-            placeholder={settings.pin}
-          />
-          <button
-            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary whitespace-nowrap"
-            onClick={() => {
-              if (newPin.length >= 4) {
-                const next = { ...draft, pin: newPin };
-                setDraft(next);
-                apply(next);
-                setNewPin("");
-              }
-            }}
-          >
-            Schimbă
-          </button>
-        </div>
-
-        <div className="mt-12 flex flex-wrap gap-10 text-lg">
-          <button className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary" onClick={() => apply(draft)}>
-            Salvează
-          </button>
+        <div className="mt-8 flex flex-wrap gap-6 text-lg">
           <button
             className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
             onClick={async () => {
@@ -981,15 +996,6 @@ export function AdminPanel({
           <button
             className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
             onClick={() => {
-              apply({ ...DEFAULT_SETTINGS, pin: draft.pin });
-              setDraft({ ...DEFAULT_SETTINGS, pin: draft.pin });
-            }}
-          >
-            Resetează setările
-          </button>
-          <button
-            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
-            onClick={() => {
               setStatus("Se pre-încălzește GPU-ul…");
               void prewarmMirror(draft, (_s, detail) => detail && setStatus(`Pre-încălzire: ${detail}`))
                 .then(() => setStatus("GPU pregătit — sesiunile pornesc instant."))
@@ -998,14 +1004,19 @@ export function AdminPanel({
           >
             Pre-încălzește GPU
           </button>
-          <button
-            className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 text-foreground"
-            onClick={() => window.location.reload()}
-          >
-            Repornește aplicația
+        </div>
+          </>
+        )}
+        {tab === "jurnal" && (
+          <>
+        <div className="mt-6 flex flex-col gap-4 text-lg">
+          <button className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base" onClick={() => set("diagnostics", !draft.diagnostics)}>
+            Mod diagnostic (verbose):{" "}
+            <span className={draft.diagnostics ? "text-primary" : "text-muted-foreground"}>
+              {draft.diagnostics ? "pornit" : "oprit"}
+            </span>
           </button>
         </div>
-
         <div className="mt-12 hairline-t pt-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg">Diagnostic live</h2>
@@ -1025,9 +1036,6 @@ export function AdminPanel({
             ))}
           </ul>
         </div>
-
-        {status && <p className="mt-8 text-sm text-muted-foreground">{status}</p>}
-
         <div className="mt-12 hairline-t pt-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg">Jurnal sesiuni (ultimele 50)</h2>
@@ -1056,6 +1064,14 @@ export function AdminPanel({
           </ul>
         </div>
           </>
+        )}
+        {tab !== "mesaje" && (
+          <div className="sticky bottom-0 mt-12 flex items-center gap-6 bg-background py-4 hairline-t">
+          <button className="border border-hairline px-5 py-3 text-sm uppercase tracking-[0.15em] transition-colors hover:border-primary hover:text-primary disabled:opacity-40 border-primary text-primary" onClick={() => apply(draft)}>
+            Salvează
+          </button>
+            {status && <span className="text-sm text-muted-foreground">{status}</span>}
+          </div>
         )}
       </div>
     </div>
