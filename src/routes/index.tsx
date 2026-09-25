@@ -939,6 +939,7 @@ function Kiosk() {
                 ref={(node) => {
                   mirrorCanvasRef.current = node;
                   delayRef.current?.attach(node);
+                  frameLoopRef.current?.attach(node);
                 }}
                 className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
               />
