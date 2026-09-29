@@ -335,7 +335,7 @@
 
 .v2-kicker {
   color: var(--primary);
-  font-size: clamp(0.8rem, 1.45vw, 1.2rem);
+  font-size: clamp(1.6rem, 2.9vw, 2.6rem);
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -363,7 +363,7 @@
   inset: -24% -10%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 62%, transparent), transparent 76%);
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 40%, transparent), transparent 76%);
   filter: blur(22px);
 }
 
@@ -407,7 +407,7 @@
   inset: -42% -18%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 78%, transparent) 0%, color-mix(in oklab, var(--background) 50%, transparent) 40%, transparent 78%);
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 52%, transparent) 0%, color-mix(in oklab, var(--background) 30%, transparent) 40%, transparent 78%);
   filter: blur(28px);
 }
 
@@ -427,7 +427,7 @@
   position: absolute;
   inset: -70% -28%;
   z-index: -1;
-  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 72%, transparent), transparent 76%);
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 46%, transparent), transparent 76%);
   filter: blur(24px);
 }
 
