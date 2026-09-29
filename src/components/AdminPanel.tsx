@@ -1118,7 +1118,8 @@ function CameraAdjuster({ draft, set, field }: { draft: MirrorSettings; set: <K 
           ))}
           <button type="button" onClick={() => set("camMirror", !draft.camMirror)} className={`${field} w-auto px-4 ${draft.camMirror ? "border-primary text-primary" : ""}`}>Oglindit</button>
         </div>
-        {slider("camZoom", "Zoom", 1, 3, 0.05)}
+        {slider("camZoom", "Zoom / câmp vizual", 0.3, 3, 0.05)}
+        <button type="button" className={`${field} w-auto px-4`} onClick={() => set("camZoom", 0.3)}>FOV maxim</button>
         {slider("camOffsetX", "Stânga / dreapta (%)", -50, 50, 1)}
         {slider("camOffsetY", "Sus / jos (%)", -50, 50, 1)}
         <button type="button" className={`${field} w-auto px-4`} onClick={() => { set("camRotation", 0); set("camZoom", 1); set("camOffsetX", 0); set("camOffsetY", 0); set("camMirror", true); }}>Resetează poziția</button>
