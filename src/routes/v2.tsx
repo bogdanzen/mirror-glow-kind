@@ -293,7 +293,10 @@ function MirrorV2() {
   }, [screen, settings.kioskName]);
 
   useEffect(() => {
-    if (screen === "attract") return;
+    // Each screen starts with a fresh inactivity window. The consent screen must
+    // remain available while the visitor reads it, regardless of time spent on attract.
+    idleRef.current = Date.now();
+    if (screen === "attract" || screen === "consent") return;
     const activity = () => { idleRef.current = Date.now(); };
     const id = window.setInterval(() => {
       if (Date.now() - idleRef.current > 45_000 && screen !== "mirror") reset();
