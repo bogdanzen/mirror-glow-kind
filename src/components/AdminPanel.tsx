@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { cameraStyle } from "@/lib/cameraView";
+import { useEffect, useRef, useState } from "react";
 import {
   DEFAULT_MESSAGES,
   DEFAULT_SETTINGS,
@@ -295,6 +296,9 @@ export function AdminPanel({
             </option>
           ))}
         </select>
+
+        <label className={label}>Poziție cameră (vizibil pe /v2)</label>
+        <CameraAdjuster draft={draft} set={set} field={field} />
 
         <div className="grid grid-cols-5 gap-6">
           {(
@@ -1073,6 +1077,52 @@ export function AdminPanel({
             {status && <span className="text-sm text-muted-foreground">{status}</span>}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+
+function CameraAdjuster({ draft, set, field }: { draft: MirrorSettings; set: <K extends keyof MirrorSettings>(k: K, v: MirrorSettings[K]) => void; field: string }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let dead = false;
+    navigator.mediaDevices
+      ?.getUserMedia({ video: draft.cameraDeviceId ? { deviceId: { exact: draft.cameraDeviceId } } : { facingMode: "user" }, audio: false })
+      .then((s) => {
+        if (dead) return s.getTracks().forEach((t) => t.stop());
+        stream = s;
+        if (videoRef.current) { videoRef.current.srcObject = s; void videoRef.current.play().catch(() => undefined); }
+      })
+      .catch(() => undefined);
+    return () => { dead = true; stream?.getTracks().forEach((t) => t.stop()); };
+  }, [draft.cameraDeviceId]);
+  const W = 270, H = 480;
+  const slider = (k: "camZoom" | "camOffsetX" | "camOffsetY", name: string, min: number, max: number, step: number) => (
+    <label className="flex flex-col gap-1 text-sm">
+      <span>{name}: {draft[k]}</span>
+      <input type="range" min={min} max={max} step={step} value={draft[k]} onChange={(e) => set(k, Number(e.target.value))} />
+    </label>
+  );
+  return (
+    <div className="mt-3 flex flex-wrap items-start gap-8">
+      <div className="relative overflow-hidden border border-border bg-black" style={{ width: W, height: H }}>
+        <video ref={videoRef} muted playsInline style={cameraStyle(draft, W, H)} />
+        <div className="pointer-events-none absolute left-1/2 top-[30%] h-[34%] w-[56%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-primary" />
+      </div>
+      <div className="flex min-w-[16rem] flex-1 flex-col gap-4">
+        <div className="flex flex-wrap gap-2">
+          {[0, 90, 180, 270].map((r) => (
+            <button key={r} type="button" onClick={() => set("camRotation", r)} className={`${field} w-auto px-4 ${draft.camRotation === r ? "border-primary text-primary" : ""}`}>{r}°</button>
+          ))}
+          <button type="button" onClick={() => set("camMirror", !draft.camMirror)} className={`${field} w-auto px-4 ${draft.camMirror ? "border-primary text-primary" : ""}`}>Oglindit</button>
+        </div>
+        {slider("camZoom", "Zoom", 1, 3, 0.05)}
+        {slider("camOffsetX", "Stânga / dreapta (%)", -50, 50, 1)}
+        {slider("camOffsetY", "Sus / jos (%)", -50, 50, 1)}
+        <button type="button" className={`${field} w-auto px-4`} onClick={() => { set("camRotation", 0); set("camZoom", 1); set("camOffsetX", 0); set("camOffsetY", 0); set("camMirror", true); }}>Resetează poziția</button>
+        <p className="text-xs text-muted-foreground">Fața trebuie să stea în ovalul punctat. Previzualizarea are proporția ecranului portret 4K.</p>
       </div>
     </div>
   );
