@@ -12,6 +12,7 @@
 ## Done
 
 - [x] V2 typography: all copy enlarged and highlighted, all text/countdown kept above mid-screen without overlap, and portrait prompt expanded for one person or groups.
+- [x] V2 typography refinement: copy reduced by half, balanced without hyphenation/orphans, alternating rose/ivory hierarchy, and all actions kept above mid-screen.
 - [x] V2 live cleanup: no face marker, generated portrait aligned to the camera with feathered outer edges, non-overlapping copy, official donation QR, and no cancer ribbon.
 - [x] Control panel split into workflow tabs: General, Transformare, Bucla 1 FPS, Mesaje, GPU live, Jurnal; one sticky Save bar
 
