@@ -548,7 +548,7 @@
 
 
 /* V2 refinements: white logo plates, real ribbon, lighter (faded) camera, line breaks in copy */
-.v2-logos img.v2-logo-white { filter: brightness(0) invert(1) drop-shadow(0 0 14px color-mix(in oklab, var(--primary) 40%, transparent)); }
+.v2-logos img.v2-logo-white { filter: drop-shadow(0 0 14px color-mix(in oklab, var(--primary) 40%, transparent)); }
 /* 4K portrait: scale rem with width so every clamp() cap grows (16px @1080, 32px @2160) */
 html:has(.v2-shell) { font-size: max(16px, calc(100vw / 67.5)); }
 .v2-ribbon { filter: drop-shadow(0 0 18px color-mix(in oklab, var(--primary) 45%, transparent)); }
