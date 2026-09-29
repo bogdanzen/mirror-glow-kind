@@ -335,8 +335,8 @@
 
 .v2-kicker {
   color: var(--primary);
-  font-size: clamp(0.576rem, 1.08vw, 0.88rem);
-  font-weight: 600;
+  font-size: clamp(0.8rem, 1.45vw, 1.2rem);
+  font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
 }
@@ -345,7 +345,26 @@
   color: color-mix(in oklab, var(--foreground) 90%, var(--primary));
   letter-spacing: 0.015em;
   line-height: 1.6;
-  text-shadow: 0 0 1.2em color-mix(in oklab, var(--primary) 16%, transparent);
+  text-shadow:
+    0 1px 2px color-mix(in oklab, var(--background) 95%, transparent),
+    0 0 1.2em color-mix(in oklab, var(--primary) 34%, transparent);
+}
+
+.v2-highlight {
+  text-shadow:
+    0 2px 3px color-mix(in oklab, var(--background) 96%, transparent),
+    0 0 0.55em color-mix(in oklab, var(--primary) 44%, transparent),
+    0 0 1.4em color-mix(in oklab, var(--background) 88%, transparent);
+}
+
+.v2-highlight::after {
+  content: "";
+  position: absolute;
+  inset: -24% -10%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 62%, transparent), transparent 76%);
+  filter: blur(22px);
 }
 
 .v2-plate {
