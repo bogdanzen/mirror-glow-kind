@@ -3,9 +3,10 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button";
 import { QrCode } from "@/components/QrCode";
 import pinkRibbon from "@/assets/pink-ribbon.png";
-import { baldifyFrame, FALLBACK_PROMPT, frameToFile } from "@/lib/bald";
+import { baldifyFrame, FALLBACK_PROMPT } from "@/lib/bald";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import { currentSession, startSession, track } from "@/lib/metrics";
+import { cameraStyle, viewToFile } from "@/lib/cameraView";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
 import verticalFreedomLogo from "@/assets/vertical-freedom-2026.png.asset.json";
 import lionsClujLogo from "@/assets/lions-vertical-freedom-2026.png.asset.json";
@@ -39,8 +40,8 @@ const PARTICLES = Array.from({ length: 12 }, (_, index) => index);
 function Logos() {
   return (
     <div className="v2-logos pointer-events-none absolute inset-x-[6vw] top-[3.5vh] z-30 flex items-start justify-between">
-      <span className="v2-logo-plate"><img src={verticalFreedomLogo.url} alt="Vertical Freedom" className="h-auto w-[clamp(7rem,20vw,17rem)] object-contain" /></span>
-      <span className="v2-logo-plate"><img src={lionsClujLogo.url} alt="Lions Club Vertical Freedom" className="h-auto w-[clamp(5.5rem,14vw,11rem)] object-contain" /></span>
+      <img src={verticalFreedomLogo.url} alt="Vertical Freedom" className="h-auto w-[clamp(7rem,20vw,17rem)] object-contain v2-logo-white" />
+      <img src={lionsClujLogo.url} alt="Lions Club Vertical Freedom" className="h-auto w-[clamp(5.5rem,14vw,11rem)] object-contain v2-logo-white" />
     </div>
   );
 }
@@ -68,6 +69,15 @@ function MirrorV2() {
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(20);
   const [origin, setOrigin] = useState("");
+  const [vp, setVp] = useState({ w: 1080, h: 1920 });
+  useEffect(() => {
+    const on = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const generationRef = useRef<AbortController | null>(null);
@@ -85,7 +95,7 @@ function MirrorV2() {
     if (!streamRef.current) {
       streamRef.current = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: "user",
+          ...(settingsRef.current.cameraDeviceId ? { deviceId: { exact: settingsRef.current.cameraDeviceId } } : { facingMode: "user" }),
           width: { ideal: 1920, max: 1920 },
           height: { ideal: 1080, max: 1080 },
           frameRate: { ideal: 24, max: 30 },
@@ -141,7 +151,7 @@ function MirrorV2() {
         await new Promise((resolve) => window.setTimeout(resolve, 100));
       }
       while (!controller.signal.aborted && (produced === 0 || (Date.now() < endBy - 8000 && !loopStopRef.current))) {
-        const frame = frameToFile(video, 768);
+        const frame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 1024);
         if (!frame) throw new Error("Nu am putut prelua imaginea camerei");
         const first = produced === 0;
         try {
@@ -296,21 +306,22 @@ function MirrorV2() {
         ref={videoRef}
         muted
         playsInline
-        className={`absolute inset-0 h-full w-full scale-x-[-1] object-cover transition-opacity duration-1000 ${cameraVisible ? "opacity-100" : "opacity-0"}`}
+        style={cameraStyle(settings, vp.w, vp.h)}
+        className={`transition-opacity duration-1000 ${cameraVisible ? "opacity-100" : "opacity-0"}`}
       />
       {cameraVisible && <div className="video-grade" aria-hidden />}
       {cameraVisible && <div className="v2-grain" aria-hidden />}
       {(screen === "attract" || screen === "final" || screen === "donate") && <PinkParticles />}
 
       {prevBaldUrl && screen === "mirror" && (
-        <img src={prevBaldUrl} alt="" aria-hidden className="absolute inset-0 z-[3] h-full w-full scale-x-[-1] object-cover" />
+        <img src={prevBaldUrl} alt="" aria-hidden className="absolute inset-0 z-[3] h-full w-full object-cover" />
       )}
       {baldUrl && (screen === "mirror" || screen === "choice") && (
         <img
           key={baldUrl}
           src={baldUrl}
           alt="Portretul vizitatorului cu capul ras"
-          className={`absolute inset-0 z-[3] h-full w-full scale-x-[-1] object-cover ${screen === "choice" ? "v2-bald-out" : "v2-bald-in"}`}
+          className={`absolute inset-0 z-[3] h-full w-full object-cover ${screen === "choice" ? "v2-bald-out" : "v2-bald-in"}`}
         />
       )}
 

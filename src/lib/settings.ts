@@ -79,6 +79,11 @@ export type MirrorSettings = {
   height: number;
   fps: number;
   cameraDeviceId: string;
+  camRotation: number;
+  camZoom: number;
+  camOffsetX: number;
+  camOffsetY: number;
+  camMirror: boolean;
   demoMode: boolean;
   storageEnabled: boolean;
   pin: string;
@@ -194,6 +199,11 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   height: 512,
   fps: 15,
   cameraDeviceId: "",
+  camRotation: 0,
+  camZoom: 1,
+  camOffsetX: 0,
+  camOffsetY: 0,
+  camMirror: true,
   demoMode: false,
   storageEnabled: false,
   pin: "0000",
