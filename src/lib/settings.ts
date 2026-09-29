@@ -31,10 +31,12 @@ export type MirrorMessages = {
   choiceTitle: string;
   healthyTitle: string;
   healthyBody: string;
+  finalCause: string;
   finalKicker: string;
   finalTitleTop: string;
   finalTitleBottom: string;
   finalSubtitle: string;
+  finalButterfly: string;
   finalQrLabel: string;
   finalOptions: string;
   finalPresence: string;
@@ -62,10 +64,13 @@ export const DEFAULT_MESSAGES: MirrorMessages = {
   choiceTitle: "ÎNCĂ POȚI ALEGE.",
   healthyTitle: "Prevenția începe înainte să doară.",
   healthyBody: "Fă-ți controalele.\nAscultă-ți corpul.\nAi grijă de tine.",
+  finalCause:
+    "Strângem 50.000 € pentru a oferi acces la screening și sprijin pentru sănătatea mintală pentru până la 1.000 de persoane.",
   finalKicker: "Împreună pentru viață",
-  finalTitleTop: "VERTICAL",
-  finalTitleBottom: "FREEDOM",
-  finalSubtitle: "Alege viața înainte să te oblige viața să alegi.",
+  finalTitleTop: "DE CE SUNTEM AICI?",
+  finalTitleBottom: "",
+  finalSubtitle: "Prevenția începe înainte să doară.",
+  finalButterfly: "TE VEZI? 🦋",
   finalQrLabel: "Scanează și alege drumul tău",
   finalOptions: "Informează-te\nFă-ți controalele\nIntră în comunitate\nSusține prevenția",
   finalPresence: "Mai ești aici? Atinge ecranul",
@@ -272,7 +277,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v13";
+const KEY = "mirror.settings.v14";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
