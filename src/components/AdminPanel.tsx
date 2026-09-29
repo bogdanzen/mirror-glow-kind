@@ -1109,10 +1109,12 @@ function CameraAdjuster({ draft, set, field }: { draft: MirrorSettings; set: <K 
     <div className="mt-3 flex flex-wrap items-start gap-8">
       <div className="relative overflow-hidden border border-border bg-black" style={{ width: W, height: H }}>
         <video ref={videoRef} muted playsInline style={cameraStyle(draft, W, H)} />
-        <div
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-primary"
-          style={{ left: `${draft.faceZoneX}%`, top: `${draft.faceZoneY}%`, height: `${draft.faceZoneSize}%`, width: `${draft.faceZoneSize * 1.65}%` }}
-        />
+        {draft.faceTracking && (
+          <div
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-primary"
+            style={{ left: `${draft.faceZoneX}%`, top: `${draft.faceZoneY}%`, height: `${draft.faceZoneSize}%`, width: `${draft.faceZoneSize * 1.65}%` }}
+          />
+        )}
       </div>
       <div className="flex min-w-[16rem] flex-1 flex-col gap-4">
         <div className="flex flex-wrap gap-2">
@@ -1126,7 +1128,13 @@ function CameraAdjuster({ draft, set, field }: { draft: MirrorSettings; set: <K 
         {slider("camOffsetX", "Stânga / dreapta (%)", -50, 50, 1)}
         {slider("camOffsetY", "Sus / jos (%)", -50, 50, 1)}
         <div className="mt-2 border-t border-border pt-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.2em] text-primary">Zonă detectare față</p>
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">Zonă detectare față</p>
+            <button type="button" onClick={() => set("faceTracking", !draft.faceTracking)} className={`${field} w-auto px-4 ${draft.faceTracking ? "border-primary text-primary" : ""}`}>
+              {draft.faceTracking ? "Urmărire față: pornită" : "Urmărire față: oprită"}
+            </button>
+          </div>
+          {!draft.faceTracking && <p className="mb-3 text-xs text-muted-foreground">Oprită: se încadrează cât mai mult din om, fără oval de față.</p>}
           <div className="flex flex-col gap-4">
             {slider("faceZoneSize", "Mărime zonă (%)", 8, 70, 1)}
             {slider("faceZoneX", "Poziție orizontală (%)", 5, 95, 1)}
