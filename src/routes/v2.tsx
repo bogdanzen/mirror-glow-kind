@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { AdminPanel } from "@/components/AdminPanel";
 import { QrCode } from "@/components/QrCode";
 import pinkRibbon from "@/assets/pink-ribbon.png";
 import { baldifyFrame, FALLBACK_PROMPT } from "@/lib/bald";
@@ -8,8 +9,8 @@ import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import { currentSession, startSession, track } from "@/lib/metrics";
 import { cameraStyle, viewToFile } from "@/lib/cameraView";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
-import verticalFreedomLogo from "@/assets/vertical-freedom-2026.png.asset.json";
-import lionsClujLogo from "@/assets/lions-vertical-freedom-2026.png.asset.json";
+import verticalFreedomLogo from "@/assets/vf-white.png.asset.json";
+import lionsClujLogo from "@/assets/lions-white.png.asset.json";
 
 export const Route = createFileRoute("/v2")({
   head: () => ({
@@ -69,6 +70,16 @@ function MirrorV2() {
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(20);
   const [origin, setOrigin] = useState("");
+  const [admin, setAdmin] = useState(false);
+  const tapsRef = useRef<number[]>([]);
+  const cornerTap = () => {
+    const now = Date.now();
+    tapsRef.current = [...tapsRef.current, now].filter((t) => now - t < 2500);
+    if (tapsRef.current.length >= 5) {
+      tapsRef.current = [];
+      setAdmin(true);
+    }
+  };
   const [vp, setVp] = useState({ w: 1080, h: 1920 });
   useEffect(() => {
     const on = () => setVp({ w: window.innerWidth, h: window.innerHeight });
@@ -334,11 +345,11 @@ function MirrorV2() {
           setScreen("consent");
         }}>
           <Logos />
-          <RoseFrame className="v2-copy-enter w-full max-w-[84vw]">
+          <div className="v2-copy-enter w-full max-w-[84vw]">
             <p className="v2-kicker mb-[2vh]">{messages.attractKicker}</p>
             <h1 className="v2-title v2-title-glow text-[clamp(4.2rem,13vw,11rem)] leading-[0.9]">{messages.attractTitle}</h1>
             <p className="v2-lede mt-[3vh] whitespace-pre-line text-[clamp(1.05rem,2.4vw,2.2rem)] leading-snug">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
-          </RoseFrame>
+          </div>
           <p className="v2-cta-pulse mt-[5vh] text-[clamp(1rem,2.1vw,1.8rem)] text-primary">{messages.attractCta}</p>
         </section>
       )}
@@ -387,6 +398,17 @@ function MirrorV2() {
 
       {screen === "donate" && (
          <section className="absolute inset-0 z-20 flex flex-col items-center px-[7vw] py-[7vh] text-center"><Logos /><RoseFrame className="v2-copy-enter mt-[15vh]"><p className="v2-kicker">Vertical Freedom</p><h2 className="v2-title mt-4 text-[clamp(3.8rem,11vw,9.5rem)] leading-[0.9]">DONEAZĂ<br /><span className="text-primary">ACUM.</span></h2><p className="v2-lede mx-auto mt-[3vh] max-w-[26ch] text-[clamp(1.2rem,2.5vw,2.2rem)]">Scanează codul și susține prevenția cancerului.</p></RoseFrame><div className="v2-qr mt-[5vh] p-4"><QrCode value={donationQr} size={300} /></div><div className="mt-auto flex w-full items-end justify-between"><Button onClick={() => setScreen("final")} variant="outline" className="v2-action h-auto px-[3vw] py-[2vh]">Înapoi</Button><p className="text-sm text-muted-foreground">Resetare în {presenceSeconds}s</p><img src={pinkRibbon} alt="Panglica roz, simbolul luptei împotriva cancerului" className="v2-ribbon h-[13vh] w-auto" /></div></section>
+      )}
+      <button
+        type="button"
+        aria-label="Administrare"
+        className="absolute left-0 top-0 z-[60] h-24 w-24 opacity-0"
+        onClick={(e) => { e.stopPropagation(); cornerTap(); }}
+      />
+      {admin && (
+        <div className="fixed inset-0 z-[70]">
+          <AdminPanel settings={settings} onChange={setSettings} onClose={() => setAdmin(false)} />
+        </div>
       )}
     </main>
   );
