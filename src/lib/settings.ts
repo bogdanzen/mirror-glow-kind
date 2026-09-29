@@ -84,6 +84,9 @@ export type MirrorSettings = {
   camOffsetX: number;
   camOffsetY: number;
   camMirror: boolean;
+  faceZoneSize: number;
+  faceZoneX: number;
+  faceZoneY: number;
   demoMode: boolean;
   storageEnabled: boolean;
   pin: string;
@@ -204,6 +207,9 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   camOffsetX: 0,
   camOffsetY: 0,
   camMirror: true,
+  faceZoneSize: 34,
+  faceZoneX: 50,
+  faceZoneY: 30,
   demoMode: false,
   storageEnabled: false,
   pin: "0000",
@@ -310,6 +316,10 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.framingSeconds = Math.round(
     clamp(merged.framingSeconds, 2, 10, DEFAULT_SETTINGS.framingSeconds),
   );
+  merged.camZoom = clamp(merged.camZoom, 0.3, 3, DEFAULT_SETTINGS.camZoom);
+  merged.faceZoneSize = clamp(merged.faceZoneSize, 8, 70, DEFAULT_SETTINGS.faceZoneSize);
+  merged.faceZoneX = clamp(merged.faceZoneX, 5, 95, DEFAULT_SETTINGS.faceZoneX);
+  merged.faceZoneY = clamp(merged.faceZoneY, 5, 95, DEFAULT_SETTINGS.faceZoneY);
   merged.sdxlDetail = String(merged.sdxlDetail ?? "");
   merged.mirrorEngine = (["frames", "delayed", "portrait"] as const).includes(
     merged.mirrorEngine as "frames",
