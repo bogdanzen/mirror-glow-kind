@@ -299,7 +299,7 @@ function MirrorV2() {
       )}
 
       {screen === "consent" && (
-        <section className="fade-in-slow absolute inset-0 z-20 flex flex-col justify-center bg-background px-[8vw]">
+        <section className="fade-in-slow absolute inset-0 z-20 flex flex-col justify-center bg-background/55 px-[8vw] backdrop-blur-2xl">
           <RoseFrame className="v2-copy-enter">
             <h2 className="v2-title text-[clamp(2.8rem,7vw,6rem)] leading-none">{messages.consentTitle}</h2>
             <p className="v2-lede mt-[4vh] max-w-[48ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed">{messages.consentBody}</p>
