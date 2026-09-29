@@ -14,6 +14,7 @@ import { Route as BaniRouteImport } from './routes/bani'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DoneazaRouteImport } from './routes/doneaza'
 import { Route as GdprRouteImport } from './routes/gdpr'
+import { Route as V2RouteImport } from './routes/v2'
 import { Route as ApiBaldRouteImport } from './routes/api/bald'
 import { Route as ApiFalRouteImport } from './routes/api/fal'
 import { Route as ApiMirrorFrameRouteImport } from './routes/api/mirror-frame'
@@ -44,6 +45,11 @@ const GdprRoute = GdprRouteImport.update({
   path: '/gdpr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V2Route = V2RouteImport.update({
+  id: '/v2',
+  path: '/v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiBaldRoute = ApiBaldRouteImport.update({
   id: '/api/bald',
   path: '/api/bald',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
+  '/v2': typeof V2Route
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
+  '/v2': typeof V2Route
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
+  '/v2': typeof V2Route
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/doneaza'
     | '/gdpr'
+    | '/v2'
     | '/api/bald'
     | '/api/fal'
     | '/api/mirror-frame'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/doneaza'
     | '/gdpr'
+    | '/v2'
     | '/api/bald'
     | '/api/fal'
     | '/api/mirror-frame'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/doneaza'
     | '/gdpr'
+    | '/v2'
     | '/api/bald'
     | '/api/fal'
     | '/api/mirror-frame'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DoneazaRoute: typeof DoneazaRoute
   GdprRoute: typeof GdprRoute
+  V2Route: typeof V2Route
   ApiBaldRoute: typeof ApiBaldRoute
   ApiFalRoute: typeof ApiFalRoute
   ApiMirrorFrameRoute: typeof ApiMirrorFrameRoute
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GdprRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v2': {
+      id: '/v2'
+      path: '/v2'
+      fullPath: '/v2'
+      preLoaderRoute: typeof V2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/bald': {
       id: '/api/bald'
       path: '/api/bald'
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DoneazaRoute: DoneazaRoute,
   GdprRoute: GdprRoute,
+  V2Route: V2Route,
   ApiBaldRoute: ApiBaldRoute,
   ApiFalRoute: ApiFalRoute,
   ApiMirrorFrameRoute: ApiMirrorFrameRoute,

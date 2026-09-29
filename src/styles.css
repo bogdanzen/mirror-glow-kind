@@ -300,3 +300,75 @@
   }
 }
 
+/* V2 keeps tablet compositing intentionally light: one video, one still, opacity only. */
+.v2-shell {
+  contain: strict;
+  background: var(--background);
+}
+
+.v2-grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  opacity: 0.055;
+  background-image: repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in oklab, var(--foreground) 14%, transparent) 4px);
+}
+
+.v2-bald-in {
+  animation: v2-bald-in 2200ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.v2-bald-out {
+  animation: v2-bald-out 2600ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.v2-particles span {
+  position: absolute;
+  bottom: -4vh;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 12px var(--primary), 0 0 24px color-mix(in oklab, var(--primary) 65%, transparent);
+  animation: v2-particle 12s linear infinite;
+}
+
+.v2-particles span:nth-child(1) { left: 8%; animation-delay: -2s; }
+.v2-particles span:nth-child(2) { left: 18%; animation-delay: -8s; animation-duration: 15s; }
+.v2-particles span:nth-child(3) { left: 27%; animation-delay: -5s; }
+.v2-particles span:nth-child(4) { left: 36%; animation-delay: -11s; animation-duration: 17s; }
+.v2-particles span:nth-child(5) { left: 44%; animation-delay: -3s; }
+.v2-particles span:nth-child(6) { left: 53%; animation-delay: -9s; animation-duration: 14s; }
+.v2-particles span:nth-child(7) { left: 61%; animation-delay: -6s; }
+.v2-particles span:nth-child(8) { left: 69%; animation-delay: -12s; animation-duration: 16s; }
+.v2-particles span:nth-child(9) { left: 76%; animation-delay: -4s; }
+.v2-particles span:nth-child(10) { left: 84%; animation-delay: -10s; animation-duration: 18s; }
+.v2-particles span:nth-child(11) { left: 91%; animation-delay: -7s; }
+.v2-particles span:nth-child(12) { left: 96%; animation-delay: -1s; animation-duration: 15s; }
+
+@keyframes v2-bald-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes v2-bald-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes v2-particle {
+  from { transform: translate3d(0, 0, 0) scale(0.7); opacity: 0; }
+  15% { opacity: 0.8; }
+  85% { opacity: 0.55; }
+  to { transform: translate3d(2vw, -108vh, 0) scale(1.15); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-bald-in,
+  .v2-bald-out,
+  .v2-particles span {
+    animation: none;
+  }
+}
+
