@@ -3,6 +3,7 @@
 ## Open
 
 - [x] Tablet-first `/v2`: exact campaign flow, one 1080p camera stream, one complete bald AI portrait generated during countdown, no WebRTC/RunPod/frame buffer.
+- [x] V2 rose-gold presentation: supplied campaign logos, early AI start, streamed preview, Cinzel/Manrope typography, framed copy and scoped rose-gold QR styling.
 
 - [x] Preserve only the visitor's eyes, nose and mouth from the camera; use the generated bald result over scalp, eyebrows and facial-hair areas.
 - [ ] Live video path: Cloudflare TURN is configured in the browser. GPU logs prove the camera arrives and StreamDiffusion produces frames. Krea selection previously reused StreamDiffusion; exact pipeline matching exposed the real blocker: Krea exhausts the current 24 GB RTX 4090. New Krea pods now require a 48+ GB GPU in Europe. Recreate the current pod, then run the real-device frame check.
