@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { QrCode } from "@/components/QrCode";
 import { CancerRibbon } from "@/components/NeonButterfly";
@@ -7,8 +7,8 @@ import { baldifyFrame, FALLBACK_PROMPT, frameToFile } from "@/lib/bald";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import { currentSession, startSession, track } from "@/lib/metrics";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
-import verticalFreedomLogo from "@/assets/vertical-freedom-logo.png.asset.json";
-import lionsClujLogo from "@/assets/lions-cluj-logo.png.asset.json";
+import verticalFreedomLogo from "@/assets/vertical-freedom-2026.png.asset.json";
+import lionsClujLogo from "@/assets/lions-vertical-freedom-2026.png.asset.json";
 
 export const Route = createFileRoute("/v2")({
   head: () => ({
@@ -38,11 +38,15 @@ const PARTICLES = Array.from({ length: 12 }, (_, index) => index);
 
 function Logos() {
   return (
-    <div className="pointer-events-none absolute inset-x-[6vw] top-[4vh] z-30 flex items-start justify-between">
-      <img src={verticalFreedomLogo.url} alt="Vertical Freedom" className="h-auto w-[clamp(8rem,24vw,21rem)] object-contain" />
-      <img src={lionsClujLogo.url} alt="Lions Club Cluj-Napoca" className="h-auto w-[clamp(4rem,11vw,9rem)] object-contain" />
+    <div className="v2-logos pointer-events-none absolute inset-x-[6vw] top-[3.5vh] z-30 flex items-start justify-between">
+      <img src={verticalFreedomLogo.url} alt="Vertical Freedom" className="h-auto w-[clamp(7rem,20vw,17rem)] object-contain" />
+      <img src={lionsClujLogo.url} alt="Lions Club Vertical Freedom" className="h-auto w-[clamp(5.5rem,14vw,11rem)] object-contain" />
     </div>
   );
+}
+
+function RoseFrame({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`v2-rose-frame ${className}`}><div className="v2-rose-frame-core">{children}</div></div>;
 }
 
 function PinkParticles() {
@@ -129,13 +133,13 @@ function MirrorV2() {
         frame,
         FALLBACK_PROMPT,
         (url, isFinal) => {
-          if (!isFinal || controller.signal.aborted) return;
+          if (controller.signal.aborted) return;
           setBaldUrl(url);
-          setProcessing(false);
+          if (isFinal) setProcessing(false);
         },
         controller.signal,
         settings.fallbackModel,
-        false,
+        true,
       );
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -285,55 +289,59 @@ function MirrorV2() {
           setScreen("consent");
         }}>
           <Logos />
-          <p className="mb-[3vh] text-[clamp(0.75rem,1.4vw,1.2rem)] uppercase tracking-[0.4em] text-muted-foreground">{messages.attractKicker}</p>
-          <h1 className="neon-title font-display text-[clamp(4.5rem,14vw,12rem)] leading-[0.86]">{messages.attractTitle}</h1>
-          <p className="mt-[5vh] whitespace-pre-line text-[clamp(1.1rem,2.6vw,2.4rem)] leading-snug text-foreground/85">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
-          <p className="breathe mt-[7vh] border-y border-primary/60 py-[2vh] text-[clamp(1rem,2.2vw,2rem)] text-primary">{messages.attractCta}</p>
+          <RoseFrame className="v2-copy-enter w-full max-w-[84vw]">
+            <p className="v2-kicker mb-[2vh]">{messages.attractKicker}</p>
+            <h1 className="v2-title v2-title-glow text-[clamp(4.2rem,13vw,11rem)] leading-[0.9]">{messages.attractTitle}</h1>
+            <p className="mt-[3vh] whitespace-pre-line text-[clamp(1.05rem,2.4vw,2.2rem)] leading-snug text-foreground/85">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
+          </RoseFrame>
+          <p className="v2-cta-pulse mt-[5vh] text-[clamp(1rem,2.1vw,1.8rem)] text-primary">{messages.attractCta}</p>
         </section>
       )}
 
       {screen === "consent" && (
         <section className="fade-in-slow absolute inset-0 z-20 flex flex-col justify-center bg-background px-[8vw]">
-          <h2 className="font-display text-[clamp(2.8rem,7vw,6rem)] leading-none">{messages.consentTitle}</h2>
-          <p className="mt-[5vh] max-w-[48ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-muted-foreground">{messages.consentBody}</p>
+          <RoseFrame className="v2-copy-enter">
+            <h2 className="v2-title text-[clamp(2.8rem,7vw,6rem)] leading-none">{messages.consentTitle}</h2>
+            <p className="mt-[4vh] max-w-[48ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-muted-foreground">{messages.consentBody}</p>
+          </RoseFrame>
           <Button variant="ghost" onClick={() => setConsent((value) => !value)} className="mt-[6vh] h-auto justify-start rounded-none px-0 py-5 text-left text-[clamp(1rem,2vw,1.8rem)] text-foreground hover:bg-transparent">
             <span className={`flex h-10 w-10 shrink-0 items-center justify-center border ${consent ? "border-primary text-primary" : "border-hairline"}`}>{consent ? "✓" : ""}</span>
             {messages.consentCheckbox}
           </Button>
-          <Button disabled={!consent} onClick={() => setScreen("framing")} className="mt-[5vh] h-auto w-full rounded-none border-y border-primary bg-transparent py-[3vh] text-[clamp(1.3rem,3vw,2.7rem)] text-primary shadow-none hover:bg-primary/10">{messages.consentContinue}</Button>
+          <Button disabled={!consent} onClick={() => { void startGeneration(); setScreen("framing"); }} className="v2-action mt-[5vh] h-auto w-full py-[3vh] text-[clamp(1.3rem,3vw,2.7rem)]">{messages.consentContinue}</Button>
           <div className="mt-[5vh] flex justify-between text-muted-foreground"><a href="/gdpr" className="underline underline-offset-8">Notă de confidențialitate</a><Button variant="ghost" onClick={reset} className="rounded-none">{messages.consentDecline}</Button></div>
         </section>
       )}
 
       {screen === "framing" && (
         <section className="absolute inset-0 z-20 flex flex-col justify-between px-[7vw] py-[8vh]">
-          <div><p className="uppercase tracking-[0.38em] text-primary">{messages.framingKicker}</p><h2 className="mt-4 max-w-[9ch] font-display text-[clamp(4rem,11vw,9rem)] leading-[0.88]">Privește-te {settings.framingSeconds} secunde.</h2></div>
-          <div className="self-end text-right"><p className="font-display text-[clamp(8rem,23vw,19rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p><p className="uppercase tracking-[0.32em] text-foreground/70">{messages.framingCaption}</p></div>
+          <RoseFrame className="v2-copy-enter max-w-[78vw]"><p className="v2-kicker">{messages.framingKicker}</p><h2 className="v2-title mt-4 max-w-[10ch] text-[clamp(3.8rem,10vw,8.5rem)] leading-[0.92]">Privește-te {settings.framingSeconds} secunde.</h2></RoseFrame>
+          <div className="v2-countdown self-end text-right"><p className="v2-title text-[clamp(8rem,23vw,19rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p><p className="v2-kicker text-foreground/70">{messages.framingCaption}</p></div>
         </section>
       )}
 
       {screen === "mirror" && (
         <section className="absolute inset-0 z-20">
-          <div className="absolute left-[7vw] top-[7vh] z-20 max-w-[78vw]"><p className="uppercase tracking-[0.36em] text-primary">O posibilă schimbare</p><h2 className="mt-4 max-w-[12ch] font-display text-[clamp(3.7rem,10vw,8.5rem)] leading-[0.9]">{messages.mirrorKicker}</h2></div>
+           <RoseFrame className="v2-copy-enter absolute left-[6vw] top-[6vh] z-20 max-w-[82vw]"><p className="v2-kicker">O posibilă schimbare</p><h2 className="v2-title mt-4 max-w-[12ch] text-[clamp(3.4rem,9vw,8rem)] leading-[0.94]">{messages.mirrorKicker}</h2></RoseFrame>
           {!baldUrl && <div className="absolute inset-x-0 bottom-[7vh] z-20 text-center"><p className="breathe text-[clamp(1rem,2vw,1.8rem)] text-foreground/85">{processing ? messages.mirrorWorking : generationError || "Imaginea reală rămâne cu tine."}</p></div>}
           {baldUrl && <p className="absolute bottom-[7vh] left-[7vw] z-20 max-w-[24ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/80">{messages.mirrorTitle}\n\n{messages.mirrorFooter}</p>}
         </section>
       )}
 
-      {screen === "choice" && <section className="absolute inset-0 z-20"><div className="absolute left-[6vw] top-[6vh] max-w-[44vw]"><p className="uppercase tracking-[0.4em] text-muted-foreground">{messages.choiceKicker}</p><h2 className="neon-title mt-[2vh] font-display text-[clamp(3.4rem,9vw,8rem)] leading-[0.88]">{messages.choiceTitle}</h2></div></section>}
+       {screen === "choice" && <section className="absolute inset-0 z-20"><RoseFrame className="v2-copy-enter absolute left-[5vw] top-[6vh] max-w-[47vw]"><p className="v2-kicker text-muted-foreground">{messages.choiceKicker}</p><h2 className="v2-title v2-title-glow mt-[2vh] text-[clamp(3.1rem,8vw,7.4rem)] leading-[0.92]">{messages.choiceTitle}</h2></RoseFrame></section>}
 
-      {screen === "healthy" && <section className="absolute inset-0 z-20"><h2 className="absolute left-[7vw] top-[8vh] max-w-[12ch] font-display text-[clamp(3.4rem,9vw,8rem)] leading-[0.9]">{messages.healthyTitle}</h2><p className="absolute bottom-[8vh] left-[7vw] max-w-[24ch] whitespace-pre-line text-[clamp(1.1rem,2.3vw,2rem)] leading-relaxed text-foreground/90">{messages.healthyBody}</p></section>}
+       {screen === "healthy" && <section className="absolute inset-0 z-20"><RoseFrame className="v2-copy-enter absolute left-[6vw] top-[7vh] max-w-[76vw]"><h2 className="v2-title max-w-[12ch] text-[clamp(3.2rem,8vw,7.4rem)] leading-[0.94]">{messages.healthyTitle}</h2></RoseFrame><p className="v2-copy-enter absolute bottom-[8vh] left-[7vw] max-w-[24ch] whitespace-pre-line text-[clamp(1.1rem,2.3vw,2rem)] leading-relaxed text-foreground/90">{messages.healthyBody}</p></section>}
 
       {screen === "final" && (
         <section className="absolute inset-0 z-20 flex flex-col px-[7vw] py-[7vh]">
           <Logos />
-          <div className="mt-[12vh]"><p className="uppercase tracking-[0.42em] text-primary">{messages.finalKicker}</p><h2 className="mt-3 font-display text-[clamp(4rem,12vw,10rem)] leading-[0.82]">{messages.finalTitleTop}<br /><span className="text-primary">{messages.finalTitleBottom}</span></h2><p className="mt-[4vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.3rem)] leading-snug text-foreground/85">{messages.finalSubtitle}</p></div>
-          <div className="mt-auto grid grid-cols-[1fr_auto] items-end gap-[5vw]"><div><p className="mb-[3vh] uppercase tracking-[0.28em] text-muted-foreground">{messages.finalQrLabel}</p><Button onClick={() => { idleRef.current = Date.now(); setPresenceSeconds(20); }} variant="outline" className="h-auto rounded-none border-primary/60 bg-transparent px-[3vw] py-[2vh] text-[clamp(1rem,2vw,1.7rem)] text-primary">{messages.finalPresence}</Button><Button onClick={() => setScreen("donate")} variant="outline" className="ml-[2vw] h-auto rounded-none border-primary bg-transparent px-[3vw] py-[2vh] text-[clamp(1rem,2vw,1.7rem)] uppercase text-primary">Donează</Button><p className="mt-4 text-sm text-muted-foreground">Resetare în {presenceSeconds}s</p></div><div className="flex flex-col items-center gap-5"><div className="bg-foreground p-3"><QrCode value={donationQr} size={180} /></div><CancerRibbon className="h-[13vh] w-auto text-primary" /></div></div>
+           <RoseFrame className="v2-copy-enter mt-[13vh]"><p className="v2-kicker">{messages.finalKicker}</p><h2 className="v2-title mt-3 text-[clamp(3.8rem,11vw,9.5rem)] leading-[0.88]">{messages.finalTitleTop}<br /><span className="text-primary">{messages.finalTitleBottom}</span></h2><p className="mt-[3vh] max-w-[22ch] text-[clamp(1.2rem,2.6vw,2.3rem)] leading-snug text-foreground/85">{messages.finalSubtitle}</p></RoseFrame>
+           <div className="mt-auto grid grid-cols-[1fr_auto] items-end gap-[5vw]"><div><p className="mb-[3vh] uppercase tracking-[0.28em] text-muted-foreground">{messages.finalQrLabel}</p><Button onClick={() => { idleRef.current = Date.now(); setPresenceSeconds(20); }} variant="outline" className="v2-action h-auto px-[3vw] py-[2vh] text-[clamp(1rem,2vw,1.7rem)]">{messages.finalPresence}</Button><Button onClick={() => setScreen("donate")} variant="outline" className="v2-action ml-[2vw] h-auto px-[3vw] py-[2vh] text-[clamp(1rem,2vw,1.7rem)] uppercase">Donează</Button><p className="mt-4 text-sm text-muted-foreground">Resetare în {presenceSeconds}s</p></div><div className="flex flex-col items-center gap-5"><div className="v2-qr p-3"><QrCode value={donationQr} size={180} /></div><CancerRibbon className="h-[13vh] w-auto text-primary" /></div></div>
         </section>
       )}
 
       {screen === "donate" && (
-        <section className="absolute inset-0 z-20 flex flex-col items-center px-[7vw] py-[7vh] text-center"><Logos /><div className="mt-[15vh]"><p className="uppercase tracking-[0.42em] text-primary">Vertical Freedom</p><h2 className="mt-4 font-display text-[clamp(4rem,12vw,10rem)] leading-[0.84]">DONEAZĂ<br /><span className="text-primary">ACUM.</span></h2><p className="mx-auto mt-[4vh] max-w-[25ch] text-[clamp(1.2rem,2.5vw,2.2rem)] text-foreground/85">Scanează codul și susține prevenția cancerului.</p></div><div className="mt-[6vh] bg-foreground p-4"><QrCode value={donationQr} size={300} /></div><div className="mt-auto flex w-full items-end justify-between"><Button onClick={() => setScreen("final")} variant="outline" className="h-auto rounded-none border-hairline bg-transparent px-[3vw] py-[2vh] text-foreground">Înapoi</Button><p className="text-sm text-muted-foreground">Resetare în {presenceSeconds}s</p><CancerRibbon className="h-[13vh] w-auto text-primary" /></div></section>
+         <section className="absolute inset-0 z-20 flex flex-col items-center px-[7vw] py-[7vh] text-center"><Logos /><RoseFrame className="v2-copy-enter mt-[15vh]"><p className="v2-kicker">Vertical Freedom</p><h2 className="v2-title mt-4 text-[clamp(3.8rem,11vw,9.5rem)] leading-[0.9]">DONEAZĂ<br /><span className="text-primary">ACUM.</span></h2><p className="mx-auto mt-[3vh] max-w-[25ch] text-[clamp(1.2rem,2.5vw,2.2rem)] text-foreground/85">Scanează codul și susține prevenția cancerului.</p></RoseFrame><div className="v2-qr mt-[5vh] p-4"><QrCode value={donationQr} size={300} /></div><div className="mt-auto flex w-full items-end justify-between"><Button onClick={() => setScreen("final")} variant="outline" className="v2-action h-auto px-[3vw] py-[2vh]">Înapoi</Button><p className="text-sm text-muted-foreground">Resetare în {presenceSeconds}s</p><CancerRibbon className="h-[13vh] w-auto text-primary" /></div></section>
       )}
     </main>
   );
