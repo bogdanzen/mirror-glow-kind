@@ -87,6 +87,8 @@ export type MirrorSettings = {
   faceZoneSize: number;
   faceZoneX: number;
   faceZoneY: number;
+  /** When off, no face oval is shown and the whole visible person is framed. */
+  faceTracking: boolean;
   demoMode: boolean;
   storageEnabled: boolean;
   pin: string;
@@ -210,6 +212,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   faceZoneSize: 34,
   faceZoneX: 50,
   faceZoneY: 30,
+  faceTracking: true,
   demoMode: false,
   storageEnabled: false,
   pin: "0000",
