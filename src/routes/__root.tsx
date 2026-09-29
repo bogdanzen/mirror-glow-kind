@@ -116,6 +116,12 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="ro">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "window.addEventListener('error',function(e){try{var d=document.createElement('pre');d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#300;color:#fff;font:14px monospace;padding:12px;white-space:pre-wrap';d.textContent='Eroare: '+(e.message||e)+' @ '+(e.filename||'')+':'+(e.lineno||'')+'\\n'+navigator.userAgent;document.documentElement.appendChild(d)}catch(_){}});",
+          }}
+        />
       </head>
       <body>
         {children}
