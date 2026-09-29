@@ -365,6 +365,17 @@
   padding: clamp(1rem, 2.2vw, 2.2rem);
 }
 
+.v2-copy-stack,
+.v2-copy-stack > .v2-rose-frame-core {
+  display: grid;
+  align-content: start;
+  gap: clamp(1rem, 2vh, 2.5rem);
+}
+
+.v2-copy-stack :is(p, h1, h2) {
+  margin: 0;
+}
+
 .v2-text-shade {
   position: relative;
   isolation: isolate;
@@ -461,6 +472,12 @@
   animation: v2-bald-out 2600ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+.v2-generated-portrait {
+  object-fit: fill;
+  -webkit-mask-image: radial-gradient(ellipse 88% 92% at center, black 62%, rgba(0, 0, 0, 0.9) 74%, transparent 100%);
+  mask-image: radial-gradient(ellipse 88% 92% at center, black 62%, rgba(0, 0, 0, 0.9) 74%, transparent 100%);
+}
+
 .v2-particles span {
   position: absolute;
   bottom: -4vh;
@@ -529,11 +546,10 @@
 }
 
 
-/* V2 refinements: white logo plates, real ribbon, lighter (faded) camera, line breaks in copy */
+/* V2 refinements: transparent white logos, lighter camera and preserved line breaks. */
 .v2-logos img.v2-logo-white { filter: drop-shadow(0 0 14px color-mix(in oklab, var(--primary) 40%, transparent)); }
 /* 4K portrait: scale rem with width so every clamp() cap grows (16px @1080, 32px @2160) */
 html:has(.v2-shell) { font-size: max(16px, calc(100vw / 67.5)); }
-.v2-ribbon { filter: drop-shadow(0 0 18px color-mix(in oklab, var(--primary) 45%, transparent)); }
 .v2-shell .video-grade { opacity: 0.4; }
 .v2-shell > video { filter: brightness(1.12) saturate(0.9); }
 .v2-shell :is(p, h1, h2) { white-space: pre-line; }
