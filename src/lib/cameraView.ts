@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 /** Physical camera mounting adjustments (camera sits landscape above a portrait screen). */
 export interface CameraView {
   camRotation: number; // 0 | 90 | 180 | 270
-  camZoom: number; // 1..3
+  camZoom: number; // 0.3..3; values below 1 reveal more of the camera field of view
   camOffsetX: number; // % of screen width, -50..50
   camOffsetY: number; // % of screen height, -50..50
   camMirror: boolean;
