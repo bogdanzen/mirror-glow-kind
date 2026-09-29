@@ -11,6 +11,7 @@
 
 ## Done
 
+- [x] V2 live cleanup: no face marker, generated portrait aligned to the camera with feathered outer edges, non-overlapping copy, official donation QR, and no cancer ribbon.
 - [x] Control panel split into workflow tabs: General, Transformare, Bucla 1 FPS, Mesaje, GPU live, Jurnal; one sticky Save bar
 
 - [x] Slow crossfade from the bald portrait into the choice portrait; choice copy moved clear of the face; campaign logos added to first and final screens.
