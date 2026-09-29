@@ -188,6 +188,16 @@ function MirrorV2() {
   }, [screen, baldUrl, settings.mirrorSeconds]);
 
   useEffect(() => {
+    if (screen !== "mirror" || baldUrl) return;
+    const waitMs = generationError ? 7000 : 45000;
+    const id = window.setTimeout(() => {
+      generationRef.current?.abort();
+      setScreen("choice");
+    }, waitMs);
+    return () => window.clearTimeout(id);
+  }, [screen, baldUrl, generationError]);
+
+  useEffect(() => {
     if (screen === "choice") {
       const id = window.setTimeout(() => setScreen("healthy"), 7000);
       return () => window.clearTimeout(id);
@@ -304,9 +314,9 @@ function MirrorV2() {
 
       {screen === "mirror" && (
         <section className="absolute inset-0 z-20">
-          <div className="absolute left-[7vw] top-[7vh] z-20 max-w-[75vw]"><p className="uppercase tracking-[0.36em] text-primary">{messages.mirrorKicker}</p><h2 className="mt-4 max-w-[11ch] font-display text-[clamp(3.7rem,10vw,8.5rem)] leading-[0.9]">{messages.mirrorTitle}</h2></div>
+          <div className="absolute left-[7vw] top-[7vh] z-20 max-w-[78vw]"><p className="uppercase tracking-[0.36em] text-primary">O posibilă schimbare</p><h2 className="mt-4 max-w-[12ch] font-display text-[clamp(3.7rem,10vw,8.5rem)] leading-[0.9]">{messages.mirrorKicker}</h2></div>
           {!baldUrl && <div className="absolute inset-x-0 bottom-[7vh] z-20 text-center"><p className="breathe text-[clamp(1rem,2vw,1.8rem)] text-foreground/85">{processing ? messages.mirrorWorking : generationError || "Imaginea reală rămâne cu tine."}</p></div>}
-          {baldUrl && <p className="absolute bottom-[7vh] left-[7vw] z-20 max-w-[24ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/80">{messages.mirrorFooter}</p>}
+          {baldUrl && <p className="absolute bottom-[7vh] left-[7vw] z-20 max-w-[24ch] whitespace-pre-line text-[clamp(1rem,2vw,1.8rem)] leading-relaxed text-foreground/80">{messages.mirrorTitle}\n\n{messages.mirrorFooter}</p>}
         </section>
       )}
 
