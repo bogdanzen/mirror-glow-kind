@@ -1,5 +1,5 @@
 import { cameraStyle } from "@/lib/cameraView";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DEFAULT_MESSAGES,
   DEFAULT_SETTINGS,
