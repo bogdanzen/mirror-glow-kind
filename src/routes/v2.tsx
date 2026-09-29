@@ -62,7 +62,8 @@ function MirrorV2() {
   const [screen, setScreen] = useState<Screen>("attract");
   const [consent, setConsent] = useState(false);
   const [countdown, setCountdown] = useState(DEFAULT_SETTINGS.framingSeconds);
-  const [baldUrl, setBaldUrl] = useState("");
+  const [baldUrl, setBaldUrlRaw] = useState("");
+  const [prevBaldUrl, setPrevBaldUrl] = useState("");
   const [processing, setProcessing] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(20);
@@ -71,7 +72,14 @@ function MirrorV2() {
   const streamRef = useRef<MediaStream | null>(null);
   const generationRef = useRef<AbortController | null>(null);
   const generationStartedRef = useRef(false);
+  const loopStopRef = useRef(false);
   const idleRef = useRef(Date.now());
+  const setBaldUrl = useCallback((url: string) => {
+    setBaldUrlRaw((current) => {
+      if (current && current !== url) setPrevBaldUrl(current);
+      return url;
+    });
+  }, []);
 
   const attachCamera = useCallback(async () => {
     if (!streamRef.current) {
@@ -101,9 +109,11 @@ function MirrorV2() {
     generationRef.current?.abort();
     generationRef.current = null;
     generationStartedRef.current = false;
+    loopStopRef.current = false;
     stopCamera();
     setConsent(false);
     setBaldUrl("");
+    setPrevBaldUrl("");
     setGenerationError("");
     setProcessing(false);
     setCountdown(settings.framingSeconds);
@@ -118,6 +128,9 @@ function MirrorV2() {
     setGenerationError("");
     const controller = new AbortController();
     generationRef.current = controller;
+    // Keep generating fresh portraits, one at a time, until the mirror window ends.
+    const endBy = Date.now() + (settings.framingSeconds + settings.mirrorSeconds) * 1000;
+    let produced = 0;
 
     try {
       await attachCamera();
@@ -127,26 +140,35 @@ function MirrorV2() {
       while (!video.videoWidth && Date.now() < deadline && !controller.signal.aborted) {
         await new Promise((resolve) => window.setTimeout(resolve, 100));
       }
-      const frame = frameToFile(video, 768);
-      if (!frame) throw new Error("Nu am putut prelua imaginea camerei");
-      await baldifyFrame(
-        frame,
-        FALLBACK_PROMPT,
-        (url, isFinal) => {
-          if (controller.signal.aborted) return;
-          setBaldUrl(url);
-          if (isFinal) setProcessing(false);
-        },
-        controller.signal,
-        settings.fallbackModel,
-        true,
-      );
+      while (!controller.signal.aborted && (produced === 0 || (Date.now() < endBy - 8000 && !loopStopRef.current))) {
+        const frame = frameToFile(video, 768);
+        if (!frame) throw new Error("Nu am putut prelua imaginea camerei");
+        const first = produced === 0;
+        try {
+          await baldifyFrame(
+            frame,
+            FALLBACK_PROMPT,
+            (url, isFinal) => {
+              if (controller.signal.aborted) return;
+              if (first || isFinal) setBaldUrl(url);
+              if (isFinal) setProcessing(false);
+            },
+            controller.signal,
+            settings.fallbackModel,
+            first,
+          );
+          produced += 1;
+        } catch (error) {
+          if (produced === 0) throw error;
+          break;
+        }
+      }
     } catch (error) {
       if (controller.signal.aborted) return;
       setProcessing(false);
       setGenerationError(error instanceof Error ? error.message : "Transformarea nu este disponibilă");
     }
-  }, [attachCamera, settings.fallbackModel]);
+  }, [attachCamera, settings.fallbackModel, settings.framingSeconds, settings.mirrorSeconds]);
 
   useEffect(() => {
     setOrigin(window.location.origin);
