@@ -311,7 +311,7 @@ function MirrorV2() {
     Object.entries(settings.messages).map(([key, value]) => [key, typeof value === "string" ? value.replace(/\\n/g, "\n").replace(/\\r/g, "") : value]),
   ) as MirrorSettings["messages"];
   const cameraVisible = CAMERA_SCREENS.includes(screen);
-  const donationQr = "https://verticalfreedom.org/doneaza";
+  const donationQr = `${origin}/doneaza?s=${currentSession()}&k=${encodeURIComponent(settings.kioskName)}&d=${encodeURIComponent("https://verticalfreedom.org/doneaza")}`;
 
   return (
     <main className="v2-shell relative h-dvh w-screen overflow-hidden bg-background text-foreground">
