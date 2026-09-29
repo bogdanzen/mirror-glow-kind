@@ -374,6 +374,11 @@ function MirrorV2() {
 
       {screen === "framing" && (
         <section className="absolute inset-0 z-20 flex flex-col justify-between px-[7vw] py-[8vh]">
+          <div
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-primary/80 shadow-[0_0_30px_var(--primary)]"
+            style={{ left: `${settings.faceZoneX}%`, top: `${settings.faceZoneY}%`, height: `${settings.faceZoneSize}%`, width: `${settings.faceZoneSize * 1.65}%` }}
+            aria-hidden
+          />
           <RoseFrame className="v2-copy-enter max-w-[78vw]"><p className="v2-kicker">{messages.framingKicker}</p><h2 className="v2-title mt-4 max-w-[10ch] text-[clamp(3.04rem,8vw,6.8rem)] leading-[0.92]">Privește-te {settings.framingSeconds} secunde.</h2></RoseFrame>
           <div className="v2-countdown v2-text-shade self-end text-right"><p className="v2-title text-[clamp(6.4rem,18.4vw,15.2rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p><p className="v2-kicker text-foreground/70">{messages.framingCaption}</p></div>
         </section>

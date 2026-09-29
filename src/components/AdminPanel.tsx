@@ -1099,7 +1099,7 @@ function CameraAdjuster({ draft, set, field }: { draft: MirrorSettings; set: <K 
     return () => { dead = true; stream?.getTracks().forEach((t) => t.stop()); };
   }, [draft.cameraDeviceId]);
   const W = 270, H = 480;
-  const slider = (k: "camZoom" | "camOffsetX" | "camOffsetY", name: string, min: number, max: number, step: number) => (
+  const slider = (k: "camZoom" | "camOffsetX" | "camOffsetY" | "faceZoneSize" | "faceZoneX" | "faceZoneY", name: string, min: number, max: number, step: number) => (
     <label className="flex flex-col gap-1 text-sm">
       <span>{name}: {draft[k]}</span>
       <input type="range" min={min} max={max} step={step} value={draft[k]} onChange={(e) => set(k, Number(e.target.value))} />
@@ -1109,7 +1109,10 @@ function CameraAdjuster({ draft, set, field }: { draft: MirrorSettings; set: <K 
     <div className="mt-3 flex flex-wrap items-start gap-8">
       <div className="relative overflow-hidden border border-border bg-black" style={{ width: W, height: H }}>
         <video ref={videoRef} muted playsInline style={cameraStyle(draft, W, H)} />
-        <div className="pointer-events-none absolute left-1/2 top-[30%] h-[34%] w-[56%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-primary" />
+        <div
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-primary"
+          style={{ left: `${draft.faceZoneX}%`, top: `${draft.faceZoneY}%`, height: `${draft.faceZoneSize}%`, width: `${draft.faceZoneSize * 1.65}%` }}
+        />
       </div>
       <div className="flex min-w-[16rem] flex-1 flex-col gap-4">
         <div className="flex flex-wrap gap-2">
@@ -1122,6 +1125,15 @@ function CameraAdjuster({ draft, set, field }: { draft: MirrorSettings; set: <K 
         <button type="button" className={`${field} w-auto px-4`} onClick={() => set("camZoom", 0.3)}>FOV maxim</button>
         {slider("camOffsetX", "Stânga / dreapta (%)", -50, 50, 1)}
         {slider("camOffsetY", "Sus / jos (%)", -50, 50, 1)}
+        <div className="mt-2 border-t border-border pt-4">
+          <p className="mb-3 text-xs uppercase tracking-[0.2em] text-primary">Zonă detectare față</p>
+          <div className="flex flex-col gap-4">
+            {slider("faceZoneSize", "Mărime zonă (%)", 8, 70, 1)}
+            {slider("faceZoneX", "Poziție orizontală (%)", 5, 95, 1)}
+            {slider("faceZoneY", "Poziție verticală (%)", 5, 95, 1)}
+          </div>
+          <button type="button" className={`${field} mt-3 w-auto px-4`} onClick={() => { set("faceZoneSize", 18); set("faceZoneX", 50); set("faceZoneY", 30); }}>Zonă mică</button>
+        </div>
         <button type="button" className={`${field} w-auto px-4`} onClick={() => { set("camRotation", 0); set("camZoom", 1); set("camOffsetX", 0); set("camOffsetY", 0); set("camMirror", true); }}>Resetează poziția</button>
         <p className="text-xs text-muted-foreground">Fața trebuie să stea în ovalul punctat. Previzualizarea are proporția ecranului portret 4K.</p>
       </div>
