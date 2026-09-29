@@ -335,7 +335,7 @@
 
 .v2-kicker {
   color: var(--primary);
-  font-size: clamp(0.72rem, 1.35vw, 1.1rem);
+  font-size: clamp(0.576rem, 1.08vw, 0.88rem);
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -349,59 +349,36 @@
 }
 
 .v2-plate {
-  border: 1px solid color-mix(in oklab, var(--primary) 34%, transparent);
-  border-radius: clamp(1rem, 2vw, 1.75rem);
-  background: color-mix(in oklab, var(--background) 34%, transparent);
-  backdrop-filter: blur(18px) saturate(1.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
-  box-shadow: 0 0 24px color-mix(in oklab, var(--primary) 10%, transparent);
-  padding: clamp(1rem, 2.2vw, 2rem);
+  position: relative;
+  isolation: isolate;
+  padding: clamp(0.7rem, 1.5vw, 1.4rem);
 }
 
 .v2-rose-frame {
   position: relative;
-  border: 1px solid color-mix(in oklab, var(--primary) 55%, transparent);
-  border-radius: clamp(1.25rem, 2.5vw, 2.25rem);
-  padding: clamp(0.35rem, 0.65vw, 0.65rem);
-  background: color-mix(in oklab, var(--background) 40%, transparent);
-  backdrop-filter: blur(22px) saturate(1.18);
-  -webkit-backdrop-filter: blur(22px) saturate(1.18);
-  box-shadow:
-    0 0 28px color-mix(in oklab, var(--primary) 12%, transparent),
-    inset 0 1px 0 color-mix(in oklab, var(--foreground) 7%, transparent);
-}
-
-.v2-rose-frame::before,
-.v2-rose-frame::after {
-  content: "";
-  position: absolute;
-  width: clamp(1.1rem, 2.5vw, 2.2rem);
-  height: clamp(1.1rem, 2.5vw, 2.2rem);
-  border-color: var(--primary);
-  opacity: 0.9;
-}
-
-.v2-rose-frame::before {
-  left: -1px;
-  top: -1px;
-  border-left: 1px solid;
-  border-top: 1px solid;
-  border-top-left-radius: inherit;
-}
-
-.v2-rose-frame::after {
-  right: -1px;
-  bottom: -1px;
-  border-right: 1px solid;
-  border-bottom: 1px solid;
-  border-bottom-right-radius: inherit;
+  isolation: isolate;
 }
 
 .v2-rose-frame-core {
-  border: 1px solid color-mix(in oklab, var(--primary) 26%, transparent);
-  border-radius: calc(clamp(1.25rem, 2.5vw, 2.25rem) - 0.38rem);
-  padding: clamp(1.4rem, 3vw, 3rem);
-  background: color-mix(in oklab, var(--background) 26%, transparent);
+  position: relative;
+  z-index: 1;
+  padding: clamp(1rem, 2.2vw, 2.2rem);
+}
+
+.v2-text-shade {
+  position: relative;
+  isolation: isolate;
+}
+
+.v2-text-shade::before,
+.v2-plate::before {
+  content: "";
+  position: absolute;
+  inset: -42% -18%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 78%, transparent) 0%, color-mix(in oklab, var(--background) 50%, transparent) 40%, transparent 78%);
+  filter: blur(28px);
 }
 
 .v2-copy-enter {
@@ -410,13 +387,18 @@
 
 .v2-cta-pulse {
   padding: 1.1em 2em;
-  border-top: 1px solid var(--primary);
-  border-bottom: 1px solid var(--primary);
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--background) 34%, transparent);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  position: relative;
+  isolation: isolate;
   animation: v2-cta-pulse 3.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.v2-cta-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -70% -28%;
+  z-index: -1;
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--background) 72%, transparent), transparent 76%);
+  filter: blur(24px);
 }
 
 .v2-action {
