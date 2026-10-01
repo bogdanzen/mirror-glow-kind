@@ -325,12 +325,16 @@
   font-weight: 600;
   letter-spacing: 0;
   text-wrap: balance;
+  -webkit-hyphens: none;
+  hyphens: none;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .v2-title-glow {
   text-shadow:
-    0 0 0.22em color-mix(in oklab, var(--primary) 28%, transparent),
-    0 0 0.7em color-mix(in oklab, var(--primary) 12%, transparent);
+    0 0 0.22em color-mix(in oklab, var(--primary) 36%, transparent),
+    0 0 0.7em color-mix(in oklab, var(--primary) 16%, transparent);
 }
 
 .v2-kicker {
@@ -346,14 +350,14 @@
   letter-spacing: 0.015em;
   line-height: 1.6;
   text-shadow:
-    0 0 0.5em color-mix(in oklab, var(--primary) 16%, transparent),
-    0 0 1.2em color-mix(in oklab, var(--primary) 8%, transparent);
+    0 0 0.5em color-mix(in oklab, var(--primary) 21%, transparent),
+    0 0 1.2em color-mix(in oklab, var(--primary) 10%, transparent);
 }
 
 .v2-highlight {
   text-shadow:
-    0 0 0.55em color-mix(in oklab, var(--primary) 18%, transparent),
-    0 0 1.4em color-mix(in oklab, var(--primary) 7%, transparent);
+    0 0 0.55em color-mix(in oklab, var(--primary) 23%, transparent),
+    0 0 1.4em color-mix(in oklab, var(--primary) 9%, transparent);
 }
 
 .v2-highlight::after {
@@ -398,7 +402,7 @@
   -webkit-hyphens: none;
   hyphens: none;
   overflow-wrap: normal;
-  word-break: normal;
+  word-break: keep-all;
 }
 
 .v2-shell :is(p, h1, h2) {
@@ -474,8 +478,13 @@
 
 .v2-action-white {
   border-color: var(--foreground);
-  color: var(--foreground);
-  box-shadow: inset 0 0 0 3px color-mix(in oklab, var(--primary) 7%, transparent);
+  background: var(--foreground);
+  color: color-mix(in oklab, var(--primary) 72%, var(--background));
+  box-shadow: inset 0 0 0 3px color-mix(in oklab, var(--primary) 10%, transparent);
+}
+
+.v2-action-white:hover {
+  background: color-mix(in oklab, var(--foreground) 94%, var(--primary));
 }
 
 .v2-countdown {

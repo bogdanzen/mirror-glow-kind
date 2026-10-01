@@ -276,6 +276,12 @@ function MirrorV2() {
   }, [screen]);
 
   useEffect(() => {
+    if (screen !== "consent") return;
+    const id = window.setTimeout(reset, 20_000);
+    return () => window.clearTimeout(id);
+  }, [screen, reset]);
+
+  useEffect(() => {
     if (screen !== "final" && screen !== "donate") return;
     setPresenceSeconds(screen === "donate" ? 45 : 20);
     const id = window.setInterval(() => {
@@ -375,7 +381,7 @@ function MirrorV2() {
           <Logos />
           <div className="v2-copy-stack v2-color-cycle v2-copy-enter v2-text-shade v2-highlight w-full max-w-[88vw]">
             <p className="v2-kicker">{messages.attractKicker}</p>
-            <h1 className="v2-title v2-title-glow text-[clamp(2.4rem,7vw,5.8rem)] leading-[1.04]">{messages.attractTitle}</h1>
+             <h1 className="v2-title v2-title-glow text-[clamp(2.88rem,8.4vw,6.96rem)] leading-[1.04]">{messages.attractTitle}</h1>
             <p className="v2-lede whitespace-pre-line text-[clamp(1.8rem,4vw,3.55rem)] leading-snug">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
           </div>
           <Button variant="outline" className="v2-action v2-action-white v2-cta-pulse v2-highlight mt-[3vh] h-auto px-[3vw] py-[1.2vh] text-[clamp(1.1rem,2.2vw,2rem)]">{messages.attractCta}</Button>
@@ -385,7 +391,7 @@ function MirrorV2() {
       {screen === "consent" && (
         <section className="fade-in-slow absolute inset-0 z-20 flex flex-col justify-start bg-background/30 px-[8vw] pt-[6vh] backdrop-blur-xl">
           <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight">
-            <h2 className="v2-title text-[clamp(1.7rem,4vw,3.35rem)] leading-[1.08]">{messages.consentTitle}</h2>
+             <h2 className="v2-title text-[clamp(2.04rem,4.8vw,4.02rem)] leading-[1.08]">{messages.consentTitle}</h2>
             <p className="v2-lede max-w-[48ch] whitespace-pre-line text-[clamp(1.4rem,2.85vw,2.55rem)] leading-[1.38]">{messages.consentBody}</p>
           </RoseFrame>
           <Button variant="ghost" onClick={() => setConsent((value) => !value)} className="v2-highlight mt-[2vh] h-auto justify-start rounded-none px-0 py-3 text-left text-[clamp(1.1rem,2.2vw,2rem)] text-foreground hover:bg-transparent">
@@ -399,7 +405,7 @@ function MirrorV2() {
 
       {screen === "framing" && (
         <section className="absolute inset-0 z-20 grid h-[49vh] grid-cols-[1fr_auto] items-start gap-[4vw] px-[7vw] pt-[6vh]">
-          <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[66vw]"><p className="v2-kicker">{messages.framingKicker}</p><h2 className="v2-title text-[clamp(2.1rem,5vw,4.35rem)] leading-[1.06]">Privește-te {settings.framingSeconds} secunde.</h2></RoseFrame>
+           <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[66vw]"><p className="v2-kicker">{messages.framingKicker}</p><h2 className="v2-title text-[clamp(2.52rem,6vw,5.22rem)] leading-[1.06]">Privește-te {settings.framingSeconds} secunde.</h2></RoseFrame>
           <div className="v2-countdown v2-text-shade v2-highlight mt-[4vh] text-right"><p className="v2-title text-[clamp(3.75rem,10vw,8.5rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p><p className="v2-kicker text-foreground/80">{messages.framingCaption}</p></div>
         </section>
       )}
@@ -407,25 +413,25 @@ function MirrorV2() {
       {screen === "mirror" && (
         <section className="absolute inset-0 z-20">
           <div className="absolute inset-x-[6vw] top-[5vh] z-20 grid max-h-[44vh] grid-cols-1 content-start gap-[2vh]">
-             <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[82vw]"><p className="v2-kicker">O posibilă schimbare</p><h2 className="v2-title text-[clamp(1.95rem,4.6vw,4.05rem)] leading-[1.06]">{messages.mirrorKicker}</h2></RoseFrame>
+              <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[82vw]"><p className="v2-kicker">O posibilă schimbare</p><h2 className="v2-title text-[clamp(2.34rem,5.52vw,4.86rem)] leading-[1.06]">{messages.mirrorKicker}</h2></RoseFrame>
              {!baldUrl && <p className="v2-plate v2-lede v2-highlight breathe max-w-[70vw] text-[clamp(1.2rem,2.4vw,2.15rem)]">{processing ? messages.mirrorWorking : generationError || "Imaginea reală rămâne cu tine."}</p>}
              {baldUrl && <p className="v2-plate v2-lede v2-highlight max-w-[74vw] whitespace-pre-line text-[clamp(1.2rem,2.4vw,2.15rem)] leading-[1.3]">{messages.mirrorTitle}{"\n"}{messages.mirrorFooter}</p>}
           </div>
         </section>
       )}
 
-        {screen === "choice" && <section className="absolute inset-0 z-20"><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight absolute left-[5vw] top-[6vh] max-w-[68vw]"><p className="v2-kicker">{messages.choiceKicker}</p><h2 className="v2-title v2-title-glow text-[clamp(1.9rem,4.5vw,3.95rem)] leading-[1.06]">{messages.choiceTitle}</h2></RoseFrame></section>}
+        {screen === "choice" && <section className="absolute inset-0 z-20"><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight absolute left-[5vw] top-[6vh] max-w-[68vw]"><p className="v2-kicker">{messages.choiceKicker}</p><h2 className="v2-title v2-title-glow text-[clamp(2.28rem,5.4vw,4.74rem)] leading-[1.06]">{messages.choiceTitle}</h2></RoseFrame></section>}
 
-        {screen === "healthy" && <section className="absolute inset-x-[6vw] top-[6vh] z-20 grid max-h-[43vh] content-start gap-[2vh]"><RoseFrame className="v2-copy-enter v2-highlight max-w-[84vw]"><h2 className="v2-title text-[clamp(1.9rem,4.4vw,3.95rem)] leading-[1.08] text-primary">{messages.healthyTitle}</h2></RoseFrame><p className="v2-plate v2-lede v2-copy-enter v2-highlight max-w-[84vw] whitespace-pre-line text-[clamp(1.45rem,2.9vw,2.6rem)] leading-[1.35]">{messages.healthyBody}</p></section>}
+        {screen === "healthy" && <section className="absolute inset-x-[6vw] top-[6vh] z-20 grid max-h-[43vh] content-start gap-[2vh]"><RoseFrame className="v2-copy-enter v2-highlight max-w-[84vw]"><h2 className="v2-title text-[clamp(2.28rem,5.28vw,4.74rem)] leading-[1.08] text-primary">{messages.healthyTitle}</h2></RoseFrame><p className="v2-plate v2-lede v2-copy-enter v2-highlight max-w-[84vw] whitespace-pre-line text-[clamp(1.45rem,2.9vw,2.6rem)] leading-[1.35]">{messages.healthyBody}</p></section>}
 
       {screen === "final" && (
         <section className="absolute inset-0 z-20 flex flex-col px-[7vw] pt-[10vh]">
           <Logos />
             <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[3vh] w-full max-w-[88vw]">
               <p className="v2-kicker">{messages.finalKicker}</p>
-              <h2 className="v2-title v2-title-glow text-[clamp(1.85rem,4.6vw,4.1rem)] leading-[1.06]">{messages.finalTitleTop}</h2>
+               <h2 className="v2-title v2-title-glow text-[clamp(2.22rem,5.52vw,4.92rem)] leading-[1.06]">{messages.finalTitleTop}</h2>
               {messages.finalTitleBottom && (
-                <h2 className="v2-title text-[clamp(1.85rem,4.6vw,4.1rem)] leading-[1.06] text-primary">{messages.finalTitleBottom}</h2>
+                 <h2 className="v2-title text-[clamp(2.22rem,5.52vw,4.92rem)] leading-[1.06] text-primary">{messages.finalTitleBottom}</h2>
               )}
               <p className="v2-lede max-w-[86vw] whitespace-pre-line text-[clamp(1.4rem,2.9vw,2.6rem)] leading-[1.32]">{messages.finalCause}</p>
               <p className="v2-lede v2-title-glow text-[clamp(1.35rem,2.75vw,2.45rem)] font-semibold leading-tight text-primary">{messages.finalSubtitle}</p>
@@ -436,7 +442,7 @@ function MirrorV2() {
       )}
 
       {screen === "donate" && (
-          <section className="absolute inset-0 z-20 flex max-h-[49vh] flex-col items-center px-[7vw] pt-[6vh] text-center"><Logos /><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[7vh]"><p className="v2-kicker">Vertical Freedom</p><h2 className="v2-title text-[clamp(1.82rem,4.8vw,4.25rem)] leading-none">DONEAZĂ<br /><span>ACUM.</span></h2><p className="v2-lede mx-auto max-w-[80vw] text-[clamp(1.3rem,2.6vw,2.35rem)]">Scanează codul și susține prevenția cancerului.</p></RoseFrame><div className="v2-qr mt-[1.5vh] p-3"><QrCode value={donationQr} size={220} /></div><div className="mt-[1.5vh] flex w-full items-start justify-between"><Button onClick={() => setScreen("final")} variant="outline" className="v2-action h-auto px-[3vw] py-[1vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">Înapoi</Button><p className="v2-highlight text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div></section>
+          <section className="absolute inset-0 z-20 flex max-h-[49vh] flex-col items-center px-[7vw] pt-[6vh] text-center"><Logos /><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[7vh]"><p className="v2-kicker">Vertical Freedom</p><h2 className="v2-title text-[clamp(2.18rem,5.76vw,5.1rem)] leading-none">DONEAZĂ<br /><span>ACUM.</span></h2><p className="v2-lede mx-auto max-w-[80vw] text-[clamp(1.3rem,2.6vw,2.35rem)]">Scanează codul și susține prevenția cancerului.</p></RoseFrame><div className="v2-qr mt-[1.5vh] p-3"><QrCode value={donationQr} size={220} /></div><div className="mt-[1.5vh] flex w-full items-start justify-between"><Button onClick={() => setScreen("final")} variant="outline" className="v2-action h-auto px-[3vw] py-[1vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">Înapoi</Button><p className="v2-highlight text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div></section>
       )}
       <button
         type="button"
