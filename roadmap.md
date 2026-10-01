@@ -11,6 +11,7 @@
 
 ## Done
 
+- [x] V2 campaign polish: metrics reset on 1 Oct 2026, three-second post-consent capture delay, dedicated smiling portrait, white opening CTA, larger non-orphaned copy, and subtle brown-rose text shading.
 - [x] V2 typography: all copy enlarged and highlighted, all text/countdown kept above mid-screen without overlap, and portrait prompt expanded for one person or groups.
 - [x] V2 typography refinement: copy reduced by half, balanced without hyphenation/orphans, alternating rose/ivory hierarchy, and all actions kept above mid-screen.
 - [x] V2 live cleanup: no face marker, generated portrait aligned to the camera with feathered outer edges, non-overlapping copy, official donation QR, and no cancer ribbon.

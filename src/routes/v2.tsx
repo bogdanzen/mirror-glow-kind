@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button";
 import { AdminPanel } from "@/components/AdminPanel";
 import { QrCode } from "@/components/QrCode";
-import { baldifyFrame, FALLBACK_PROMPT } from "@/lib/bald";
+import { baldifyFrame, FALLBACK_PROMPT, SMILE_PROMPT } from "@/lib/bald";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import { currentSession, startSession, track } from "@/lib/metrics";
 import { cameraStyle, viewToFile } from "@/lib/cameraView";
@@ -65,6 +65,7 @@ function MirrorV2() {
   const [countdown, setCountdown] = useState(DEFAULT_SETTINGS.framingSeconds);
   const [baldUrl, setBaldUrlRaw] = useState("");
   const [prevBaldUrl, setPrevBaldUrl] = useState("");
+  const [smileUrl, setSmileUrl] = useState("");
   const [processing, setProcessing] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(20);
@@ -134,6 +135,7 @@ function MirrorV2() {
     setConsent(false);
     setBaldUrlRaw("");
     setPrevBaldUrl("");
+    setSmileUrl("");
     setGenerationError("");
     setProcessing(false);
     setCountdown(settings.framingSeconds);
@@ -148,10 +150,6 @@ function MirrorV2() {
     setGenerationError("");
     const controller = new AbortController();
     generationRef.current = controller;
-    // Keep generating fresh portraits, one at a time, until the mirror window ends.
-    const endBy = Date.now() + (settings.framingSeconds + settings.mirrorSeconds) * 1000;
-    let produced = 0;
-
     try {
       await attachCamera();
       const video = videoRef.current;
@@ -160,29 +158,44 @@ function MirrorV2() {
       while (!video.videoWidth && Date.now() < deadline && !controller.signal.aborted) {
         await new Promise((resolve) => window.setTimeout(resolve, 100));
       }
-      while (!controller.signal.aborted && (produced === 0 || (Date.now() < endBy - 8000 && !loopStopRef.current))) {
-        const frame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 1024);
-        if (!frame) throw new Error("Nu am putut prelua imaginea camerei");
-        const first = produced === 0;
-        try {
-          await baldifyFrame(
-            frame,
-            FALLBACK_PROMPT,
-            (url, isFinal) => {
-              if (controller.signal.aborted) return;
-              if (first || isFinal) setBaldUrl(url);
-              if (isFinal) setProcessing(false);
-            },
-            controller.signal,
-            settings.fallbackModel,
-            first,
-          );
-          produced += 1;
-        } catch (error) {
-          if (produced === 0) throw error;
-          break;
-        }
-      }
+      // Give visitors time to step back into the final framing after consent.
+      await new Promise<void>((resolve) => {
+        const id = window.setTimeout(resolve, 3000);
+        controller.signal.addEventListener("abort", () => {
+          window.clearTimeout(id);
+          resolve();
+        }, { once: true });
+      });
+      if (controller.signal.aborted) return;
+
+      const baldFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 1024);
+      if (!baldFrame) throw new Error("Nu am putut prelua imaginea camerei");
+      await baldifyFrame(
+        baldFrame,
+        FALLBACK_PROMPT,
+        (url, isFinal) => {
+          if (controller.signal.aborted) return;
+          setBaldUrl(url);
+          if (isFinal) setProcessing(false);
+        },
+        controller.signal,
+        settings.fallbackModel,
+        true,
+      );
+
+      if (controller.signal.aborted || loopStopRef.current) return;
+      const smileFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 1024);
+      if (!smileFrame) return;
+      await baldifyFrame(
+        smileFrame,
+        SMILE_PROMPT,
+        (url, isFinal) => {
+          if (!controller.signal.aborted && isFinal) setSmileUrl(url);
+        },
+        controller.signal,
+        settings.fallbackModel,
+        false,
+      );
     } catch (error) {
       if (controller.signal.aborted) return;
       setProcessing(false);
@@ -308,7 +321,12 @@ function MirrorV2() {
   }, [screen, reset]);
 
   const messages = Object.fromEntries(
-    Object.entries(settings.messages).map(([key, value]) => [key, typeof value === "string" ? value.replace(/\\n/g, "\n").replace(/\\r/g, "") : value]),
+    Object.entries(settings.messages).map(([key, value]) => [key, typeof value === "string" ? value
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "")
+      .split("\n")
+      .map((line) => line.replace(/\s+(\S+)$/, "\u00a0$1"))
+      .join("\n") : value]),
   ) as MirrorSettings["messages"];
   const cameraVisible = CAMERA_SCREENS.includes(screen);
   const donationQr = `${origin}/doneaza?s=${currentSession()}&k=${encodeURIComponent(settings.kioskName)}&d=${encodeURIComponent("https://verticalfreedom.org/doneaza")}`;
@@ -337,6 +355,13 @@ function MirrorV2() {
           className={`v2-generated-portrait absolute inset-0 z-[3] h-full w-full ${screen === "choice" ? "v2-bald-out" : "v2-bald-in"}`}
         />
       )}
+      {smileUrl && screen === "choice" && (
+        <img
+          src={smileUrl}
+          alt="Portretul vizitatorului zâmbind"
+          className="v2-generated-portrait v2-smile-in absolute inset-0 z-[4] h-full w-full"
+        />
+      )}
 
       {screen === "attract" && (
         <section className="absolute inset-0 z-20 flex flex-col items-center justify-start px-[8vw] pt-[20vh] text-center" onClick={() => {
@@ -349,18 +374,18 @@ function MirrorV2() {
           <Logos />
           <div className="v2-copy-stack v2-color-cycle v2-copy-enter v2-text-shade v2-highlight w-full max-w-[88vw]">
             <p className="v2-kicker">{messages.attractKicker}</p>
-            <h1 className="v2-title v2-title-glow text-[clamp(2rem,6vw,5rem)] leading-[1.02]">{messages.attractTitle}</h1>
-            <p className="v2-lede whitespace-pre-line text-[clamp(1.62rem,3.6vw,3.24rem)] leading-snug">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
+            <h1 className="v2-title v2-title-glow text-[clamp(2.4rem,7vw,5.8rem)] leading-[1.04]">{messages.attractTitle}</h1>
+            <p className="v2-lede whitespace-pre-line text-[clamp(1.8rem,4vw,3.55rem)] leading-snug">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
           </div>
-          <Button variant="outline" className="v2-action v2-cta-pulse v2-highlight mt-[3vh] h-auto px-[3vw] py-[1.2vh] text-[clamp(1rem,2vw,1.8rem)]">{messages.attractCta}</Button>
+          <Button variant="outline" className="v2-action v2-action-white v2-cta-pulse v2-highlight mt-[3vh] h-auto px-[3vw] py-[1.2vh] text-[clamp(1.1rem,2.2vw,2rem)]">{messages.attractCta}</Button>
         </section>
       )}
 
       {screen === "consent" && (
         <section className="fade-in-slow absolute inset-0 z-20 flex flex-col justify-start bg-background/30 px-[8vw] pt-[6vh] backdrop-blur-xl">
           <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight">
-            <h2 className="v2-title text-[clamp(1.4rem,3.4vw,2.9rem)] leading-none">{messages.consentTitle}</h2>
-            <p className="v2-lede max-w-[48ch] whitespace-pre-line text-[clamp(1.3rem,2.6vw,2.35rem)] leading-[1.4]">{messages.consentBody}</p>
+            <h2 className="v2-title text-[clamp(1.7rem,4vw,3.35rem)] leading-[1.08]">{messages.consentTitle}</h2>
+            <p className="v2-lede max-w-[48ch] whitespace-pre-line text-[clamp(1.4rem,2.85vw,2.55rem)] leading-[1.38]">{messages.consentBody}</p>
           </RoseFrame>
           <Button variant="ghost" onClick={() => setConsent((value) => !value)} className="v2-highlight mt-[2vh] h-auto justify-start rounded-none px-0 py-3 text-left text-[clamp(1.1rem,2.2vw,2rem)] text-foreground hover:bg-transparent">
             <span className={`flex h-[1.1em] w-[1.1em] shrink-0 items-center justify-center border ${consent ? "border-primary text-primary" : "border-hairline"}`}>{consent ? "✓" : ""}</span>
@@ -373,7 +398,7 @@ function MirrorV2() {
 
       {screen === "framing" && (
         <section className="absolute inset-0 z-20 grid h-[49vh] grid-cols-[1fr_auto] items-start gap-[4vw] px-[7vw] pt-[6vh]">
-          <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[62vw]"><p className="v2-kicker">{messages.framingKicker}</p><h2 className="v2-title max-w-[10ch] text-[clamp(1.85rem,4.6vw,3.9rem)] leading-[1.04]">Privește-te {settings.framingSeconds} secunde.</h2></RoseFrame>
+          <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[66vw]"><p className="v2-kicker">{messages.framingKicker}</p><h2 className="v2-title text-[clamp(2.1rem,5vw,4.35rem)] leading-[1.06]">Privește-te {settings.framingSeconds} secunde.</h2></RoseFrame>
           <div className="v2-countdown v2-text-shade v2-highlight mt-[4vh] text-right"><p className="v2-title text-[clamp(3.75rem,10vw,8.5rem)] leading-none text-primary">{String(countdown).padStart(2, "0")}</p><p className="v2-kicker text-foreground/80">{messages.framingCaption}</p></div>
         </section>
       )}
@@ -381,16 +406,16 @@ function MirrorV2() {
       {screen === "mirror" && (
         <section className="absolute inset-0 z-20">
           <div className="absolute inset-x-[6vw] top-[5vh] z-20 grid max-h-[44vh] grid-cols-1 content-start gap-[2vh]">
-             <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[82vw]"><p className="v2-kicker">O posibilă schimbare</p><h2 className="v2-title max-w-[12ch] text-[clamp(1.65rem,4.1vw,3.65rem)] leading-none">{messages.mirrorKicker}</h2></RoseFrame>
+             <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight max-w-[82vw]"><p className="v2-kicker">O posibilă schimbare</p><h2 className="v2-title text-[clamp(1.95rem,4.6vw,4.05rem)] leading-[1.06]">{messages.mirrorKicker}</h2></RoseFrame>
              {!baldUrl && <p className="v2-plate v2-lede v2-highlight breathe max-w-[70vw] text-[clamp(1.2rem,2.4vw,2.15rem)]">{processing ? messages.mirrorWorking : generationError || "Imaginea reală rămâne cu tine."}</p>}
              {baldUrl && <p className="v2-plate v2-lede v2-highlight max-w-[74vw] whitespace-pre-line text-[clamp(1.2rem,2.4vw,2.15rem)] leading-[1.3]">{messages.mirrorTitle}{"\n"}{messages.mirrorFooter}</p>}
           </div>
         </section>
       )}
 
-        {screen === "choice" && <section className="absolute inset-0 z-20"><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight absolute left-[5vw] top-[6vh] max-w-[62vw]"><p className="v2-kicker">{messages.choiceKicker}</p><h2 className="v2-title v2-title-glow text-[clamp(1.55rem,3.8vw,3.4rem)] leading-none">{messages.choiceTitle}</h2></RoseFrame></section>}
+        {screen === "choice" && <section className="absolute inset-0 z-20"><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight absolute left-[5vw] top-[6vh] max-w-[68vw]"><p className="v2-kicker">{messages.choiceKicker}</p><h2 className="v2-title v2-title-glow text-[clamp(1.9rem,4.5vw,3.95rem)] leading-[1.06]">{messages.choiceTitle}</h2></RoseFrame></section>}
 
-        {screen === "healthy" && <section className="absolute inset-x-[6vw] top-[6vh] z-20 grid max-h-[43vh] content-start gap-[2vh]"><RoseFrame className="v2-copy-enter v2-highlight max-w-[80vw]"><h2 className="v2-title max-w-[13ch] text-[clamp(1.55rem,3.7vw,3.4rem)] leading-[1.04] text-primary">{messages.healthyTitle}</h2></RoseFrame><p className="v2-plate v2-lede v2-copy-enter v2-highlight max-w-[80vw] whitespace-pre-line text-[clamp(1.3rem,2.6vw,2.35rem)] leading-[1.32]">{messages.healthyBody}</p></section>}
+        {screen === "healthy" && <section className="absolute inset-x-[6vw] top-[6vh] z-20 grid max-h-[43vh] content-start gap-[2vh]"><RoseFrame className="v2-copy-enter v2-highlight max-w-[84vw]"><h2 className="v2-title text-[clamp(1.9rem,4.4vw,3.95rem)] leading-[1.08] text-primary">{messages.healthyTitle}</h2></RoseFrame><p className="v2-plate v2-lede v2-copy-enter v2-highlight max-w-[84vw] whitespace-pre-line text-[clamp(1.45rem,2.9vw,2.6rem)] leading-[1.35]">{messages.healthyBody}</p></section>}
 
       {screen === "final" && (
         <section className="absolute inset-0 z-20 flex flex-col px-[7vw] pt-[10vh]">
