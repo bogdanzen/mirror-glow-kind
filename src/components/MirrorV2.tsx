@@ -326,6 +326,7 @@ export function MirrorV2() {
         className={`transition-opacity duration-1000 ${cameraVisible ? "opacity-100" : "opacity-0"}`}
       />
       {cameraVisible && <div className="video-grade" aria-hidden />}
+      {cameraVisible && <div className="v2-top-shade" aria-hidden />}
       {cameraVisible && <div className="v2-grain" aria-hidden />}
       {(screen === "attract" || screen === "final" || screen === "donate") && <PinkParticles />}
 
