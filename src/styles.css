@@ -147,6 +147,23 @@
     radial-gradient(ellipse at center, transparent 42%, color-mix(in oklab, var(--background) 62%, transparent) 100%);
 }
 
+.v2-top-shade {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 38%;
+  z-index: 2;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--v2-shade) 44%, transparent) 0%,
+    color-mix(in oklab, var(--v2-shade) 30%, transparent) 34%,
+    color-mix(in oklab, var(--v2-shade) 13%, transparent) 68%,
+    transparent 100%
+  );
+}
+
 .video-grade-soft {
   opacity: 0.72;
 }
