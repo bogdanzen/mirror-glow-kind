@@ -9,5 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep `/v2` as the tablet-safe campaign path: one camera stream and sequential server-generated portraits (one request at a time, only during the mirror window); do not import WebRTC, RunPod, MediaPipe, or video frame loops there because Android tablet stability is the priority.
-- Keep `/v2` visually isolated through `.v2-*` styles and scoped theme tokens so its rose-gold campaign treatment never changes the legacy kiosk or dashboard.
+- Keep `/` and `/v2` on the shared tablet-safe campaign component: one camera stream and sequential server-generated portraits; do not import WebRTC, RunPod, MediaPipe, or video frame loops there because Android tablet stability is the priority.
+- Keep the shared campaign experience visually isolated through `.v2-*` styles and scoped theme tokens so its rose-gold treatment never changes the dashboard or supporting pages.
