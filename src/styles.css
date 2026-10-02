@@ -329,8 +329,8 @@
   --hairline: oklch(0.68 0.08 24 / 0.62);
   --border: var(--hairline);
   --ring: oklch(0.78 0.09 22);
-  --qr-dark: oklch(0.24 0.05 18);
-  --qr-light: oklch(0.87 0.075 25);
+  --qr-dark: #3a2114;
+  --qr-light: #e8b8b0;
   background:
     radial-gradient(ellipse at 50% 36%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 48%),
     var(--background);
@@ -530,8 +530,8 @@
 }
 
 .v2-qr {
-  --qr-dark: oklch(0.23 0.045 20);
-  --qr-light: oklch(0.85 0.08 26);
+  --qr-dark: #3a2114;
+  --qr-light: #e8b8b0;
   border: 1px solid var(--primary);
   border-radius: clamp(1rem, 2vw, 1.75rem);
   background: var(--primary);
@@ -541,7 +541,19 @@
 
 .v2-qr canvas {
   display: block;
+  width: clamp(9rem, 19vw, 15rem);
+  height: auto;
   border-radius: clamp(0.65rem, 1.5vw, 1.25rem);
+}
+
+.v2-final-qr-row {
+  position: absolute;
+  inset-inline: 7vw;
+  top: 34vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 5vw;
 }
 
 .v2-grain {
