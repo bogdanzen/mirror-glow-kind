@@ -11,6 +11,7 @@
 
 ## Done
 
+- [x] Final campaign QR rendered reliably with compatible rose colors and linked directly to the official „Te vezi în oglindă” page.
 - [x] V2 promoted to the main `/` route through one shared tablet-safe campaign component; `/v2` remains available as an alias.
 - [x] V2 readability pass: Cinzel headings enlarged 20%, rose-brown shadows strengthened, white/powder-pink opening CTA, whole-word wrapping, and 20-second consent timeout.
 - [x] V2 campaign polish: metrics reset on 1 Oct 2026, three-second post-consent capture delay, dedicated smiling portrait, white opening CTA, larger non-orphaned copy, and subtle brown-rose text shading.

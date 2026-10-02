@@ -314,7 +314,7 @@ export function MirrorV2() {
       .join("\n") : value]),
   ) as MirrorSettings["messages"];
   const cameraVisible = CAMERA_SCREENS.includes(screen);
-  const donationQr = `${origin}/doneaza?s=${currentSession()}&k=${encodeURIComponent(settings.kioskName)}&d=${encodeURIComponent("https://verticalfreedom.org/te-vezi-oglinda/")}`;
+  const donationQr = "https://verticalfreedom.org/te-vezi-oglinda/";
 
   return (
     <main className="v2-shell relative h-dvh w-screen overflow-hidden bg-background text-foreground">
@@ -416,7 +416,7 @@ export function MirrorV2() {
               <p className="v2-lede v2-title-glow text-[clamp(1.35rem,2.75vw,2.45rem)] font-semibold leading-tight text-primary">{messages.finalSubtitle}</p>
               <p className="v2-title text-[clamp(1.1rem,2.3vw,2.1rem)] leading-none text-primary">{messages.finalButterfly}</p>
             </RoseFrame>
-            <div className="mt-[2vh] flex w-full items-start justify-between gap-[5vw]"><div className="v2-highlight"><p className="mb-[1.5vh] text-[clamp(0.75rem,1.4vw,1.2rem)] uppercase tracking-[0.22em] text-primary">{messages.finalQrLabel}</p><Button onClick={() => { idleRef.current = Date.now(); setPresenceSeconds(20); }} variant="outline" className="v2-action h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">{messages.finalPresence}</Button><Button onClick={() => setScreen("donate")} variant="outline" className="v2-action ml-[2vw] h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)] uppercase">Donează</Button><p className="mt-3 text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div><div className="v2-qr shrink-0 p-3"><QrCode value={donationQr} size={180} /></div></div>
+            <div className="v2-final-qr-row"><div className="v2-highlight"><p className="mb-[1.5vh] text-[clamp(0.75rem,1.4vw,1.2rem)] uppercase tracking-[0.22em] text-primary">{messages.finalQrLabel}</p><Button onClick={() => { idleRef.current = Date.now(); setPresenceSeconds(20); }} variant="outline" className="v2-action h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">{messages.finalPresence}</Button><Button onClick={() => setScreen("donate")} variant="outline" className="v2-action ml-[2vw] h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)] uppercase">Donează</Button><p className="mt-3 text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div><div className="v2-qr shrink-0 p-3"><QrCode value={donationQr} size={240} /></div></div>
         </section>
       )}
 
