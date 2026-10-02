@@ -336,7 +336,7 @@ function MirrorV2() {
       .join("\n") : value]),
   ) as MirrorSettings["messages"];
   const cameraVisible = CAMERA_SCREENS.includes(screen);
-  const donationQr = `${origin}/doneaza?s=${currentSession()}&k=${encodeURIComponent(settings.kioskName)}&d=${encodeURIComponent("https://verticalfreedom.org/doneaza")}`;
+  const donationQr = `${origin}/doneaza?s=${currentSession()}&k=${encodeURIComponent(settings.kioskName)}&d=${encodeURIComponent("https://verticalfreedom.org/te-vezi-oglinda/")}`;
 
   return (
     <main className="v2-shell relative h-dvh w-screen overflow-hidden bg-background text-foreground">
@@ -381,7 +381,7 @@ function MirrorV2() {
           <Logos />
           <div className="v2-copy-stack v2-color-cycle v2-copy-enter v2-text-shade v2-highlight w-full max-w-[88vw]">
             <p className="v2-kicker">{messages.attractKicker}</p>
-             <h1 className="v2-title v2-title-glow text-[clamp(2.88rem,8.4vw,6.96rem)] leading-[1.04]">{messages.attractTitle}</h1>
+             <h1 className="v2-title v2-title-glow text-[clamp(3.75rem,10.9vw,9.05rem)] leading-[1.04]">{messages.attractTitle}</h1>
             <p className="v2-lede whitespace-pre-line text-[clamp(1.8rem,4vw,3.55rem)] leading-snug">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
           </div>
           <Button variant="outline" className="v2-action v2-action-white v2-cta-pulse v2-highlight mt-[3vh] h-auto px-[3vw] py-[1.2vh] text-[clamp(1.1rem,2.2vw,2rem)]">{messages.attractCta}</Button>

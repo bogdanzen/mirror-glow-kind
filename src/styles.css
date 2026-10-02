@@ -320,6 +320,10 @@
   font-family: "Manrope", "Varela Round", ui-sans-serif, system-ui, sans-serif;
 }
 
+:root {
+  --v2-shade: #3a2114;
+}
+
 .v2-title {
   font-family: "Cinzel", ui-serif, Georgia, serif;
   font-weight: 600;
@@ -329,10 +333,15 @@
   hyphens: none;
   overflow-wrap: normal;
   word-break: keep-all;
+  text-shadow:
+    0 0.035em 0.14em color-mix(in oklab, var(--v2-shade) 60%, transparent),
+    0 0.1em 0.45em color-mix(in oklab, var(--v2-shade) 32%, transparent);
 }
 
 .v2-title-glow {
   text-shadow:
+    0 0.035em 0.14em color-mix(in oklab, var(--v2-shade) 62%, transparent),
+    0 0.1em 0.5em color-mix(in oklab, var(--v2-shade) 36%, transparent),
     0 0 0.22em color-mix(in oklab, var(--primary) 36%, transparent),
     0 0 0.7em color-mix(in oklab, var(--primary) 16%, transparent);
 }
@@ -343,6 +352,9 @@
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
+  text-shadow:
+    0 0.04em 0.14em color-mix(in oklab, var(--v2-shade) 55%, transparent),
+    0 0.1em 0.4em color-mix(in oklab, var(--v2-shade) 30%, transparent);
 }
 
 .v2-lede {
@@ -350,12 +362,16 @@
   letter-spacing: 0.015em;
   line-height: 1.6;
   text-shadow:
+    0 0.04em 0.15em color-mix(in oklab, var(--v2-shade) 58%, transparent),
+    0 0.12em 0.55em color-mix(in oklab, var(--v2-shade) 32%, transparent),
     0 0 0.5em color-mix(in oklab, var(--primary) 21%, transparent),
     0 0 1.2em color-mix(in oklab, var(--primary) 10%, transparent);
 }
 
 .v2-highlight {
   text-shadow:
+    0 0.04em 0.15em color-mix(in oklab, var(--v2-shade) 60%, transparent),
+    0 0.12em 0.55em color-mix(in oklab, var(--v2-shade) 34%, transparent),
     0 0 0.55em color-mix(in oklab, var(--primary) 23%, transparent),
     0 0 1.4em color-mix(in oklab, var(--primary) 9%, transparent);
 }
@@ -363,11 +379,11 @@
 .v2-highlight::after {
   content: "";
   position: absolute;
-  inset: -24% -10%;
+  inset: -30% -12%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--primary) 9%, transparent), transparent 76%);
-  filter: blur(22px);
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--v2-shade) 20%, transparent), transparent 78%);
+  filter: blur(40px);
 }
 
 .v2-plate {
@@ -430,11 +446,11 @@
 .v2-plate::before {
   content: "";
   position: absolute;
-  inset: -42% -18%;
+  inset: -48% -22%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--primary) 10%, transparent) 0%, color-mix(in oklab, var(--primary) 5%, transparent) 42%, transparent 78%);
-  filter: blur(28px);
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--v2-shade) 22%, transparent) 0%, color-mix(in oklab, var(--v2-shade) 11%, transparent) 44%, transparent 80%);
+  filter: blur(48px);
 }
 
 .v2-copy-enter {
