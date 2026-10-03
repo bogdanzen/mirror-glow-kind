@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791028095739,
+      "tag": "0000_kiosk_remote_control",
+      "breakpoints": true
+    }
+  ]
+}

@@ -14,6 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
+      kiosk_commands: {
+        Row: {
+          acknowledged_at: string | null
+          command: string
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          id: string
+          kiosk_id: string
+          result: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          command: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          id?: string
+          kiosk_id: string
+          result?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          command?: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          id?: string
+          kiosk_id?: string
+          result?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosk_commands_kiosk_id_fkey"
+            columns: ["kiosk_id"]
+            isOneToOne: false
+            referencedRelation: "kiosk_status"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kiosk_status: {
+        Row: {
+          ai_latency_ms: number | null
+          ai_ok: boolean
+          app_version: string
+          camera_ok: boolean
+          current_screen: string
+          id: string
+          kiosk_name: string
+          last_ai_success_at: string | null
+          last_error: string | null
+          last_seen: string
+          session_active: boolean
+          token_hash: string
+          updated_at: string
+          user_agent: string | null
+          viewport: string | null
+        }
+        Insert: {
+          ai_latency_ms?: number | null
+          ai_ok?: boolean
+          app_version?: string
+          camera_ok?: boolean
+          current_screen?: string
+          id?: string
+          kiosk_name: string
+          last_ai_success_at?: string | null
+          last_error?: string | null
+          last_seen?: string
+          session_active?: boolean
+          token_hash: string
+          updated_at?: string
+          user_agent?: string | null
+          viewport?: string | null
+        }
+        Update: {
+          ai_latency_ms?: number | null
+          ai_ok?: boolean
+          app_version?: string
+          camera_ok?: boolean
+          current_screen?: string
+          id?: string
+          kiosk_name?: string
+          last_ai_success_at?: string | null
+          last_error?: string | null
+          last_seen?: string
+          session_active?: boolean
+          token_hash?: string
+          updated_at?: string
+          user_agent?: string | null
+          viewport?: string | null
+        }
+        Relationships: []
+      }
       mirror_events: {
         Row: {
           created_at: string
@@ -44,15 +139,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -179,6 +298,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
