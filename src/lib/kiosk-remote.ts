@@ -36,7 +36,10 @@ export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
   const identity = remoteIdentity();
   const response = await fetch("/api/public/kiosk-sync", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-Kiosk-Viewport": `${window.innerWidth}x${window.innerHeight}@${window.devicePixelRatio || 1}`,
+    },
     body: JSON.stringify({ ...identity, ...telemetry }),
   });
   if (!response.ok) throw new Error(`Monitorizare ${response.status}`);

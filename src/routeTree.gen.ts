@@ -18,6 +18,7 @@ import { Route as ApiBaldRouteImport } from './routes/api/bald'
 import { Route as ApiFalRouteImport } from './routes/api/fal'
 import { Route as ApiMirrorFrameRouteImport } from './routes/api/mirror-frame'
 import { Route as RIdRouteImport } from './routes/r.$id'
+import { Route as ApiPublicKioskSyncRouteImport } from './routes/api/public/kiosk-sync'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const RIdRoute = RIdRouteImport.update({
   path: '/r/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicKioskSyncRoute = ApiPublicKioskSyncRouteImport.update({
+  id: '/api/public/kiosk-sync',
+  path: '/api/public/kiosk-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/kiosk-sync': typeof ApiPublicKioskSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/kiosk-sync': typeof ApiPublicKioskSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/kiosk-sync': typeof ApiPublicKioskSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/api/fal'
     | '/api/mirror-frame'
     | '/r/$id'
+    | '/api/public/kiosk-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/api/fal'
     | '/api/mirror-frame'
     | '/r/$id'
+    | '/api/public/kiosk-sync'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/api/fal'
     | '/api/mirror-frame'
     | '/r/$id'
+    | '/api/public/kiosk-sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   ApiFalRoute: typeof ApiFalRoute
   ApiMirrorFrameRoute: typeof ApiMirrorFrameRoute
   RIdRoute: typeof RIdRoute
+  ApiPublicKioskSyncRoute: typeof ApiPublicKioskSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/kiosk-sync': {
+      id: '/api/public/kiosk-sync'
+      path: '/api/public/kiosk-sync'
+      fullPath: '/api/public/kiosk-sync'
+      preLoaderRoute: typeof ApiPublicKioskSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFalRoute: ApiFalRoute,
   ApiMirrorFrameRoute: ApiMirrorFrameRoute,
   RIdRoute: RIdRoute,
+  ApiPublicKioskSyncRoute: ApiPublicKioskSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

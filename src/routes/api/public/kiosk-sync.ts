@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/public/kiosk-sync")({
 
         const { data: command } = await supabaseAdmin
           .from("kiosk_commands")
-          .select("id,command")
+          .select("id,command,delivered_at")
           .eq("kiosk_id", kioskId)
           .is("acknowledged_at", null)
           .order("created_at", { ascending: true })
