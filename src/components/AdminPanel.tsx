@@ -284,6 +284,14 @@ export function AdminPanel({
               >
                 Donații pe totemuri
               </a>
+              <a
+                href="/remote"
+                target="_blank"
+                rel="noreferrer"
+                className="border border-primary px-5 py-3 text-sm uppercase tracking-[0.15em] text-primary"
+              >
+                Monitorizare remote
+              </a>
             </div>
             <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">Cameră și durate</h2>
         <label className={label}>Cameră</label>
