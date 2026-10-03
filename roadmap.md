@@ -11,6 +11,7 @@
 
 ## Done
 
+- [x] Final campaign copy aligned to one left edge and butterfly emoji removed.
 - [x] Main campaign timing and navigation cleanup: 5-second bald portrait, 5-second smile portrait, accurate duration controls with −/+ buttons, opening QR and campaign credit, left-aligned donation finish, scrollable dashboard, and `/v2` removed.
 - [x] Final campaign QR rendered reliably with compatible rose colors and linked directly to the official „Te vezi în oglindă” page.
 - [x] Tablet-safe campaign promoted to `/`; the obsolete `/v2` alias was later removed.

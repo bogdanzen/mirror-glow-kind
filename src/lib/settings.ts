@@ -70,7 +70,7 @@ export const DEFAULT_MESSAGES: MirrorMessages = {
   finalTitleTop: "DE CE SUNTEM AICI?",
   finalTitleBottom: "",
   finalSubtitle: "Prevenția începe înainte să doară.",
-  finalButterfly: "TE VEZI? 🦋",
+  finalButterfly: "TE VEZI?",
   finalQrLabel: "Scanează și alege drumul tău",
   finalOptions: "Informează-te\nFă-ți controalele\nIntră în comunitate\nSusține prevenția",
   finalPresence: "Mai ești aici? Atinge ecranul",
@@ -292,6 +292,7 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   for (const key of Object.keys(DEFAULT_MESSAGES) as (keyof MirrorMessages)[]) {
     messages[key] = String(messages[key] ?? DEFAULT_MESSAGES[key]);
   }
+  messages.finalButterfly = messages.finalButterfly.replace(/🦋/gu, "").trim();
   merged.messages = messages;
   const raw = merged.scopeDenoiseSteps as unknown;
   const list = Array.isArray(raw) ? raw : raw == null ? [] : [raw];

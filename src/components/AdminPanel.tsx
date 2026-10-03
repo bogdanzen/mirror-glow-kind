@@ -197,7 +197,7 @@ export function AdminPanel({
                 ["finalTitleTop", "Final — titlu rând 1"],
                 ["finalTitleBottom", "Final — titlu rând 2"],
                 ["finalSubtitle", "Final — subtitlu"],
-                ["finalButterfly", "Final — fluture 🦋"],
+                ["finalButterfly", "Final — mesaj TE VEZI?"],
                 ["finalQrLabel", "Final — text QR"],
                 ["finalOptions", "Final — opțiuni (una pe rând)"],
                 ["finalPresence", "Final — buton prezență"],
