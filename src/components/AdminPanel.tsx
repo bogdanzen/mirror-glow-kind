@@ -1,5 +1,6 @@
 import { cameraStyle } from "@/lib/cameraView";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DEFAULT_MESSAGES,
   DEFAULT_SETTINGS,
@@ -299,29 +300,28 @@ export function AdminPanel({
           ))}
         </select>
 
-        <label className={label}>Poziție cameră (vizibil pe /v2)</label>
+        <label className={label}>Poziție cameră (experiența principală)</label>
         <CameraAdjuster draft={draft} set={set} field={field} />
 
-        <div className="grid grid-cols-5 gap-6">
+        <p className="mt-8 text-sm text-muted-foreground">Timpii de mai jos corespund exact ecranelor văzute de vizitator.</p>
+        <div className="grid gap-4 sm:grid-cols-2">
           {(
             [
-              ["framingSeconds", "Countdown (s)"],
-              ["mirrorSeconds", "Oglindă (s)"],
-              ["captureSeconds", "Captură (s)"],
-              ["thanksSeconds", "Mulțumim (s)"],
-              ["idleTimeoutSeconds", "Inactivitate (s)"],
+              ["framingSeconds", "Privește-te / countdown", 2, 10],
+              ["mirrorSeconds", "Imagine cu chelie", 1, 30],
+              ["captureSeconds", "Imagine cu zâmbet", 1, 30],
+              ["thanksSeconds", "Mesaj de prevenție", 1, 60],
+              ["idleTimeoutSeconds", "Ecran final / donații", 5, 120],
             ] as const
-          ).map(([k, l]) => (
-            <div key={k}>
-              <label className={label}>{l}</label>
-              <input
-                className={field}
-                type="number"
-                min={k === "framingSeconds" ? 2 : undefined}
-                max={k === "framingSeconds" ? 10 : undefined}
-                value={draft[k]}
-                onChange={(e) => set(k, Number(e.target.value))}
-              />
+          ).map(([k, l, min, max]) => (
+            <div key={k} className="border border-hairline p-4">
+              <label className="block text-xs uppercase tracking-[0.16em] text-muted-foreground">{l}</label>
+              <div className="mt-3 grid grid-cols-[3rem_1fr_3rem] items-center gap-3">
+                <Button type="button" variant="outline" size="icon" aria-label={`Scade ${l}`} onClick={() => set(k, Math.max(min, draft[k] - 1))} className="h-12 w-12 rounded-none text-2xl">−</Button>
+                <input className={`${field} py-2 text-center text-2xl`} type="number" min={min} max={max} value={draft[k]} onChange={(e) => set(k, Math.min(max, Math.max(min, Number(e.target.value))))} />
+                <Button type="button" variant="outline" size="icon" aria-label={`Crește ${l}`} onClick={() => set(k, Math.min(max, draft[k] + 1))} className="h-12 w-12 rounded-none text-2xl">+</Button>
+              </div>
+              <p className="mt-2 text-center text-xs text-muted-foreground">secunde</p>
             </div>
           ))}
         </div>

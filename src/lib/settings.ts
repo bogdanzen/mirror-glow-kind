@@ -43,7 +43,7 @@ export type MirrorMessages = {
 };
 
 export const DEFAULT_MESSAGES: MirrorMessages = {
-  attractKicker: "Vertical Freedom prezintă",
+  attractKicker: "Fundația Vertical Freedom prezintă campania de prevenție și conștientizare.",
   attractTitle: "TE VEZI?",
   attractSubtitle: "Privește-te.\nDoar 5 secunde.",
   attractCta: "Atinge ecranul pentru a începe",
@@ -222,9 +222,9 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   storageEnabled: false,
   pin: "0000",
   framingSeconds: 5,
-  mirrorSeconds: 40,
-  captureSeconds: 30,
-  thanksSeconds: 15,
+  mirrorSeconds: 5,
+  captureSeconds: 5,
+  thanksSeconds: 12,
   idleTimeoutSeconds: 20,
   campaignLine: "PREVENȚIA ÎNCEPE ÎNAINTE SĂ DOARĂ.",
   modelId: "stabilityai/sdxl-turbo",
@@ -277,7 +277,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v14";
+const KEY = "mirror.settings.v15";
+const LEGACY_KEY = "mirror.settings.v14";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -323,6 +324,18 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.falSeed = Math.round(clamp(merged.falSeed, 1, 2147483647, DEFAULT_SETTINGS.falSeed));
   merged.framingSeconds = Math.round(
     clamp(merged.framingSeconds, 2, 10, DEFAULT_SETTINGS.framingSeconds),
+  );
+  merged.mirrorSeconds = Math.round(
+    clamp(merged.mirrorSeconds, 1, 30, DEFAULT_SETTINGS.mirrorSeconds),
+  );
+  merged.captureSeconds = Math.round(
+    clamp(merged.captureSeconds, 1, 30, DEFAULT_SETTINGS.captureSeconds),
+  );
+  merged.thanksSeconds = Math.round(
+    clamp(merged.thanksSeconds, 1, 60, DEFAULT_SETTINGS.thanksSeconds),
+  );
+  merged.idleTimeoutSeconds = Math.round(
+    clamp(merged.idleTimeoutSeconds, 5, 120, DEFAULT_SETTINGS.idleTimeoutSeconds),
   );
   merged.camZoom = clamp(merged.camZoom, 0.3, 3, DEFAULT_SETTINGS.camZoom);
   merged.faceZoneSize = clamp(merged.faceZoneSize, 8, 70, DEFAULT_SETTINGS.faceZoneSize);
@@ -380,7 +393,18 @@ export function loadSettings(): MirrorSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return DEFAULT_SETTINGS;
+    if (!raw) {
+      const legacyRaw = window.localStorage.getItem(LEGACY_KEY);
+      if (!legacyRaw) return DEFAULT_SETTINGS;
+      const legacy = JSON.parse(legacyRaw) as Partial<MirrorSettings>;
+      const migrated = sanitizeSettings({
+        ...legacy,
+        mirrorSeconds: DEFAULT_SETTINGS.mirrorSeconds,
+        captureSeconds: DEFAULT_SETTINGS.captureSeconds,
+      });
+      window.localStorage.setItem(KEY, JSON.stringify(migrated));
+      return migrated;
+    }
     return sanitizeSettings(JSON.parse(raw) as Partial<MirrorSettings>);
   } catch {
     return DEFAULT_SETTINGS;
