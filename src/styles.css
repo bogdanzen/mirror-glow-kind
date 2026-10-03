@@ -431,6 +431,18 @@
   margin: 0;
 }
 
+.v2-final-copy > .v2-rose-frame-core {
+  padding-inline: 0;
+  justify-items: start;
+  text-align: left;
+}
+
+.v2-final-copy :is(p, h1, h2) {
+  width: 100%;
+  max-width: none;
+  text-align: left;
+}
+
 .v2-shell :is(p, h1, h2, a, button, span) {
   -webkit-hyphens: none;
   hyphens: none;

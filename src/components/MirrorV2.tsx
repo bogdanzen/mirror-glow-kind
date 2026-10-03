@@ -415,7 +415,7 @@ export function MirrorV2() {
       {screen === "final" && (
         <section className="absolute inset-0 z-20 flex flex-col items-start px-[7vw] pt-[10vh] text-left">
           <Logos />
-            <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[3vh] w-full max-w-[88vw]">
+            <RoseFrame className="v2-final-copy v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[3vh] w-full max-w-[88vw]">
               <p className="v2-kicker">{messages.finalKicker}</p>
                <h2 className="v2-title v2-title-glow text-[clamp(2.22rem,5.52vw,4.92rem)] leading-[1.06]">{messages.finalTitleTop}</h2>
               {messages.finalTitleBottom && (
