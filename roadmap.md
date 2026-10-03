@@ -2,7 +2,7 @@
 
 ## Open
 
-- [x] Tablet-first `/v2`: exact campaign flow, one 1080p camera stream, one complete bald AI portrait generated during countdown, no WebRTC/RunPod/frame buffer.
+- [x] Tablet-first main campaign: exact flow, one 1080p camera stream, sequential server-generated portraits, no WebRTC/RunPod/frame buffer.
 - [x] V2 rose-gold presentation: supplied campaign logos, early AI start, streamed preview, Cinzel/Manrope typography, framed copy and scoped rose-gold QR styling.
 
 - [x] Preserve only the visitor's eyes, nose and mouth from the camera; use the generated bald result over scalp, eyebrows and facial-hair areas.
@@ -13,7 +13,7 @@
 
 - [x] Main campaign timing and navigation cleanup: 5-second bald portrait, 5-second smile portrait, accurate duration controls with −/+ buttons, opening QR and campaign credit, left-aligned donation finish, scrollable dashboard, and `/v2` removed.
 - [x] Final campaign QR rendered reliably with compatible rose colors and linked directly to the official „Te vezi în oglindă” page.
-- [x] V2 promoted to the main `/` route through one shared tablet-safe campaign component; `/v2` remains available as an alias.
+- [x] Tablet-safe campaign promoted to `/`; the obsolete `/v2` alias was later removed.
 - [x] V2 readability pass: Cinzel headings enlarged 20%, rose-brown shadows strengthened, white/powder-pink opening CTA, whole-word wrapping, and 20-second consent timeout.
 - [x] V2 campaign polish: metrics reset on 1 Oct 2026, three-second post-consent capture delay, dedicated smiling portrait, white opening CTA, larger non-orphaned copy, and subtle brown-rose text shading.
 - [x] V2 typography: all copy enlarged and highlighted, all text/countdown kept above mid-screen without overlap, and portrait prompt expanded for one person or groups.
@@ -49,4 +49,4 @@
   credentiale de scurta durata in src/lib/turn.functions.ts si le ataseaza conexiunii din browser.
 - ramas: primul cadru procesat verificat pe masina utilizatorului (5 sesiuni la rand, primul cadru <= 5s).
 - [x] Dashboard /dashboard: vizitatori, scanari QR, donatii, abandonuri, agregare pe totemuri; evenimente anonime in cloud; panou reorganizat cu butoane reale
-- [x] Ecran final /v2: text cauză + subtexte 3×, umbre mai transparente, QR descărcabil (2026-09-29)
+- [x] Ecran final principal: text cauză, umbre discrete și QR oficial descărcabil (2026-09-29)

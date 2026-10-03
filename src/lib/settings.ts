@@ -277,7 +277,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v14";
+const KEY = "mirror.settings.v15";
+const LEGACY_KEY = "mirror.settings.v14";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -392,7 +393,18 @@ export function loadSettings(): MirrorSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return DEFAULT_SETTINGS;
+    if (!raw) {
+      const legacyRaw = window.localStorage.getItem(LEGACY_KEY);
+      if (!legacyRaw) return DEFAULT_SETTINGS;
+      const legacy = JSON.parse(legacyRaw) as Partial<MirrorSettings>;
+      const migrated = sanitizeSettings({
+        ...legacy,
+        mirrorSeconds: DEFAULT_SETTINGS.mirrorSeconds,
+        captureSeconds: DEFAULT_SETTINGS.captureSeconds,
+      });
+      window.localStorage.setItem(KEY, JSON.stringify(migrated));
+      return migrated;
+    }
     return sanitizeSettings(JSON.parse(raw) as Partial<MirrorSettings>);
   } catch {
     return DEFAULT_SETTINGS;
