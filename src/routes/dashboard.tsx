@@ -93,7 +93,7 @@ function Dashboard() {
   }, [range, load]);
 
   return (
-    <main className="min-h-dvh bg-background px-[6vw] py-[6vh] text-foreground">
+    <main className="dashboard-scroll h-dvh overflow-y-auto bg-background px-[6vw] py-[6vh] text-foreground">
       <div className="mx-auto max-w-5xl">
         <header className="flex flex-wrap items-end justify-between gap-6 hairline-b pb-6">
           <div>

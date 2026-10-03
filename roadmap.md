@@ -11,6 +11,7 @@
 
 ## Done
 
+- [x] Main campaign timing and navigation cleanup: 5-second bald portrait, 5-second smile portrait, accurate duration controls with −/+ buttons, opening QR and campaign credit, left-aligned donation finish, scrollable dashboard, and `/v2` removed.
 - [x] Final campaign QR rendered reliably with compatible rose colors and linked directly to the official „Te vezi în oglindă” page.
 - [x] V2 promoted to the main `/` route through one shared tablet-safe campaign component; `/v2` remains available as an alias.
 - [x] V2 readability pass: Cinzel headings enlarged 20%, rose-brown shadows strengthened, white/powder-pink opening CTA, whole-word wrapping, and 20-second consent timeout.

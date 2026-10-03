@@ -46,7 +46,7 @@ export function MirrorV2() {
   const [smileUrl, setSmileUrl] = useState("");
   const [processing, setProcessing] = useState(false);
   const [generationError, setGenerationError] = useState("");
-  const [presenceSeconds, setPresenceSeconds] = useState(20);
+  const [presenceSeconds, setPresenceSeconds] = useState(DEFAULT_SETTINGS.idleTimeoutSeconds);
   const [origin, setOrigin] = useState("");
   const [admin, setAdmin] = useState(false);
   const tapsRef = useRef<number[]>([]);
@@ -117,9 +117,9 @@ export function MirrorV2() {
     setGenerationError("");
     setProcessing(false);
     setCountdown(settings.framingSeconds);
-    setPresenceSeconds(20);
+    setPresenceSeconds(settings.idleTimeoutSeconds);
     setScreen("attract");
-  }, [settings.framingSeconds, stopCamera]);
+  }, [settings.framingSeconds, settings.idleTimeoutSeconds, stopCamera]);
 
   const startGeneration = useCallback(async () => {
     if (generationStartedRef.current) return;
@@ -180,7 +180,7 @@ export function MirrorV2() {
       setProcessing(false);
       setGenerationError(error instanceof Error ? error.message : "Transformarea nu este disponibilă");
     }
-  }, [attachCamera, settings.fallbackModel, settings.framingSeconds, settings.mirrorSeconds]);
+  }, [attachCamera, settings.fallbackModel]);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -242,16 +242,22 @@ export function MirrorV2() {
   }, [screen, baldUrl, generationError]);
 
   useEffect(() => {
-    if (screen === "choice") {
-      const id = window.setTimeout(() => setScreen("healthy"), 7000);
+    if (screen === "choice" && smileUrl) {
+      const id = window.setTimeout(() => setScreen("healthy"), settings.captureSeconds * 1000);
       return () => window.clearTimeout(id);
     }
     if (screen === "healthy") {
-      const id = window.setTimeout(() => setScreen("final"), 12000);
+      const id = window.setTimeout(() => setScreen("final"), settings.thanksSeconds * 1000);
       return () => window.clearTimeout(id);
     }
     return undefined;
-  }, [screen]);
+  }, [screen, settings.captureSeconds, settings.thanksSeconds, smileUrl]);
+
+  useEffect(() => {
+    if (screen !== "choice" || smileUrl) return;
+    const id = window.setTimeout(() => setScreen("healthy"), 45_000);
+    return () => window.clearTimeout(id);
+  }, [screen, smileUrl]);
 
   useEffect(() => {
     if (screen !== "consent") return;
@@ -261,7 +267,7 @@ export function MirrorV2() {
 
   useEffect(() => {
     if (screen !== "final" && screen !== "donate") return;
-    setPresenceSeconds(screen === "donate" ? 45 : 20);
+    setPresenceSeconds(settings.idleTimeoutSeconds);
     const id = window.setInterval(() => {
       setPresenceSeconds((seconds) => {
         if (seconds <= 1) {
@@ -273,7 +279,7 @@ export function MirrorV2() {
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [screen, reset]);
+  }, [screen, reset, settings.idleTimeoutSeconds]);
 
   useEffect(() => {
     if (screen === "attract" || screen === "donate") return;
@@ -286,7 +292,7 @@ export function MirrorV2() {
       healthy: "prevention",
       final: "final",
     }[screen] as "consent" | "framing" | "mirror" | "choice" | "prevention" | "final";
-    track(event, { kiosk, meta: { version: "v2" } });
+    track(event, { kiosk, meta: { version: "principal" } });
   }, [screen, settings.kioskName]);
 
   useEffect(() => {
@@ -333,12 +339,12 @@ export function MirrorV2() {
       {prevBaldUrl && screen === "mirror" && (
         <img src={prevBaldUrl} alt="" aria-hidden className="v2-generated-portrait absolute inset-0 z-[3] h-full w-full" />
       )}
-      {baldUrl && (screen === "mirror" || screen === "choice") && (
+      {baldUrl && screen === "mirror" && (
         <img
           key={baldUrl}
           src={baldUrl}
           alt="Portretul vizitatorului cu capul ras"
-          className={`v2-generated-portrait absolute inset-0 z-[3] h-full w-full ${screen === "choice" ? "v2-bald-out" : "v2-bald-in"}`}
+          className="v2-generated-portrait v2-bald-in absolute inset-0 z-[3] h-full w-full"
         />
       )}
       {smileUrl && screen === "choice" && (
@@ -354,7 +360,7 @@ export function MirrorV2() {
           void enterFullscreen();
           void attachCamera();
           startSession();
-          track("start", { kiosk: settings.kioskName, meta: { version: "v2" } });
+          track("start", { kiosk: settings.kioskName, meta: { version: "principal" } });
           setScreen("consent");
         }}>
           <Logos />
@@ -364,6 +370,9 @@ export function MirrorV2() {
             <p className="v2-lede whitespace-pre-line text-[clamp(1.8rem,4vw,3.55rem)] leading-snug">{messages.attractSubtitle.replace(/\d+\s+secunde/i, `${settings.framingSeconds} secunde`)}</p>
           </div>
           <Button variant="outline" className="v2-action v2-action-white v2-cta-pulse v2-highlight mt-[3vh] h-auto px-[3vw] py-[1.2vh] text-[clamp(1.1rem,2.2vw,2rem)]">{messages.attractCta}</Button>
+          <div className="v2-start-qr v2-qr mt-[2vh] p-2" onClick={(event) => event.stopPropagation()}>
+            <QrCode value={donationQr} size={180} />
+          </div>
         </section>
       )}
 
@@ -404,7 +413,7 @@ export function MirrorV2() {
         {screen === "healthy" && <section className="absolute inset-x-[6vw] top-[6vh] z-20 grid max-h-[43vh] content-start gap-[2vh]"><RoseFrame className="v2-copy-enter v2-highlight max-w-[84vw]"><h2 className="v2-title text-[clamp(2.28rem,5.28vw,4.74rem)] leading-[1.08] text-primary">{messages.healthyTitle}</h2></RoseFrame><p className="v2-plate v2-lede v2-copy-enter v2-highlight max-w-[84vw] whitespace-pre-line text-[clamp(1.45rem,2.9vw,2.6rem)] leading-[1.35]">{messages.healthyBody}</p></section>}
 
       {screen === "final" && (
-        <section className="absolute inset-0 z-20 flex flex-col px-[7vw] pt-[10vh]">
+        <section className="absolute inset-0 z-20 flex flex-col items-start px-[7vw] pt-[10vh] text-left">
           <Logos />
             <RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[3vh] w-full max-w-[88vw]">
               <p className="v2-kicker">{messages.finalKicker}</p>
@@ -416,12 +425,12 @@ export function MirrorV2() {
               <p className="v2-lede v2-title-glow text-[clamp(1.35rem,2.75vw,2.45rem)] font-semibold leading-tight text-primary">{messages.finalSubtitle}</p>
               <p className="v2-title text-[clamp(1.1rem,2.3vw,2.1rem)] leading-none text-primary">{messages.finalButterfly}</p>
             </RoseFrame>
-            <div className="v2-final-qr-row"><div className="v2-highlight"><p className="mb-[1.5vh] text-[clamp(0.75rem,1.4vw,1.2rem)] uppercase tracking-[0.22em] text-primary">{messages.finalQrLabel}</p><Button onClick={() => { idleRef.current = Date.now(); setPresenceSeconds(20); }} variant="outline" className="v2-action h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">{messages.finalPresence}</Button><Button onClick={() => setScreen("donate")} variant="outline" className="v2-action ml-[2vw] h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)] uppercase">Donează</Button><p className="mt-3 text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div><div className="v2-qr shrink-0 p-3"><QrCode value={donationQr} size={240} /></div></div>
+            <div className="v2-final-qr-row"><div className="v2-highlight text-left"><p className="mb-[1.5vh] text-[clamp(0.75rem,1.4vw,1.2rem)] uppercase tracking-[0.22em] text-primary">{messages.finalQrLabel}</p><div className="flex flex-wrap items-start gap-[1.5vw]"><Button onClick={() => { idleRef.current = Date.now(); setPresenceSeconds(settings.idleTimeoutSeconds); }} variant="outline" className="v2-action h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">{messages.finalPresence}</Button><Button onClick={() => setScreen("donate")} variant="outline" className="v2-action h-auto px-[3vw] py-[1.2vh] text-[clamp(0.7rem,1.3vw,1.1rem)] uppercase">Donează</Button></div><p className="mt-3 text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div><div className="v2-qr shrink-0 p-3"><QrCode value={donationQr} size={240} /></div></div>
         </section>
       )}
 
       {screen === "donate" && (
-          <section className="absolute inset-0 z-20 flex max-h-[49vh] flex-col items-center px-[7vw] pt-[6vh] text-center"><Logos /><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[7vh]"><p className="v2-kicker">Vertical Freedom</p><h2 className="v2-title text-[clamp(2.18rem,5.76vw,5.1rem)] leading-none">DONEAZĂ<br /><span>ACUM.</span></h2><p className="v2-lede mx-auto max-w-[80vw] text-[clamp(1.3rem,2.6vw,2.35rem)]">Scanează codul și susține prevenția cancerului.</p></RoseFrame><div className="v2-qr mt-[1.5vh] p-3"><QrCode value={donationQr} size={220} /></div><div className="mt-[1.5vh] flex w-full items-start justify-between"><Button onClick={() => setScreen("final")} variant="outline" className="v2-action h-auto px-[3vw] py-[1vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">Înapoi</Button><p className="v2-highlight text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div></section>
+          <section className="absolute inset-0 z-20 flex max-h-[49vh] flex-col items-start px-[7vw] pt-[6vh] text-left"><Logos /><RoseFrame className="v2-copy-stack v2-color-cycle v2-copy-enter v2-highlight mt-[7vh] w-full"><p className="v2-kicker">Vertical Freedom</p><h2 className="v2-title text-[clamp(2.18rem,5.76vw,5.1rem)] leading-none">DONEAZĂ<br /><span>ACUM.</span></h2><p className="v2-lede max-w-[80vw] text-[clamp(1.3rem,2.6vw,2.35rem)]">Scanează codul și susține prevenția cancerului.</p></RoseFrame><div className="v2-qr mt-[1.5vh] p-3"><QrCode value={donationQr} size={220} /></div><div className="mt-[1.5vh] flex w-full items-start justify-between"><Button onClick={() => setScreen("final")} variant="outline" className="v2-action h-auto px-[3vw] py-[1vh] text-[clamp(0.7rem,1.3vw,1.1rem)]">Înapoi</Button><p className="v2-highlight text-left text-[clamp(0.6rem,1.1vw,0.95rem)] text-muted-foreground">Resetare în {presenceSeconds}s</p></div></section>
       )}
       <button
         type="button"
