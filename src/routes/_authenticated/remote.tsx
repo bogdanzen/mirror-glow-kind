@@ -60,7 +60,11 @@ function RemoteControl() {
   const load = useCallback(async () => {
     try {
       await initialize();
-      setRows(await getStatuses());
+      const all = await getStatuses();
+      // Only the Iulius Android tablet: prefer a name with "iulius", else the newest Android device.
+      const android = all.filter((r) => /android/i.test(r.user_agent ?? ""));
+      const pick = all.find((r) => /iulius/i.test(r.kiosk_name)) ?? android[0];
+      setRows(pick ? [pick] : []);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Monitorizarea nu este disponibilă");
@@ -150,7 +154,14 @@ function RemoteControl() {
                   <div><dt className="text-muted-foreground">Conexiune AI</dt><dd className="mt-1 flex items-center gap-2"><Dot ok={row.ai_ok} />{row.ai_ok ? "Disponibilă" : "Neverificată / eroare"}</dd></div>
                   <div><dt className="text-muted-foreground">Răspuns AI</dt><dd className="mt-1">{row.ai_latency_ms ? `${(row.ai_latency_ms / 1000).toFixed(1)}s` : "—"}</dd></div>
                   <div><dt className="text-muted-foreground">Experiență</dt><dd className="mt-1">{row.session_active ? "Vizitator activ" : "În așteptare"}</dd></div>
-                  <div><dt className="text-muted-foreground">Ecran tabletă</dt><dd className="mt-1">{row.viewport || "—"}</dd></div>
+                  <div><dt className="text-muted-foreground">Ecran complet</dt><dd className="mt-1 flex items-center gap-2">{(() => {
+                    const mode = row.viewport?.split("|")[2];
+                    if (!mode) return "Necunoscut (tableta are versiune veche)";
+                    const full = mode === "fullscreen" || mode === "app";
+                    return <><Dot ok={full} />{full ? "Da, fullscreen" : "Nu — bara browserului e vizibilă"}</>;
+                  })()}</dd></div>
+                  <div><dt className="text-muted-foreground">Ecran tabletă</dt><dd className="mt-1">{row.viewport?.split("|").slice(0, 2).join(" · ") || "—"}</dd></div>
+                  <div className="col-span-2"><dt className="text-muted-foreground">Dispozitiv</dt><dd className="mt-1 break-words text-xs">{row.user_agent || "—"}</dd></div>
                   <div><dt className="text-muted-foreground">Versiune</dt><dd className="mt-1">{row.app_version}</dd></div>
                 </dl>
 
