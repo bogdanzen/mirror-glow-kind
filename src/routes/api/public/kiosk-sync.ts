@@ -47,17 +47,13 @@ export const Route = createFileRoute("/api/public/kiosk-sync")({
           const { data } = await supabaseAdmin.from("kiosk_status").select("token_hash").eq("id", kioskId).maybeSingle();
           if (!data || !secureMatch(data.token_hash, tokenHash)) return new Response("Neautorizat", { status: 401 });
         } else {
-          const { data: existing } = await supabaseAdmin.from("kiosk_status").select("id").eq("token_hash", tokenHash).maybeSingle();
-          if (existing) kioskId = existing.id;
-          else {
-            const { data: created, error } = await supabaseAdmin
-              .from("kiosk_status")
-              .insert({ kiosk_name: body.kioskName, token_hash: tokenHash })
-              .select("id")
-              .single();
-            if (error) throw error;
-            kioskId = created.id;
-          }
+          const { data: registered, error } = await supabaseAdmin
+            .from("kiosk_status")
+            .upsert({ kiosk_name: body.kioskName, token_hash: tokenHash }, { onConflict: "token_hash" })
+            .select("id")
+            .single();
+          if (error) throw error;
+          kioskId = registered.id;
         }
 
         const now = new Date().toISOString();

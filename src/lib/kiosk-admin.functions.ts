@@ -46,7 +46,7 @@ export const getKioskStatuses = createServerFn({ method: "GET" })
 
 export const sendKioskCommand = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({
+  .validator((input) => z.object({
     kioskId: z.string().uuid(),
     command: z.enum(["refresh", "reset_experience", "test_ai"]),
   }).parse(input))
