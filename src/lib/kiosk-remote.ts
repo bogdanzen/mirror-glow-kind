@@ -32,13 +32,23 @@ function remoteIdentity() {
   return { kioskId, token };
 }
 
+/** ASCII summary: "1080x1920@2|screen 1080x1920|fullscreen". No camera data. */
+function viewportReport() {
+  const fs = Boolean(document.fullscreenElement) ||
+    window.matchMedia("(display-mode: fullscreen)").matches;
+  const standalone = window.matchMedia("(display-mode: standalone)").matches;
+  const fillsScreen = Math.abs(window.innerHeight - screen.height) <= 2 && Math.abs(window.innerWidth - screen.width) <= 2;
+  const mode = fs ? "fullscreen" : standalone ? "app" : fillsScreen ? "fullscreen" : "browser";
+  return `${window.innerWidth}x${window.innerHeight}@${window.devicePixelRatio || 1}|screen ${screen.width}x${screen.height}|${mode}`;
+}
+
 export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
   const identity = remoteIdentity();
   const response = await fetch("/api/public/kiosk-sync", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Kiosk-Viewport": `${window.innerWidth}x${window.innerHeight}@${window.devicePixelRatio || 1}`,
+      "X-Kiosk-Viewport": viewportReport(),
     },
     body: JSON.stringify({ ...identity, ...telemetry }),
   });
