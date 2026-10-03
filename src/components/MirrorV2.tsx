@@ -45,6 +45,7 @@ export function MirrorV2() {
   const [baldUrl, setBaldUrlRaw] = useState("");
   const [prevBaldUrl, setPrevBaldUrl] = useState("");
   const [smileUrl, setSmileUrl] = useState("");
+  const [smileFailed, setSmileFailed] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(DEFAULT_SETTINGS.idleTimeoutSeconds);
@@ -121,6 +122,7 @@ export function MirrorV2() {
     setBaldUrlRaw("");
     setPrevBaldUrl("");
     setSmileUrl("");
+    setSmileFailed(false);
     setGenerationError("");
     setProcessing(false);
     setCountdown(settings.framingSeconds);
@@ -311,9 +313,10 @@ export function MirrorV2() {
 
   useEffect(() => {
     if (screen !== "choice" || smileUrl) return;
-    const id = window.setTimeout(() => setScreen("healthy"), 45_000);
+    const wait = smileFailed ? settings.captureSeconds * 1000 : 45_000;
+    const id = window.setTimeout(() => setScreen("healthy"), wait);
     return () => window.clearTimeout(id);
-  }, [screen, smileUrl]);
+  }, [screen, smileUrl, smileFailed, settings.captureSeconds]);
 
   useEffect(() => {
     if (screen !== "consent") return;
