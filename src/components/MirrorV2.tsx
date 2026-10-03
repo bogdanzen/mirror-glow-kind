@@ -147,9 +147,9 @@ export function MirrorV2() {
       while (!video.videoWidth && Date.now() < deadline && !controller.signal.aborted) {
         await new Promise((resolve) => window.setTimeout(resolve, 100));
       }
-      // Give visitors time to step back into the final framing after consent.
+      // Give visitors a moment to step back into the final framing after consent.
       await new Promise<void>((resolve) => {
-        const id = window.setTimeout(resolve, 3000);
+        const id = window.setTimeout(resolve, 1500);
         controller.signal.addEventListener("abort", () => {
           window.clearTimeout(id);
           resolve();
@@ -157,8 +157,30 @@ export function MirrorV2() {
       });
       if (controller.signal.aborted) return;
 
-      const baldFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 1024);
+      const baldFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 768);
       if (!baldFrame) throw new Error("Nu am putut prelua imaginea camerei");
+      // Run both portraits in parallel from the same frame so the smile is
+      // ready by the time the bald one has been shown.
+      const smileJob = (async () => {
+        // The smile portrait is a bonus: if the AI refuses it, keep the live
+        // camera on the choice screen instead of surfacing an error.
+        try {
+          await baldifyFrame(
+            baldFrame,
+            SMILE_PROMPT,
+            (url, isFinal) => {
+              if (!controller.signal.aborted && isFinal) setSmileUrl(url);
+            },
+            controller.signal,
+            settings.fallbackModel,
+            false,
+          );
+        } catch (smileError) {
+          if (controller.signal.aborted) return;
+          console.warn("[smile]", smileError instanceof Error ? smileError.message : smileError);
+          setSmileFailed(true);
+        }
+      })();
       await baldifyFrame(
         baldFrame,
         FALLBACK_PROMPT,
@@ -176,28 +198,7 @@ export function MirrorV2() {
         settings.fallbackModel,
         true,
       );
-
-      if (controller.signal.aborted || loopStopRef.current) return;
-      const smileFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 1024);
-      if (!smileFrame) return;
-      // The smile portrait is a bonus: if the AI refuses it, keep the live
-      // camera on the choice screen instead of surfacing an error.
-      try {
-        await baldifyFrame(
-          smileFrame,
-          SMILE_PROMPT,
-          (url, isFinal) => {
-            if (!controller.signal.aborted && isFinal) setSmileUrl(url);
-          },
-          controller.signal,
-          settings.fallbackModel,
-          false,
-        );
-      } catch (smileError) {
-        if (controller.signal.aborted) return;
-        console.warn("[smile]", smileError instanceof Error ? smileError.message : smileError);
-        setSmileFailed(true);
-      }
+      await smileJob;
     } catch (error) {
       if (controller.signal.aborted) return;
       setProcessing(false);
