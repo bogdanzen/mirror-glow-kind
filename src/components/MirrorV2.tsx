@@ -45,6 +45,7 @@ export function MirrorV2() {
   const [baldUrl, setBaldUrlRaw] = useState("");
   const [prevBaldUrl, setPrevBaldUrl] = useState("");
   const [smileUrl, setSmileUrl] = useState("");
+  const [smileFailed, setSmileFailed] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(DEFAULT_SETTINGS.idleTimeoutSeconds);
@@ -121,6 +122,7 @@ export function MirrorV2() {
     setBaldUrlRaw("");
     setPrevBaldUrl("");
     setSmileUrl("");
+    setSmileFailed(false);
     setGenerationError("");
     setProcessing(false);
     setCountdown(settings.framingSeconds);
@@ -178,16 +180,24 @@ export function MirrorV2() {
       if (controller.signal.aborted || loopStopRef.current) return;
       const smileFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 1024);
       if (!smileFrame) return;
-      await baldifyFrame(
-        smileFrame,
-        SMILE_PROMPT,
-        (url, isFinal) => {
-          if (!controller.signal.aborted && isFinal) setSmileUrl(url);
-        },
-        controller.signal,
-        settings.fallbackModel,
-        false,
-      );
+      // The smile portrait is a bonus: if the AI refuses it, keep the live
+      // camera on the choice screen instead of surfacing an error.
+      try {
+        await baldifyFrame(
+          smileFrame,
+          SMILE_PROMPT,
+          (url, isFinal) => {
+            if (!controller.signal.aborted && isFinal) setSmileUrl(url);
+          },
+          controller.signal,
+          settings.fallbackModel,
+          false,
+        );
+      } catch (smileError) {
+        if (controller.signal.aborted) return;
+        console.warn("[smile]", smileError instanceof Error ? smileError.message : smileError);
+        setSmileFailed(true);
+      }
     } catch (error) {
       if (controller.signal.aborted) return;
       setProcessing(false);
@@ -303,9 +313,10 @@ export function MirrorV2() {
 
   useEffect(() => {
     if (screen !== "choice" || smileUrl) return;
-    const id = window.setTimeout(() => setScreen("healthy"), 45_000);
+    const wait = smileFailed ? settings.captureSeconds * 1000 : 45_000;
+    const id = window.setTimeout(() => setScreen("healthy"), wait);
     return () => window.clearTimeout(id);
-  }, [screen, smileUrl]);
+  }, [screen, smileUrl, smileFailed, settings.captureSeconds]);
 
   useEffect(() => {
     if (screen !== "consent") return;

@@ -38,7 +38,9 @@ export const Route = createFileRoute("/api/bald")({
           body: form,
         });
         if (!upstream.ok || !upstream.body) {
-          return new Response(await upstream.text(), { status: upstream.status });
+          const detail = await upstream.text();
+          console.error(`[bald] upstream ${upstream.status}: ${detail.slice(0, 500)}`);
+          return new Response(detail, { status: upstream.status });
         }
         if (!streaming) {
           return new Response(upstream.body, { headers: { "Content-Type": "application/json" } });
