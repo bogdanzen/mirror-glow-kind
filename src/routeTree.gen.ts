@@ -10,18 +10,31 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BaniRouteImport } from './routes/bani'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DoneazaRouteImport } from './routes/doneaza'
 import { Route as GdprRouteImport } from './routes/gdpr'
+import { Route as AuthenticatedRemoteRouteImport } from './routes/_authenticated/remote'
 import { Route as ApiBaldRouteImport } from './routes/api/bald'
 import { Route as ApiFalRouteImport } from './routes/api/fal'
 import { Route as ApiMirrorFrameRouteImport } from './routes/api/mirror-frame'
 import { Route as RIdRouteImport } from './routes/r.$id'
+import { Route as ApiPublicKioskSyncRouteImport } from './routes/api/public/kiosk-sync'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BaniRoute = BaniRouteImport.update({
@@ -44,6 +57,11 @@ const GdprRoute = GdprRouteImport.update({
   path: '/gdpr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRemoteRoute = AuthenticatedRemoteRouteImport.update({
+  id: '/remote',
+  path: '/remote',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiBaldRoute = ApiBaldRouteImport.update({
   id: '/api/bald',
   path: '/api/bald',
@@ -64,79 +82,106 @@ const RIdRoute = RIdRouteImport.update({
   path: '/r/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicKioskSyncRoute = ApiPublicKioskSyncRouteImport.update({
+  id: '/api/public/kiosk-sync',
+  path: '/api/public/kiosk-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/bani': typeof BaniRoute
   '/dashboard': typeof DashboardRoute
   '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
+  '/remote': typeof AuthenticatedRemoteRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/kiosk-sync': typeof ApiPublicKioskSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/bani': typeof BaniRoute
   '/dashboard': typeof DashboardRoute
   '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
+  '/remote': typeof AuthenticatedRemoteRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/kiosk-sync': typeof ApiPublicKioskSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/bani': typeof BaniRoute
   '/dashboard': typeof DashboardRoute
   '/doneaza': typeof DoneazaRoute
   '/gdpr': typeof GdprRoute
+  '/_authenticated/remote': typeof AuthenticatedRemoteRoute
   '/api/bald': typeof ApiBaldRoute
   '/api/fal': typeof ApiFalRoute
   '/api/mirror-frame': typeof ApiMirrorFrameRoute
   '/r/$id': typeof RIdRoute
+  '/api/public/kiosk-sync': typeof ApiPublicKioskSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/bani'
     | '/dashboard'
     | '/doneaza'
     | '/gdpr'
+    | '/remote'
     | '/api/bald'
     | '/api/fal'
     | '/api/mirror-frame'
     | '/r/$id'
+    | '/api/public/kiosk-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/bani'
     | '/dashboard'
     | '/doneaza'
     | '/gdpr'
+    | '/remote'
     | '/api/bald'
     | '/api/fal'
     | '/api/mirror-frame'
     | '/r/$id'
+    | '/api/public/kiosk-sync'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/auth'
     | '/bani'
     | '/dashboard'
     | '/doneaza'
     | '/gdpr'
+    | '/_authenticated/remote'
     | '/api/bald'
     | '/api/fal'
     | '/api/mirror-frame'
     | '/r/$id'
+    | '/api/public/kiosk-sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   BaniRoute: typeof BaniRoute
   DashboardRoute: typeof DashboardRoute
   DoneazaRoute: typeof DoneazaRoute
@@ -145,6 +190,7 @@ export interface RootRouteChildren {
   ApiFalRoute: typeof ApiFalRoute
   ApiMirrorFrameRoute: typeof ApiMirrorFrameRoute
   RIdRoute: typeof RIdRoute
+  ApiPublicKioskSyncRoute: typeof ApiPublicKioskSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -154,6 +200,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bani': {
@@ -184,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GdprRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/remote': {
+      id: '/_authenticated/remote'
+      path: '/remote'
+      fullPath: '/remote'
+      preLoaderRoute: typeof AuthenticatedRemoteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/bald': {
       id: '/api/bald'
       path: '/api/bald'
@@ -212,11 +279,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/kiosk-sync': {
+      id: '/api/public/kiosk-sync'
+      path: '/api/public/kiosk-sync'
+      fullPath: '/api/public/kiosk-sync'
+      preLoaderRoute: typeof ApiPublicKioskSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedRemoteRoute: typeof AuthenticatedRemoteRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedRemoteRoute: AuthenticatedRemoteRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   BaniRoute: BaniRoute,
   DashboardRoute: DashboardRoute,
   DoneazaRoute: DoneazaRoute,
@@ -225,6 +312,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFalRoute: ApiFalRoute,
   ApiMirrorFrameRoute: ApiMirrorFrameRoute,
   RIdRoute: RIdRoute,
+  ApiPublicKioskSyncRoute: ApiPublicKioskSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

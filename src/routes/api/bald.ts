@@ -9,6 +9,10 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/bald")({
   server: {
     handlers: {
+      GET: async () => Response.json({
+        ok: Boolean(process.env["LOVABLE_API_KEY"]),
+        model: "openai/gpt-image-2.5-flare",
+      }),
       POST: async ({ request }) => {
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });

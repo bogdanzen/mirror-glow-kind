@@ -6,6 +6,7 @@ import { baldifyFrame, FALLBACK_PROMPT, SMILE_PROMPT } from "@/lib/bald";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import { currentSession, startSession, track } from "@/lib/metrics";
 import { cameraStyle, viewToFile } from "@/lib/cameraView";
+import { syncKiosk } from "@/lib/kiosk-remote";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
 import verticalFreedomLogo from "@/assets/vf-white.png.asset.json";
 import lionsClujLogo from "@/assets/lions-white.png.asset.json";
@@ -47,6 +48,10 @@ export function MirrorV2() {
   const [processing, setProcessing] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(DEFAULT_SETTINGS.idleTimeoutSeconds);
+  const [cameraOk, setCameraOk] = useState(false);
+  const [aiOk, setAiOk] = useState(false);
+  const [aiLatencyMs, setAiLatencyMs] = useState<number | null>(null);
+  const [lastAiSuccessAt, setLastAiSuccessAt] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [admin, setAdmin] = useState(false);
   const tapsRef = useRef<number[]>([]);
@@ -95,12 +100,14 @@ export function MirrorV2() {
     const video = videoRef.current;
     if (video && video.srcObject !== streamRef.current) video.srcObject = streamRef.current;
     await video?.play().catch(() => undefined);
+    setCameraOk(Boolean(streamRef.current?.getVideoTracks().some((track) => track.readyState === "live")));
     return streamRef.current;
   }, []);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    setCameraOk(false);
     if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
@@ -130,6 +137,7 @@ export function MirrorV2() {
     const controller = new AbortController();
     generationRef.current = controller;
     try {
+      const startedAt = Date.now();
       await attachCamera();
       const video = videoRef.current;
       if (!video) throw new Error("Camera nu este pregătită");
@@ -155,7 +163,12 @@ export function MirrorV2() {
         (url, isFinal) => {
           if (controller.signal.aborted) return;
           setBaldUrl(url);
-          if (isFinal) setProcessing(false);
+          if (isFinal) {
+            setProcessing(false);
+            setAiOk(true);
+            setAiLatencyMs(Date.now() - startedAt);
+            setLastAiSuccessAt(new Date().toISOString());
+          }
         },
         controller.signal,
         settings.fallbackModel,
@@ -178,6 +191,7 @@ export function MirrorV2() {
     } catch (error) {
       if (controller.signal.aborted) return;
       setProcessing(false);
+      setAiOk(false);
       setGenerationError(error instanceof Error ? error.message : "Transformarea nu este disponibilă");
     }
   }, [attachCamera, settings.fallbackModel]);
@@ -194,6 +208,40 @@ export function MirrorV2() {
       stopCamera();
     };
   }, [stopCamera]);
+
+  useEffect(() => {
+    let active = true;
+    const report = async () => {
+      if (!active) return;
+      try {
+        const probe = await fetch("/api/bald", { method: "GET", cache: "no-store" });
+        const routeOk = probe.ok && Boolean(((await probe.json().catch(() => ({}))) as { ok?: boolean }).ok);
+        setAiOk((current) => current || routeOk);
+      } catch {
+        setAiOk(false);
+      }
+      try {
+        await syncKiosk({
+          kioskName: settingsRef.current.kioskName,
+          currentScreen: screen,
+          cameraOk,
+          aiOk,
+          aiLatencyMs,
+          lastAiSuccessAt,
+          lastError: generationError || null,
+          sessionActive: screen !== "attract",
+        });
+      } catch {
+        // Monitoring is best-effort and must never interrupt the kiosk flow.
+      }
+    };
+    void report();
+    const id = window.setInterval(() => void report(), 10_000);
+    return () => {
+      active = false;
+      window.clearInterval(id);
+    };
+  }, [screen, cameraOk, aiOk, aiLatencyMs, lastAiSuccessAt, generationError]);
 
   useEffect(() => {
     if (!CAMERA_SCREENS.includes(screen)) return;
