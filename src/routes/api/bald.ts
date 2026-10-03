@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/bald")({
         const asked = String(form.get("model") ?? "");
         form.set("model", allowed.includes(asked) ? asked : "openai/gpt-image-2.5-flare");
         form.set("size", "auto");
-        if (!form.get("quality")) form.set("quality", "high");
+        if (!form.get("quality")) form.set("quality", "medium");
         if (streaming) {
           form.set("stream", "true");
           form.set("partial_images", "2");
