@@ -419,7 +419,7 @@ export function MirrorV3() {
           className="v3-screen v3-attract"
           onClick={() => {
             void enterFullscreen();
-            void attachCamera();
+            void attachCamera().catch(() => undefined);
             startSession();
             track("start", { kiosk: settings.kioskName, meta: { version: "v3" } });
             setScreen("consent");
