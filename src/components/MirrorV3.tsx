@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
+import { AmbientButterflyLoop } from "@/components/AmbientButterflyLoop";
 import { QrCode } from "@/components/QrCode";
 import { baldifyFrame, FALLBACK_PROMPT, SMILE_PROMPT } from "@/lib/bald";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
@@ -29,6 +30,7 @@ export function MirrorV3() {
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(DEFAULT_SETTINGS.idleTimeoutSeconds);
   const [cameraOk, setCameraOk] = useState(false);
+  const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [aiOk, setAiOk] = useState(false);
   const [aiLatencyMs, setAiLatencyMs] = useState<number | null>(null);
   const [lastAiSuccessAt, setLastAiSuccessAt] = useState<string | null>(null);
@@ -66,22 +68,31 @@ export function MirrorV3() {
   }, []);
 
   const attachCamera = useCallback(async () => {
-    if (!streamRef.current) {
-      streamRef.current = await navigator.mediaDevices.getUserMedia({
-        video: {
-          ...(settingsRef.current.cameraDeviceId ? { deviceId: { exact: settingsRef.current.cameraDeviceId } } : { facingMode: "user" }),
-          width: { ideal: 1920, max: 1920 },
-          height: { ideal: 1080, max: 1080 },
-          frameRate: { ideal: 24, max: 30 },
-        },
-        audio: false,
-      });
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera nu este disponibilă pe acest dispozitiv");
+      if (!streamRef.current) {
+        streamRef.current = await navigator.mediaDevices.getUserMedia({
+          video: {
+            ...(settingsRef.current.cameraDeviceId ? { deviceId: { exact: settingsRef.current.cameraDeviceId } } : { facingMode: "user" }),
+            width: { ideal: 1920, max: 1920 },
+            height: { ideal: 1080, max: 1080 },
+            frameRate: { ideal: 24, max: 30 },
+          },
+          audio: false,
+        });
+      }
+      const video = videoRef.current;
+      if (video && video.srcObject !== streamRef.current) video.srcObject = streamRef.current;
+      await video?.play().catch(() => undefined);
+      const live = Boolean(streamRef.current?.getVideoTracks().some((track) => track.readyState === "live"));
+      setCameraOk(live);
+      setCameraUnavailable(!live);
+      return streamRef.current;
+    } catch (error) {
+      setCameraOk(false);
+      setCameraUnavailable(true);
+      throw error;
     }
-    const video = videoRef.current;
-    if (video && video.srcObject !== streamRef.current) video.srcObject = streamRef.current;
-    await video?.play().catch(() => undefined);
-    setCameraOk(Boolean(streamRef.current?.getVideoTracks().some((track) => track.readyState === "live")));
-    return streamRef.current;
   }, []);
 
   const stopCamera = useCallback(() => {
@@ -103,6 +114,7 @@ export function MirrorV3() {
     setSmileUrl("");
     setSmileFailed(false);
     setGenerationError("");
+    setCameraUnavailable(false);
     setProcessing(false);
     setCountdown(settings.framingSeconds);
     setPresenceSeconds(settings.idleTimeoutSeconds);
@@ -236,7 +248,7 @@ export function MirrorV3() {
   useEffect(() => {
     if (!CAMERA_SCREENS.includes(screen)) return;
     void attachCamera().catch(() => {
-      if (screen !== "attract") setGenerationError("Camera nu este disponibilă. Atinge ecranul și încearcă din nou.");
+      if (screen !== "attract") setGenerationError("Camera nu este disponibilă. Verifică permisiunea și conexiunea camerei.");
     });
   }, [screen, attachCamera]);
 
@@ -361,8 +373,22 @@ export function MirrorV3() {
   const cameraVisible = CAMERA_SCREENS.includes(screen);
   const donationQr = "https://verticalfreedom.org/te-vezi-oglinda/";
 
-  const cameraError = /camera/i.test(generationError) && !baldUrl;
-  const retry = () => { reset(); window.setTimeout(() => setScreen("consent"), 0); };
+  const cameraError = cameraUnavailable && !baldUrl;
+  const retry = async () => {
+    generationRef.current?.abort();
+    generationRef.current = null;
+    generationStartedRef.current = false;
+    stopCamera();
+    setGenerationError("");
+    setCameraUnavailable(false);
+    try {
+      await attachCamera();
+      setScreen("framing");
+    } catch {
+      setGenerationError("Camera nu este disponibilă. Verifică permisiunea și conexiunea camerei.");
+      setCameraUnavailable(true);
+    }
+  };
 
   return (
     <main className="v3-shell relative h-dvh w-screen overflow-hidden">
@@ -386,10 +412,11 @@ export function MirrorV3() {
         <img src={smileUrl} alt="Portret procesat zâmbind" className="v2-generated-portrait v2-smile-in absolute inset-0 z-[4] h-full w-full" />
       )}
       {cameraVisible && <div className="v3-top-gradient" aria-hidden />}
+      <AmbientButterflyLoop visible={screen === "attract"} />
 
       {screen === "attract" && (
         <section
-          className="v3-screen"
+          className="v3-screen v3-attract"
           onClick={() => {
             void enterFullscreen();
             void attachCamera();
@@ -399,14 +426,14 @@ export function MirrorV3() {
           }}
         >
           <BrandHeader />
-          <div className="v3-enter mt-[6vw] grid gap-[1.6vw]">
+          <div className="v3-attract-copy v3-enter grid gap-[1.6vw] text-center">
             <p className="v3-label">Fundația Vertical Freedom prezintă</p>
             <p className="v3-body v3-muted">Campania de prevenție și conștientizare.</p>
             <h1 className="v3-headline v3-headline-xl">TE VEZI?</h1>
             <p className="v3-body-lg">Privește-te.{"\n"}Doar {settings.framingSeconds} secunde.</p>
           </div>
-          <PrimaryAction className="mt-[4vw]" title="Atinge ecranul pentru a începe" />
-          <div className="v3-qr-card mt-[4vw]" onClick={(e) => e.stopPropagation()}>
+          <PrimaryAction className="v3-attract-action" title="Atinge ecranul pentru a începe" />
+          <div className="v3-qr-card v3-attract-qr" onClick={(e) => e.stopPropagation()}>
             <div className="v3-qr-box"><QrCode value={donationQr} size={360} /></div>
             <div className="grid gap-[0.8vw]">
               <p className="v3-card-title">Scanează QR-ul</p>
@@ -464,7 +491,7 @@ export function MirrorV3() {
             </GlassPanel>
           )}
           {cameraError && (
-            <ErrorPanel onRetry={retry} onExit={reset} />
+            <ErrorPanel onRetry={() => void retry()} onExit={reset} />
           )}
           {baldUrl && (
             <GlassPanel className="mt-[4vw] grid gap-[1.2vw]">

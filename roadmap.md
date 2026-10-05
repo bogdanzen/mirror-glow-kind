@@ -2,7 +2,7 @@
 
 ## Open
 
-- [ ] V3 review: centered opening composition, reliable camera retry, and optional subtle butterfly-loop layer ready for the supplied video.
+- [x] V3 review: centered opening composition, reliable camera retry, and optional subtle butterfly-loop layer ready for the supplied video.
 
 - [x] Tablet-first main campaign: exact flow, one 1080p camera stream, sequential server-generated portraits, no WebRTC/RunPod/frame buffer.
 - [x] V2 rose-gold presentation: supplied campaign logos, early AI start, streamed preview, Cinzel/Manrope typography, framed copy and scoped rose-gold QR styling.
