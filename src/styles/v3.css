@@ -24,8 +24,10 @@
 .v3-consent { background: radial-gradient(ellipse at 50% 0%, var(--v3-burgundy), var(--v3-burgundy-deep) 70%); padding-top: 10vw; }
 .v3-attract { align-items: center; text-align: center; }
 .v3-attract .v3-brand { align-self: stretch; }
-.v3-attract-copy { width: min(78vw, 82vh); margin-top: 10vh; justify-items: center; }
+.v3-attract-copy { width: 88vw; margin-top: 10vh; justify-items: center; }
 .v3-attract-copy .v3-body { max-width: none; }
+.v3-attract-copy .v3-headline-xl { font-size: 17.5926vw; line-height: 1; letter-spacing: 0; }
+.v3-attract-copy .v3-body-lg { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; font-size: 4.4444vw; font-weight: 600; line-height: 1.25; letter-spacing: 0; }
 .v3-attract-action { width: min(62vw, 72vh); margin-top: 4vw; justify-items: center; text-align: center; }
 .v3-attract-qr { position: absolute; left: 6.5vw; bottom: 5vw; text-align: left; }
 
