@@ -13,6 +13,7 @@
 
 ## Done
 
+- [x] Experiența V3 promovată pe pagina principală, ruta de previzualizare `/v3` eliminată și nota vizibilă despre portretul AI scoasă.
 - [x] Secure remote kiosk control: Google administrator account, 10-second heartbeat, camera/AI/screen telemetry, command acknowledgement, forced refresh and experience reset; no image transmission or storage.
 - [x] Final campaign copy aligned to one left edge and butterfly emoji removed.
 - [x] Main campaign timing and navigation cleanup: 5-second bald portrait, 5-second smile portrait, accurate duration controls with −/+ buttons, opening QR and campaign credit, left-aligned donation finish, scrollable dashboard, and `/v2` removed.
