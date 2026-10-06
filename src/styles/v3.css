@@ -28,6 +28,7 @@
 .v3-consent { background: radial-gradient(ellipse at 50% 0%, var(--v3-burgundy), var(--v3-burgundy-deep) 70%); padding-top: 10vw; }
 .v3-attract { align-items: center; text-align: center; }
 .v3-attract .v3-brand { align-self: stretch; }
+.v3-attract .v3-logo-vf { max-height: 10vh; object-position: left top; }
 .v3-attract-copy { position: absolute; top: min(20.7%, calc(48.2% - 45vw)); width: 88vw; justify-items: center; }
 .v3-campaign-banner { width: 61vw; padding: 1.6vw 2vw; margin-bottom: 2vw; border-radius: 1.8vw; background: var(--v3-banner); color: var(--v3-charcoal); box-shadow: 0 0.6vw 1.4vw color-mix(in oklab, var(--v3-charcoal) 18%, transparent); }
 .v3-campaign-banner .v3-label { color: var(--v3-charcoal); font-size: 1.65vw; line-height: 1.4; letter-spacing: 0; }
