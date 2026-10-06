@@ -121,7 +121,10 @@ vec3 getLineColor(float t, vec3 baseColor) {
   }
 
   float m = uv.y - y;
-  return 0.0175 / max(abs(m) + 0.01, 1e-3) + 0.01;
+  // Narrow luminous thread with a small halo, and zero energy away from it.
+  float core = exp(-pow(m / 0.0015, 2.0));
+  float halo = exp(-pow(m / 0.006, 2.0)) * 0.12;
+  return (core + halo) * 1.75;
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
@@ -197,19 +200,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     }
   }
 
-if (lightMode) {
   vec3 energy = max(col, vec3(0.0));
   float peak = max(energy.r, max(energy.g, energy.b));
-  float coverage = smoothstep(0.018, 0.5, peak);
+  float coverage = clamp(peak, 0.0, 0.85);
   vec3 chroma = clamp(energy / max(peak, 0.0001), 0.0, 1.0);
-  chroma = pow(chroma, vec3(1.35));
-  float chromaPeak = max(chroma.r, max(chroma.g, chroma.b));
-  chroma /= max(chromaPeak, 0.0001);
-  vec3 ink = mix(chroma, clamp(chroma * 0.82, 0.0, 1.0), smoothstep(0.5, 1.0, coverage));
-  fragColor = vec4(mix(vec3(1.0), ink, coverage * 0.94), 1.0);
-} else {
-    fragColor = vec4(col, 1.0);
-  }
+  vec3 ink = lightMode ? chroma * 0.82 : chroma;
+  fragColor = vec4(ink, coverage);
 }
 
 void main() {
@@ -305,7 +301,8 @@ export default function FloatingLines({
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false });
+    const renderer = new WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearAlpha(0);
     renderer.setPixelRatio(1);
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
@@ -378,7 +375,9 @@ export default function FloatingLines({
     const material = new ShaderMaterial({
       uniforms,
       vertexShader,
-      fragmentShader
+      fragmentShader,
+      transparent: true,
+      depthWrite: false
     });
 
     const geometry = new PlaneGeometry(2, 2);
