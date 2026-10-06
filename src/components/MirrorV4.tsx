@@ -438,12 +438,12 @@ export function MirrorV4() {
         <section className="v4-screen v4-light v4-consent">
           <CampaignLines variant="light" />
           <NeonButterfly className="v4-butterfly-small" />
-          <h2 className="v4-enter v4-serif-title">TERMENI ȘI CONDIȚII</h2>
+          <h2 className="v4-enter v4-serif-title">TERMENI SI CONDITII</h2>
           <span className="v4-divider" aria-hidden />
           <div className="v4-enter v4-terms">
-            <p>Această experiență interactivă face parte din campania de prevenție și conștientizare „TE VEZI?”, organizată de Fundația Vertical Freedom.</p>
-            <p>Experiența are scop informativ și educativ. Imaginea afișată poate fi modificată digital pentru a crea un moment de conștientizare și nu reprezintă un diagnostic sau o predicție medicală.</p>
-            <p>Prin continuare, confirmi că ai înțeles scopul experienței și ești de acord să participi.</p>
+            <p>Această experiență interactivă{"\n"}face parte din campania de prevenție{"\n"}și conștientizare „TE VEZI?”,{"\n"}organizată de Fundația Vertical Freedom.</p>
+            <p>Experiența are scop informativ și educativ.{"\n"}Imaginea afișată poate fi modificată{"\n"}digital pentru a crea un moment{"\n"}de conștientizare și nu reprezintă{"\n"}un diagnostic sau o predicție medicală.</p>
+            <p>Prin continuare, confirmi că ai înțeles{"\n"}scopul experienței și ești de acord{"\n"}să participi.</p>
           </div>
           <PillButton label="ACCEPTĂ" className="v4-consent-pill" onClick={() => { setConsent(true); void startGeneration(); setScreen("framing"); }} />
           <button type="button" className="v4-text-link" onClick={reset}>Renunț</button>
@@ -486,7 +486,7 @@ export function MirrorV4() {
           )}
           <div className="v4-enter v4-reflect">
             <p>Dacă mâine{"\n"}totul s-ar schimba,</p>
-            <p className="v4-accent">ce ai fi vrut{"\n"}să nu amâni?</p>
+            <p className="v4-accent">ce ai fi vrut să nu amâni?</p>
           </div>
         </section>
       )}
@@ -532,12 +532,12 @@ export function MirrorV4() {
                 setScreen("donate");
               }}
             >50.000 €</button>
-            <p className="v4-cause-body"><strong>pentru Fondul pentru Prevenție{"\n"}și Sănătate Mintală,</strong>{"\n"}prin care ne propunem să oferim acces la screening și psihoterapie pentru până la 1.000 de persoane.</p>
+            <p className="v4-cause-body"><strong>pentru Fondul pentru Prevenție{"\n"}și Sănătate Mintală,</strong>{"\n"}prin care ne propunem să oferim acces{"\n"}la screening și psihoterapie{"\n"}pentru până la 1.000 de persoane.</p>
           </div>
           <footer className="v4-final-footer">
             <NeonButterfly className="v4-butterfly-footer" />
             <p className="v4-org is-ink">FUNDAȚIA{"\n"}VERTICAL FREEDOM</p>
-            <p className="v4-accent v4-motto">Împreună pentru viață.</p>
+            <p className="v4-accent v4-motto">Împreună pentru viață</p>
           </footer>
           <p className="v4-reset">Revenire în {presenceSeconds}s</p>
         </section>
