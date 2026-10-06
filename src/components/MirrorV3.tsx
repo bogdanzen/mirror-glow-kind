@@ -13,7 +13,7 @@ import lionsClujLogo from "@/assets/lions-white.png.asset.json";
 
 type Screen = "attract" | "consent" | "framing" | "mirror" | "choice" | "healthy" | "final" | "donate";
 
-const CAMERA_SCREENS: Screen[] = ["attract", "framing", "mirror", "choice", "healthy"];
+const CAMERA_SCREENS: Screen[] = ["attract", "framing", "mirror", "choice", "healthy", "final"];
 const PARTICLES = Array.from({ length: 12 }, (_, index) => index);
 
 
@@ -397,7 +397,7 @@ export function MirrorV3() {
         muted
         playsInline
         style={cameraStyle(settings, vp.w, vp.h)}
-        className={`transition-opacity duration-1000 ${cameraVisible ? "opacity-100" : "opacity-0"}`}
+        className={`transition-opacity duration-1000 ${cameraVisible ? "opacity-100" : "opacity-0"} ${screen === "final" ? "v3-final-camera" : ""}`}
       />
       {cameraVisible && <div className={`v3-tint ${screen === "mirror" && !baldUrl ? "v3-tint-strong" : ""}`} aria-hidden />}
       {(screen === "final" || screen === "donate") && <div className="v3-tint v3-tint-strong" aria-hidden />}
@@ -529,19 +529,34 @@ export function MirrorV3() {
       )}
 
       {screen === "final" && (
-        <section className="v3-screen">
+        <section className="v3-screen v3-final">
           <BrandHeader />
-          <div className="v3-enter mt-[5vw] grid gap-[2vw]">
-            <h2 className="v3-headline v3-headline-md">PREVENȚIA ÎNCEPE{"\n"}ÎNAINTE SĂ DOARĂ.</h2>
-            <p className="v3-body">Scanează codul QR, alege drumul tău și contribuie la un răspuns mai rapid, mai sigur și mai aproape pentru sănătatea mintală.</p>
+          <div className="v3-final-toolbar">
+            <SecondaryAction title="← Înapoi" onClick={() => setScreen("healthy")} />
+            <ResetTimer seconds={presenceSeconds} onStay={() => { idleRef.current = Date.now(); setPresenceSeconds(settings.idleTimeoutSeconds); }} />
           </div>
-          <div className="v3-dark-card v3-enter mt-[3vw]">
-            <div className="v3-qr-box"><QrCode value={donationQr} size={480} /></div>
-            <div className="grid content-start gap-[1.2vw]">
-              <p className="v3-headline v3-headline-sm">DONEAZĂ ACUM</p>
-              <p className="v3-body-sm">Scanează codul pentru a alege suma și drumul tău.</p>
-              <PrimaryAction className="mt-[1vw]" title="Donează" onClick={() => setScreen("donate")} />
-              <ResetTimer seconds={presenceSeconds} onStay={() => { idleRef.current = Date.now(); setPresenceSeconds(settings.idleTimeoutSeconds); }} />
+          <h2 className="v3-enter v3-headline v3-final-heading">PREVENȚIA ÎNCEPE{"\n"}ÎNAINTE SĂ DOARĂ.</h2>
+          <div className="v3-final-columns v3-enter">
+            <div className="v3-final-cause">
+              <div className="v3-final-impact">
+                <h3 className="v3-headline">DE CE SUNTEM AICI?</h3>
+                <p>Strângem 50.000 € pentru a oferi acces la screening și sprijin pentru sănătatea mintală pentru până la 1.000 de persoane.</p>
+                <div className="v3-final-stats">
+                  <div><strong>50.000 €</strong><span>obiectiv de strângere</span></div>
+                  <div><strong>1.000</strong><span>persoane sprijinite</span></div>
+                </div>
+              </div>
+              <p className="v3-final-description">Scanează codul QR, alege drumul tău și contribuie la un răspuns mai rapid, mai sigur și mai aproape pentru sănătatea mintală.</p>
+            </div>
+            <div className="v3-final-donation">
+              <p className="v3-final-qr-intro">Scanează codul pentru a afla mai multe despre campanie și a face o donație</p>
+              <div className="v3-qr-box"><QrCode value={donationQr} size={960} /></div>
+              <p className="v3-final-donation-title">Donează acum!</p>
+              <p className="v3-final-donation-copy">Alege suma, alege drumul și completează donația în câteva secunde.</p>
+              <PrimaryAction className="v3-final-donate-button" title="Donează" onClick={() => {
+                track("donate_click", { kiosk: settings.kioskName, meta: { version: "main", source: "final_button" } });
+                setScreen("donate");
+              }} />
             </div>
           </div>
         </section>
