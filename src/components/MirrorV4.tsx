@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { FuseLines, NeonButterfly, PreventionIcon } from "@/components/v4-decor";
 import sunriseAsset from "@/assets/v4-sunrise.png.asset.json";
@@ -382,4 +382,212 @@ export function MirrorV4() {
     }
   };
 
-/*__RETURN__*/
+  const total = Math.max(1, settings.framingSeconds);
+  const countNumbers = Array.from({ length: total }, (_, i) => total - i);
+
+  return (
+    <main className={`v4-shell ${cameraVisible ? "is-dark" : "is-light"}`}>
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        style={cameraStyle(settings, vp.w, vp.h)}
+        className={`transition-opacity duration-1000 ${cameraVisible ? "opacity-100" : "opacity-0"}`}
+      />
+      {cameraVisible && <div className={`v4-veil v4-veil-${screen}`} aria-hidden />}
+
+      {prevBaldUrl && screen === "mirror" && (
+        <img src={prevBaldUrl} alt="" aria-hidden className="v2-generated-portrait absolute inset-0 z-[3] h-full w-full" />
+      )}
+      {baldUrl && screen === "mirror" && (
+        <img key={baldUrl} src={baldUrl} alt="Portret procesat artistic" className="v2-generated-portrait v2-bald-in absolute inset-0 z-[3] h-full w-full" />
+      )}
+      {smileUrl && screen === "choice" && (
+        <img src={smileUrl} alt="Portret procesat zâmbind" className="v2-generated-portrait v2-smile-in absolute inset-0 z-[4] h-full w-full" />
+      )}
+      {cameraVisible && <div className="v4-bottom-shade" aria-hidden />}
+
+      {screen === "attract" && (
+        <section
+          className="v4-screen v4-attract"
+          onClick={() => {
+            void enterFullscreen();
+            void attachCamera().catch(() => undefined);
+            startSession();
+            track("start", { kiosk: settings.kioskName, meta: { version: "v4" } });
+            setScreen("consent");
+          }}
+        >
+          <FuseLines variant="attract" />
+          <NeonButterfly className="v4-butterfly-top" />
+          <div className="v4-enter v4-attract-credit">
+            <p className="v4-org">FUNDAȚIA{"\n"}VERTICAL FREEDOM</p>
+            <p className="v4-presents">prezintă</p>
+            <p className="v4-campaign">Campania de prevenție{"\n"}și conștientizare</p>
+          </div>
+          <h1 className="v4-enter v4-display v4-te-vezi">TE VEZI?</h1>
+          <PillButton label="ÎNCEPE AICI" className="v4-attract-pill" />
+          <div className="v4-qr-block" onClick={(e) => e.stopPropagation()}>
+            <div className="v4-qr-card"><QrCode value={donationQr} size={480} /></div>
+            <p className="v4-qr-caption">Scanează-mă{"\n"}pentru mai multe{"\n"}informații.</p>
+          </div>
+        </section>
+      )}
+
+      {screen === "consent" && (
+        <section className="v4-screen v4-light v4-consent">
+          <FuseLines variant="light" />
+          <NeonButterfly className="v4-butterfly-small" />
+          <h2 className="v4-enter v4-serif-title">TERMENI ȘI CONDIȚII</h2>
+          <span className="v4-divider" aria-hidden />
+          <div className="v4-enter v4-terms">
+            <p>Această experiență interactivă face parte din campania de prevenție și conștientizare „TE VEZI?”, organizată de Fundația Vertical Freedom.</p>
+            <p>Experiența are scop informativ și educativ. Imaginea afișată poate fi modificată digital pentru a crea un moment de conștientizare și nu reprezintă un diagnostic sau o predicție medicală.</p>
+            <p>Prin continuare, confirmi că ai înțeles scopul experienței și ești de acord să participi.</p>
+          </div>
+          <PillButton label="ACCEPTĂ" className="v4-consent-pill" onClick={() => { setConsent(true); void startGeneration(); setScreen("framing"); }} />
+          <button type="button" className="v4-text-link" onClick={reset}>Renunț</button>
+        </section>
+      )}
+
+      {screen === "framing" && (
+        <section className="v4-screen v4-countdown">
+          <FuseLines variant="countdown" />
+          <ol className="v4-count-column" aria-label={`Mai sunt ${countdown} secunde`}>
+            {countNumbers.map((n) => (
+              <li key={n} className={`v4-count-ring ${countdown <= n ? "is-shown" : ""} ${countdown === n ? "is-now" : ""}`}>
+                <span>{n}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="v4-count-copy v4-enter">
+            <p>O posibilă versiune{"\n"}vulnerabilă a ta.</p>
+            <p className="v4-accent">Viața este imprevizibilă.</p>
+          </div>
+        </section>
+      )}
+
+      {screen === "mirror" && (
+        <section className="v4-screen v4-transform">
+          {baldUrl && <FuseLines variant="split" />}
+          <FuseLines variant="lower" />
+          {!baldUrl && !cameraError && (
+            <div className="v4-processing" role="status">
+              <span className="v4-processing-ring" aria-hidden />
+              <p>{generationError ? "Imaginea reală rămâne cu tine." : "Se procesează imaginea"}</p>
+            </div>
+          )}
+          {cameraError && (
+            <div className="v4-processing">
+              <p>Camera nu este disponibilă.</p>
+              <div className="flex gap-[3vw]">
+                <PillButton label="REÎNCEARCĂ" onClick={() => void retry()} />
+                <button type="button" className="v4-text-link is-dark" onClick={reset}>Ieși</button>
+              </div>
+            </div>
+          )}
+          <div className="v4-enter v4-reflect">
+            <p>Dacă mâine{"\n"}totul s-ar schimba,</p>
+            <p className="v4-accent">ce ai fi vrut{"\n"}să nu amâni?</p>
+          </div>
+        </section>
+      )}
+
+      {screen === "choice" && (
+        <section className="v4-screen v4-back">
+          <FuseLines variant="lower" />
+          <div className="v4-enter v4-back-title">
+            <p>Acum,</p>
+            <p className="v4-accent">ce faci pentru tine?</p>
+          </div>
+          <ul className="v4-actions">
+            {ACTIONS.map(([icon, label], i) => (
+              <li key={label} style={{ animationDelay: `${300 + i * 160}ms` }}>
+                <PreventionIcon name={icon} />
+                <span>{label}</span>
+              </li>
+            ))}
+          </ul>
+          <PillButton label={"NU AMÂNA GRIJA\nPENTRU TINE."} className="v4-back-pill" chevron={false} onClick={() => setScreen("final")} />
+        </section>
+      )}
+
+      {screen === "final" && (
+        <section className="v4-screen v4-light v4-final">
+          <img src={sunriseAsset.url} alt="" aria-hidden className="v4-sunrise" />
+          <div className="v4-final-wash" aria-hidden />
+          <FuseLines variant="light" />
+          <h2 className="v4-enter v4-serif-title v4-final-title">TRĂIEȘTE-ȚI{"\n"}VIAȚA ACUM.</h2>
+          <p className="v4-enter v4-final-sub">Prevenția începe{"\n"}înainte să doară.</p>
+          <div className="v4-final-qr">
+            <div className="v4-qr-card is-glow"><QrCode value={donationQr} size={640} /></div>
+            <p className="v4-qr-caption is-ink">Scanează și află{"\n"}ce poți face pentru tine.</p>
+          </div>
+          <span className="v4-divider is-wide" aria-hidden />
+          <div className="v4-cause">
+            <p className="v4-cause-lead">Prin campania „TE VEZI?”{"\n"}strângem</p>
+            <button
+              type="button"
+              className="v4-amount"
+              onClick={() => {
+                track("donate_click", { kiosk: settings.kioskName, meta: { version: "v4", source: "final_button" } });
+                setScreen("donate");
+              }}
+            >50.000 €</button>
+            <p className="v4-cause-body"><strong>pentru Fondul pentru Prevenție{"\n"}și Sănătate Mintală,</strong>{"\n"}prin care ne propunem să oferim acces la screening și psihoterapie pentru până la 1.000 de persoane.</p>
+          </div>
+          <footer className="v4-final-footer">
+            <NeonButterfly className="v4-butterfly-footer" />
+            <p className="v4-org is-ink">FUNDAȚIA{"\n"}VERTICAL FREEDOM</p>
+            <p className="v4-accent v4-motto">Împreună pentru viață.</p>
+          </footer>
+          <p className="v4-reset">Revenire în {presenceSeconds}s</p>
+        </section>
+      )}
+
+      {screen === "donate" && (
+        <section className="v4-screen v4-light v4-donate">
+          <FuseLines variant="light" />
+          <NeonButterfly className="v4-butterfly-small" />
+          <h2 className="v4-enter v4-serif-title">DONEAZĂ ACUM.</h2>
+          <p className="v4-final-sub">Scanează codul și alege suma{"\n"}direct pe telefonul tău.</p>
+          <div className="v4-qr-card is-glow v4-donate-qr"><QrCode value={donationQr} size={900} /></div>
+          <div className="flex items-center gap-[4vw]">
+            <button type="button" className="v4-text-link" onClick={() => setScreen("final")}>← Înapoi</button>
+            <p className="v4-reset is-inline">Revenire în {presenceSeconds}s</p>
+          </div>
+        </section>
+      )}
+
+      <button
+        type="button"
+        aria-label="Administrare"
+        className="absolute left-0 top-0 z-[60] h-24 w-24 opacity-0"
+        onClick={(e) => { e.stopPropagation(); cornerTap(); }}
+      />
+      {admin && (
+        <div className="fixed inset-0 z-[70]">
+          <AdminPanel settings={settings} onChange={setSettings} onClose={() => setAdmin(false)} />
+        </div>
+      )}
+    </main>
+  );
+}
+
+const ACTIONS: ["heart" | "lotus" | "search" | "shield", string][] = [
+  ["heart", "Fă-ți controalele."],
+  ["lotus", "Ascultă-ți corpul."],
+  ["search", "Nu ignora semnele."],
+  ["shield", "Alege prevenția."],
+];
+
+function PillButton({ label, onClick, className = "", chevron = true }: { label: string; onClick?: () => void; className?: string; chevron?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} className={`v4-pill ${className}`}>
+      <span>{label}</span>
+      {chevron && (
+        <svg viewBox="0 0 24 24" aria-hidden className="v4-pill-chevron"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      )}
+    </button>
+  );
+}
