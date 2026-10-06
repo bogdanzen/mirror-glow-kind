@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import butterflyAsset from "@/assets/v3-butterfly-swarm.mp4.asset.json";
+import butterflyAsset from "@/assets/v3-butterfly-swarm.webm.asset.json";
 
 type AmbientButterflyLoopProps = {
   src?: string;
