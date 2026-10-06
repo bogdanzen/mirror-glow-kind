@@ -182,7 +182,7 @@
 .v4-attract .v4-org { position: absolute; top: 14.973958%; left: 16.666667%; width: 66.666667%; }
 .v4-attract .v4-presents { position: absolute; top: 22.291667%; left: 18.75%; width: 62.5%; }
 .v4-attract .v4-campaign { position: absolute; top: 25.78125%; left: 16.666667%; width: 66.666667%; }
-.v4-te-vezi { position: absolute; top: 38.28125%; left: 11.574074%; width: 76.851852%; margin: 0; }
+.v4-shell .v4-te-vezi { position: absolute; top: 38.28125%; left: 0; width: 100%; margin: 0; white-space: nowrap; }
 .v4-attract-pill { position: absolute; top: 55.729167%; width: 65.740741%; height: 6.510417%; margin: 0; min-height: 0; }
 .v4-attract .v4-qr-block { position: absolute; top: 66.145833%; margin: 0; width: 61.111111%; }
 .v4-attract .v4-qr-card { width: calc(620 * var(--v4-text-unit)); }
