@@ -15,3 +15,5 @@
 - Keep ambient campaign video in a dedicated pointer-events-none layer that disappears for reduced-motion visitors, so decoration cannot block kiosk actions.
 - Schedule ambient video with cleaned-up timers and one non-looping player; pause it outside the opening screen and hidden tabs to preserve tablet resources.
 - Record final-screen donation-button taps with the existing anonymous donate_click event before opening the donation screen; this measures intent, not completed payments.
+
+- Keep V4 FloatingLines lazily loaded after hydration in a scoped non-interactive layer, capped at 30 fps and paused in hidden tabs; this preserves SSR and tablet resources.
