@@ -64,7 +64,7 @@
 /* Exact Figma typography. A unit is one pixel on the 2160 × 3840 canvas. */
 .v4-display, .v4-serif-title { font-family: var(--v4-font-display); font-weight: 700; line-height: 1.15; letter-spacing: 0; }
 .v4-serif-title { font-size: calc(133 * var(--v4-text-unit)); color: var(--v4-text-title); }
-.v4-org { font-family: var(--v4-font-action); font-size: calc(102 * var(--v4-text-unit)); font-weight: 400; letter-spacing: 0.04em; line-height: 1.2; }
+.v4-shell .v4-org { font-family: var(--v4-font-action); font-size: calc(102 * var(--v4-text-unit)); font-weight: 400; letter-spacing: 0.04em; line-height: 1.2; }
 .v4-org.is-ink { color: var(--v4-text-foundation); font-size: calc(72 * var(--v4-text-unit)); }
 .v4-presents { font-size: calc(84 * var(--v4-text-unit)); font-weight: 400; line-height: 1.15; }
 .v4-campaign { font-size: calc(112 * var(--v4-text-unit)); font-weight: 400; line-height: 1.2; }
