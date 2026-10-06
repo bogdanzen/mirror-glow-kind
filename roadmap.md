@@ -1,6 +1,7 @@
 # Roadmap — Oglinda kiosk
 
 ## Open
+- [ ] Align V4 text with uploaded Figma specification; exact Bodoni 72 font awaits licensed webfont.
 
 - [x] V3 review: centered opening composition, reliable camera retry, and optional subtle butterfly-loop layer ready for the supplied video.
 
