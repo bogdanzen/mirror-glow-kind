@@ -81,7 +81,7 @@ export function FuseLines({ variant }: { variant: Variant }) {
             <path d={p.d} pathLength={1000} className="v4-fuse-pulse" style={{ animationDuration: `${p.dur * 0.8}s`, animationDelay: `${p.delay}s` }} />
             <path d={p.d} pathLength={1000} className="v4-fuse-head" filter={`url(#v4-glow-${variant})`} style={{ animationDuration: `${p.dur}s`, animationDelay: `${p.delay}s` }} />
             {!light && SPARKS.map((s) => (
-              <circle key={s} r={s % 2 ? 2.6 : 3.6} className="v4-spark" style={{ animationDuration: `${p.dur}s`, animationDelay: `${p.delay + s * 0.07}s` }}>
+              <circle key={s} r={s % 2 ? 2.6 : 3.6} className="v4-spark" style={{ animationDuration: `${0.45 + s * 0.13}s`, animationDelay: `${s * 0.09}s` }}>
                 <animateMotion dur={`${p.dur}s`} begin={`${p.delay + s * 0.07}s`} repeatCount="indefinite" rotate="auto">
                   <mpath href={`#${id}`} />
                 </animateMotion>
