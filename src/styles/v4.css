@@ -177,6 +177,8 @@
 
 /* Text-box placements from boundsFromScreen; decorations and camera are unchanged. */
 .v4-attract-credit { display: contents; }
+.v4-attract .v4-butterfly-top { position: absolute; top: 4.6875%; width: calc(547 * var(--v4-text-unit)); height: calc(427 * var(--v4-text-unit)); margin: 0; }
+.v4-consent .v4-butterfly-small { position: absolute; top: 3%; width: calc(350 * var(--v4-text-unit)); height: calc(330 * var(--v4-text-unit)); margin: 0; }
 .v4-attract .v4-org { position: absolute; top: 14.973958%; left: 16.666667%; width: 66.666667%; }
 .v4-attract .v4-presents { position: absolute; top: 22.291667%; left: 18.75%; width: 62.5%; }
 .v4-attract .v4-campaign { position: absolute; top: 25.78125%; left: 16.666667%; width: 66.666667%; }
@@ -205,7 +207,7 @@
 .v4-final > .v4-divider { position: absolute; top: 59.244792%; margin: 0; }
 .v4-final .v4-cause { position: absolute; inset: 0; color: var(--v4-text-final); pointer-events: none; }
 .v4-cause-lead { position: absolute; top: 60.807292%; width: 77.777778%; }
-.v4-amount { position: absolute; top: 66.015625%; pointer-events: auto; }
+.v4-amount { position: absolute; top: 66.015625%; height: calc(245 * var(--v4-text-unit)); min-width: 0; width: 62%; padding: 0; display: grid; place-items: center; pointer-events: auto; }
 .v4-cause-body { position: absolute; top: 73.567708%; width: 78.240741%; }
 .v4-final-footer { position: absolute; top: 84.817708%; left: 0; right: 0; margin: 0; gap: calc(13 * var(--v4-text-unit)); }
 .v4-final-footer .v4-butterfly-footer { height: calc(214 * var(--v4-text-unit)); margin: 0; }

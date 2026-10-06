@@ -1,7 +1,7 @@
 # Roadmap — Oglinda kiosk
 
 ## Open
-- [ ] Align V4 text with uploaded Figma specification; exact Bodoni 72 font awaits licensed webfont.
+- [ ] Exact V4 display typeface: awaiting the user's licensed Bodoni 72 Bold webfont; Bodoni Moda is a temporary fallback.
 
 - [x] V3 review: centered opening composition, reliable camera retry, and optional subtle butterfly-loop layer ready for the supplied video.
 
@@ -13,6 +13,7 @@
 - [ ] Verification of first-frame ≤5 s over 5 warm sessions must be run on the kiosk/user machine: this sandbox browser produces no ICE candidates, so WebRTC media cannot be validated here.
 
 ## Done
+- [x] V4 Figma text settings: Tinos, Afacad, Roboto Condensed, Bebas Neue; measured sizes, line heights, text colors, tracking, explicit line breaks and mixed bold fund copy.
 
 - [x] /v4 Figma redesign: 6 screens, transparent neon butterfly (start, terms, final footer), React Bits FloatingLines (no lines on transformation), countdown numbers appearing one by one, supplied prevention icons, live campaign QR.
 
