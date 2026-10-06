@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { AdminPanel } from "@/components/AdminPanel";
 import { FuseLines, NeonButterfly, PreventionIcon } from "@/components/v4-decor";
 import sunriseAsset from "@/assets/v4-sunrise.png.asset.json";
-import "@/styles/v4.css";
 import { QrCode } from "@/components/QrCode";
 import { baldifyFrame, FALLBACK_PROMPT, SMILE_PROMPT } from "@/lib/bald";
 import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
