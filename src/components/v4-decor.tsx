@@ -60,7 +60,8 @@ export function CampaignLines({ variant }: { variant: "attract" | "countdown" | 
           enabledWaves={WAVES}
           lineCount={2}
           lineDistance={64.5}
-          animationSpeed={1.6}
+          animationSpeed={0.4}
+          mixBlendMode="normal"
           bendRadius={19}
           parallax={false}
           lightMode={variant === "light"}
