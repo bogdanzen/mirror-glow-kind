@@ -427,8 +427,10 @@ export function MirrorV3() {
         >
           <BrandHeader />
           <div className="v3-attract-copy v3-enter grid gap-[1.6vw] text-center">
-            <p className="v3-label">Fundația Vertical Freedom prezintă</p>
-            <p className="v3-body v3-muted">Campania de prevenție și conștientizare.</p>
+            <div className="v3-campaign-banner">
+              <p className="v3-label">Fundația Vertical Freedom prezintă</p>
+              <p className="v3-body">Campania de prevenție și conștientizare.</p>
+            </div>
             <h1 className="v3-headline v3-headline-xl">TE VEZI?</h1>
             <p className="v3-body-lg">Privește-te.{"\n"}Doar {settings.framingSeconds} secunde.</p>
           </div>
