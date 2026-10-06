@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MirrorV2 } from "@/components/MirrorV2";
+import { MirrorV3 } from "@/components/MirrorV3";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,5 +18,5 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: MirrorV2,
+  component: MirrorV3,
 });

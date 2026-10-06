@@ -343,7 +343,7 @@ export function MirrorV3() {
       healthy: "prevention",
       final: "final",
     }[screen] as "consent" | "framing" | "mirror" | "choice" | "prevention" | "final";
-    track(event, { kiosk, meta: { version: "v3" } });
+    track(event, { kiosk, meta: { version: "main" } });
   }, [screen, settings.kioskName]);
 
   useEffect(() => {
@@ -421,7 +421,7 @@ export function MirrorV3() {
             void enterFullscreen();
             void attachCamera().catch(() => undefined);
             startSession();
-            track("start", { kiosk: settings.kioskName, meta: { version: "v3" } });
+            track("start", { kiosk: settings.kioskName, meta: { version: "main" } });
             setScreen("consent");
           }}
         >
@@ -494,12 +494,6 @@ export function MirrorV3() {
           )}
           {cameraError && (
             <ErrorPanel onRetry={() => void retry()} onExit={reset} />
-          )}
-          {baldUrl && (
-            <GlassPanel className="mt-[4vw] grid gap-[1.2vw]">
-              <p className="v3-card-title">O imagine artistică generată de inteligență artificială</p>
-              <p className="v3-body-sm v3-muted">Această compoziție nu este o previziune, ci o interpretare artistică a unui portret procesat, realizată pentru o experiență verticală de doi metri.</p>
-            </GlassPanel>
           )}
         </section>
       )}
