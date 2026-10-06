@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
-import { FuseLines, NeonButterfly, PreventionIcon } from "@/components/v4-decor";
+import { CampaignLines, NeonButterfly, PreventionIcon } from "@/components/v4-decor";
 import sunriseAsset from "@/assets/v4-sunrise.png.asset.json";
 import { QrCode } from "@/components/QrCode";
 import { baldifyFrame, FALLBACK_PROMPT, SMILE_PROMPT } from "@/lib/bald";
@@ -418,7 +418,7 @@ export function MirrorV4() {
             setScreen("consent");
           }}
         >
-          <FuseLines variant="attract" />
+          <CampaignLines variant="attract" />
           <NeonButterfly className="v4-butterfly-top" />
           <div className="v4-enter v4-attract-credit">
             <p className="v4-org">FUNDAȚIA{"\n"}VERTICAL FREEDOM</p>
@@ -436,7 +436,7 @@ export function MirrorV4() {
 
       {screen === "consent" && (
         <section className="v4-screen v4-light v4-consent">
-          <FuseLines variant="light" />
+          <CampaignLines variant="light" />
           <NeonButterfly className="v4-butterfly-small" />
           <h2 className="v4-enter v4-serif-title">TERMENI ȘI CONDIȚII</h2>
           <span className="v4-divider" aria-hidden />
@@ -452,7 +452,7 @@ export function MirrorV4() {
 
       {screen === "framing" && (
         <section className="v4-screen v4-countdown">
-          <FuseLines variant="countdown" />
+          <CampaignLines variant="countdown" />
           <ol className="v4-count-column" aria-label={`Mai sunt ${countdown} secunde`}>
             {countNumbers.map((n) => (
               <li key={n} className={`v4-count-ring ${countdown <= n ? "is-shown" : ""} ${countdown === n ? "is-now" : ""}`}>
@@ -469,8 +469,6 @@ export function MirrorV4() {
 
       {screen === "mirror" && (
         <section className="v4-screen v4-transform">
-          {baldUrl && <FuseLines variant="split" />}
-          <FuseLines variant="lower" />
           {!baldUrl && !cameraError && (
             <div className="v4-processing" role="status">
               <span className="v4-processing-ring" aria-hidden />
@@ -495,7 +493,7 @@ export function MirrorV4() {
 
       {screen === "choice" && (
         <section className="v4-screen v4-back">
-          <FuseLines variant="lower" />
+          <CampaignLines variant="lower" />
           <div className="v4-enter v4-back-title">
             <p>Acum,</p>
             <p className="v4-accent">ce faci pentru tine?</p>
@@ -516,7 +514,7 @@ export function MirrorV4() {
         <section className="v4-screen v4-light v4-final">
           <img src={sunriseAsset.url} alt="" aria-hidden className="v4-sunrise" />
           <div className="v4-final-wash" aria-hidden />
-          <FuseLines variant="light" />
+          <CampaignLines variant="light" />
           <h2 className="v4-enter v4-serif-title v4-final-title">TRĂIEȘTE-ȚI{"\n"}VIAȚA ACUM.</h2>
           <p className="v4-enter v4-final-sub">Prevenția începe{"\n"}înainte să doară.</p>
           <div className="v4-final-qr">
@@ -547,7 +545,7 @@ export function MirrorV4() {
 
       {screen === "donate" && (
         <section className="v4-screen v4-light v4-donate">
-          <FuseLines variant="light" />
+          <CampaignLines variant="light" />
           <NeonButterfly className="v4-butterfly-small" />
           <h2 className="v4-enter v4-serif-title">DONEAZĂ ACUM.</h2>
           <p className="v4-final-sub">Scanează codul și alege suma{"\n"}direct pe telefonul tău.</p>

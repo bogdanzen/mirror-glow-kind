@@ -13,7 +13,7 @@
 
 ## Done
 
-- [x] /v4 Figma redesign: 6 screens, transparent neon butterfly (start, terms, final footer), pink fuse-light lines with tiny sparks, countdown numbers appearing one by one, supplied prevention icons, live campaign QR.
+- [x] /v4 Figma redesign: 6 screens, transparent neon butterfly (start, terms, final footer), React Bits FloatingLines (no lines on transformation), countdown numbers appearing one by one, supplied prevention icons, live campaign QR.
 
 - [x] Ecran final aliniat referinței: cauză și obiective în stânga, QR roz în dreapta, buton Donează cu eveniment anonim donate_click.
 - [x] Experiența V3 promovată pe pagina principală, ruta de previzualizare `/v3` eliminată și nota vizibilă despre portretul AI scoasă.

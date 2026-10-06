@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import butterflyAsset from "@/assets/v4-butterfly-neon.webm.asset.json";
 
 /** Neon butterfly loop with a real alpha channel (no black box). Hidden for reduced motion. */
@@ -38,59 +38,35 @@ export function NeonButterfly({ className = "" }: { className?: string }) {
   );
 }
 
-type Variant = "attract" | "countdown" | "split" | "lower" | "light";
+const FloatingLines = lazy(() => import("./FloatingLines"));
+const LINE_GRADIENT = ["--v4-lines-start", "--v4-lines-mid", "--v4-lines-end"];
+const WAVES: ("top" | "middle" | "bottom")[] = ["top", "middle", "bottom"];
 
-// Paths drawn in kiosk pixels (2160 x 3840).
-const PATHS: Record<Variant, { d: string; dur: number; delay: number }[]> = {
-  attract: [
-    { d: "M-80 1180 C 420 1010, 880 1150, 1260 1060 S 1900 880, 2260 960", dur: 7.5, delay: 0 },
-    { d: "M1180 3840 C 1460 3560, 1720 3420, 2260 3180", dur: 6, delay: 2.4 },
-  ],
-  countdown: [{ d: "M1000 3840 C 1350 3600, 1700 3480, 2260 3260", dur: 6.5, delay: 0.6 }],
-  split: [{ d: "M1080 -40 C 1076 700, 1088 1500, 1080 2560", dur: 4.2, delay: 0 }],
-  lower: [
-    { d: "M-80 2900 C 520 2620, 1020 3100, 1560 2760 S 2050 2500, 2260 2560", dur: 8, delay: 0.3 },
-  ],
-  light: [
-    { d: "M-80 3380 C 600 3120, 1200 3640, 2260 3260", dur: 9, delay: 0 },
-    { d: "M-80 3560 C 700 3360, 1300 3760, 2260 3480", dur: 10, delay: 3 },
-  ],
-};
-
-const SPARKS = [0, 1, 2, 3, 4, 5];
-
-/**
- * A slow pink "burning fuse": faint base line, one bright travelling head and a few
- * tiny sparks that trail behind it and fade. Pure SVG, no JS frame loop.
- */
-export function FuseLines({ variant }: { variant: Variant }) {
-  const light = variant === "light";
+export function CampaignLines({ variant }: { variant: "attract" | "countdown" | "lower" | "light" }) {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setEnabled(!query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  if (!enabled) return null;
   return (
-    <svg className={`v4-fuse ${light ? "is-light" : ""}`} viewBox="0 0 2160 3840" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      <defs>
-        <filter id={`v4-glow-${variant}`} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="9" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-      {PATHS[variant].map((p, i) => {
-        const id = `v4-path-${variant}-${i}`;
-        return (
-          <g key={id}>
-            <path id={id} d={p.d} className="v4-fuse-base" />
-            <path d={p.d} pathLength={1000} className="v4-fuse-pulse" style={{ animationDuration: `${p.dur * 0.8}s`, animationDelay: `${p.delay}s` }} />
-            <path d={p.d} pathLength={1000} className="v4-fuse-head" filter={`url(#v4-glow-${variant})`} style={{ animationDuration: `${p.dur}s`, animationDelay: `${p.delay}s` }} />
-            {!light && SPARKS.map((s) => (
-              <circle key={s} r={s % 2 ? 2.6 : 3.6} className="v4-spark" style={{ animationDuration: `${0.45 + s * 0.13}s`, animationDelay: `${s * 0.09}s` }}>
-                <animateMotion dur={`${p.dur}s`} begin={`${p.delay + s * 0.07}s`} repeatCount="indefinite" rotate="auto">
-                  <mpath href={`#${id}`} />
-                </animateMotion>
-              </circle>
-            ))}
-          </g>
-        );
-      })}
-    </svg>
+    <div className={`v4-floating-lines v4-floating-lines-${variant}`} aria-hidden>
+      <Suspense fallback={null}>
+        <FloatingLines
+          linesGradient={LINE_GRADIENT}
+          enabledWaves={WAVES}
+          lineCount={2}
+          lineDistance={64.5}
+          animationSpeed={1.6}
+          bendRadius={19}
+          parallax={false}
+          lightMode={variant === "light"}
+        />
+      </Suspense>
+    </div>
   );
 }
 

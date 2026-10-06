@@ -1,0 +1,23 @@
+import type { CSSProperties, ComponentType } from "react";
+type Wave = "top" | "middle" | "bottom";
+type Position = { x?: number; y?: number; rotate?: number };
+declare const FloatingLines: ComponentType<{
+  linesGradient?: string[];
+  enabledWaves?: Wave[];
+  lineCount?: number | number[];
+  lineDistance?: number | number[];
+  topWavePosition?: Position;
+  middleWavePosition?: Position;
+  bottomWavePosition?: Position;
+  animationSpeed?: number;
+  interactive?: boolean;
+  bendRadius?: number;
+  bendStrength?: number;
+  mouseDamping?: number;
+  parallax?: boolean;
+  parallaxStrength?: number;
+  mixBlendMode?: CSSProperties["mixBlendMode"];
+  backgroundColor?: string;
+  lightMode?: boolean;
+}>;
+export default FloatingLines;
