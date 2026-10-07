@@ -102,7 +102,7 @@
 /* 1 Start */
 .v4-home-brand { position: absolute; top: 5%; left: 6.5%; right: 6.5%; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
 /* Both logos share one height so they read as an equal pair; width follows each artwork's own ratio. */
-.v4-home-brand img { display: block; height: calc(320 * var(--v4-text-unit)); width: auto; max-width: 38%; }
+.v4-home-brand img { display: block; height: calc(384 * var(--v4-text-unit)); width: auto; max-width: 38%; }
 .v4-home-logo-vf { object-fit: contain; }
 .v4-home-logo-lions { object-fit: contain; }
 .v4-ambient-butterflies { position: absolute; inset: 0; z-index: 8; pointer-events: none; opacity: 0; overflow: hidden; }
