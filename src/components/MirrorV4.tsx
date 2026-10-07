@@ -577,6 +577,7 @@ export function MirrorV4() {
         className="absolute left-0 top-0 z-[60] h-24 w-24 opacity-0"
         onClick={(e) => { e.stopPropagation(); cornerTap(); }}
       />
+      <KioskAudio screen={screen} settings={settings} muted={admin} />
       {admin && (
         <div className="fixed inset-0 z-[70]">
           <AdminPanel settings={settings} onChange={setSettings} onClose={() => setAdmin(false)} />
