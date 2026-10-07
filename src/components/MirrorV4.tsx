@@ -441,7 +441,6 @@ export function MirrorV4() {
             <img src={verticalFreedomLogo.url} alt="Vertical Freedom" className="v4-home-logo-vf" />
             <img src={lionsClujLogo.url} alt="Lions Club" className="v4-home-logo-lions" />
           </header>
-          <NeonButterfly className="v4-butterfly-top" />
           <div className="v4-enter v4-attract-credit">
             <p className="v4-org">FUNDAȚIA{"\n"}VERTICAL FREEDOM</p>
             <p className="v4-presents">prezintă</p>
