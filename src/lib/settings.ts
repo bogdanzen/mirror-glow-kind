@@ -229,7 +229,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   voiceoverEnabled: true,
   musicMode: "healing",
   musicVolume: 25,
-  youtubeUrl: "",
+  youtubeUrl: "https://www.youtube.com/watch?v=dzRT9vqg9xs&list=RD1ZYbU82GVz4&index=2",
   pin: "0000",
   framingSeconds: 5,
   mirrorSeconds: 5,
