@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { KioskAudio } from "@/components/KioskAudio";
+import { V4AmbientButterflies } from "@/components/V4AmbientButterflies";
+import verticalFreedomLogo from "@/assets/vf-white.png.asset.json";
+import lionsClujLogo from "@/assets/lions-white.png.asset.json";
 import { CampaignLines, NeonButterfly, PreventionIcon } from "@/components/v4-decor";
 import sunriseAsset from "@/assets/v4-sunrise.png.asset.json";
 import { QrCode } from "@/components/QrCode";
@@ -420,6 +423,7 @@ export function MirrorV4() {
         <img src={smileUrl} onLoad={() => setLoadedSmileUrl(smileUrl)} onError={() => setSmileFailed(true)} alt="Portret procesat zâmbind" className="v2-generated-portrait v2-smile-in absolute inset-0 z-[4] h-full w-full" />
       )}
       {cameraVisible && <div className="v4-bottom-shade" aria-hidden />}
+      <V4AmbientButterflies visible={screen === "attract" && !admin} />
 
       {screen === "attract" && (
         <section
@@ -433,6 +437,10 @@ export function MirrorV4() {
           }}
         >
           <CampaignLines variant="attract" />
+          <header className="v4-home-brand">
+            <img src={verticalFreedomLogo.url} alt="Vertical Freedom" className="v4-home-logo-vf" />
+            <img src={lionsClujLogo.url} alt="Lions Club" className="v4-home-logo-lions" />
+          </header>
           <NeonButterfly className="v4-butterfly-top" />
           <div className="v4-enter v4-attract-credit">
             <p className="v4-org">FUNDAȚIA{"\n"}VERTICAL FREEDOM</p>
