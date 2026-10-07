@@ -360,6 +360,49 @@ export function AdminPanel({
               {draft.storageEnabled ? "pornită" : "oprită"}
             </span>
           </button>
+          <button
+            className="flex w-full items-center justify-between border border-hairline px-5 py-4 text-left text-base"
+            onClick={() => set("voiceoverEnabled", !draft.voiceoverEnabled)}
+          >
+            Voce pe ecrane:{" "}
+            <span className={draft.voiceoverEnabled ? "text-primary" : "text-muted-foreground"}>
+              {draft.voiceoverEnabled ? "pornită" : "oprită"}
+            </span>
+          </button>
+          <div className="border border-hairline px-5 py-4 text-base">
+            <div>Muzică de fundal</div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {([["off", "Oprită"], ["healing", "Sunete calmante"], ["youtube", "YouTube"]] as const).map(([v, l]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => set("musicMode", v)}
+                  className={`border px-3 py-3 ${draft.musicMode === v ? "border-primary text-primary" : "border-hairline text-muted-foreground"}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+            {draft.musicMode === "youtube" && (
+              <input
+                className="mt-3 w-full border border-hairline bg-transparent px-3 py-3"
+                placeholder="Link playlist YouTube (https://www.youtube.com/playlist?list=...)"
+                value={draft.youtubeUrl}
+                onChange={(e) => set("youtubeUrl", e.target.value)}
+              />
+            )}
+            <label className="mt-3 flex items-center gap-3">
+              Volum {draft.musicVolume}%
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={draft.musicVolume}
+                onChange={(e) => set("musicVolume", Number(e.target.value))}
+                className="flex-1"
+              />
+            </label>
+          </div>
         </div>
             <h2 className="mt-10 text-sm uppercase tracking-[0.3em] text-primary">Securitate</h2>
         <label className={label}>PIN nou</label>

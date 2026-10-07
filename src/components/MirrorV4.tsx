@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
+import { KioskAudio } from "@/components/KioskAudio";
 import { CampaignLines, NeonButterfly, PreventionIcon } from "@/components/v4-decor";
 import sunriseAsset from "@/assets/v4-sunrise.png.asset.json";
 import { QrCode } from "@/components/QrCode";
