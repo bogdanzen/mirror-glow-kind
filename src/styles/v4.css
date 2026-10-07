@@ -73,7 +73,6 @@
 
 /* Butterfly */
 .v4-butterfly { display: block; object-fit: contain; pointer-events: none; }
-.v4-butterfly-top { width: 24vw; height: 22vw; margin-bottom: 1.2vw; }
 .v4-butterfly-small { width: 17vw; height: 15.5vw; }
 .v4-butterfly-footer { width: 13vw; height: 12vw; margin: 0 auto 0.4vw; }
 
@@ -197,7 +196,6 @@
 
 /* Text-box placements from boundsFromScreen; decorations and camera are unchanged. */
 .v4-attract-credit { display: contents; }
-.v4-attract .v4-butterfly-top { position: absolute; top: 4.6875%; width: calc(547 * var(--v4-text-unit)); height: calc(427 * var(--v4-text-unit)); margin: 0; }
 .v4-consent .v4-butterfly-small { position: absolute; top: 3%; width: calc(350 * var(--v4-text-unit)); height: calc(330 * var(--v4-text-unit)); margin: 0; }
 .v4-attract .v4-org { position: absolute; top: 14.973958%; left: 16.666667%; width: 66.666667%; }
 .v4-attract .v4-presents { position: absolute; top: 22.291667%; left: 18.75%; width: 62.5%; }
