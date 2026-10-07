@@ -75,17 +75,24 @@ export function KioskAudio({ screen, settings, muted }: { screen: string; settin
     return () => window.removeEventListener("pointerdown", unlock);
   }, []);
 
-  // Voiceover for the current screen.
+  // Voiceover for the current screen; on the opening screen it repeats every 3 minutes.
   useEffect(() => {
     if (!unlocked || muted || !settings.voiceoverEnabled) return;
     const src = VOICE[screen];
     if (!src) return;
-    const audio = new Audio(src);
-    voiceRef.current = audio;
-    audio.play().catch(() => {});
+    let audio: HTMLAudioElement | null = null;
+    const play = () => {
+      audio?.pause();
+      audio = new Audio(src);
+      voiceRef.current = audio;
+      audio.play().catch(() => {});
+    };
+    play();
+    const repeat = screen === "attract" ? window.setInterval(play, 3 * 60 * 1000) : null;
     return () => {
-      audio.pause();
-      audio.src = "";
+      if (repeat !== null) window.clearInterval(repeat);
+      audio?.pause();
+      if (audio) audio.src = "";
     };
   }, [screen, unlocked, muted, settings.voiceoverEnabled]);
 

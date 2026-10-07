@@ -229,7 +229,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   voiceoverEnabled: true,
   musicMode: "healing",
   musicVolume: 25,
-  youtubeUrl: "",
+  youtubeUrl: "https://www.youtube.com/watch?v=dzRT9vqg9xs&list=RD1ZYbU82GVz4&index=2",
   pin: "0000",
   framingSeconds: 5,
   mirrorSeconds: 5,
@@ -312,6 +312,7 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.scopeDenoiseSteps = steps.length ? steps : DEFAULT_SETTINGS.scopeDenoiseSteps;
   merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
   merged.fallbackPrompt = String(merged.fallbackPrompt || FALLBACK_PROMPT);
+  if (!String(merged.youtubeUrl || "").trim()) merged.youtubeUrl = DEFAULT_SETTINGS.youtubeUrl;
   merged.fallbackMode = Boolean(merged.fallbackMode);
   merged.fallbackRefresh = (["off", "normal", "fast"] as const).includes(
     merged.fallbackRefresh as "off",
