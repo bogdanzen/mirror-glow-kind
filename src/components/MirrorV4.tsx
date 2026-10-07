@@ -25,6 +25,8 @@ export function MirrorV4() {
   const [smileUrl, setSmileUrl] = useState("");
   const [smileFailed, setSmileFailed] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [loadedBaldUrl, setLoadedBaldUrl] = useState("");
+  const [loadedSmileUrl, setLoadedSmileUrl] = useState("");
   const [generationError, setGenerationError] = useState("");
   const [presenceSeconds, setPresenceSeconds] = useState(DEFAULT_SETTINGS.idleTimeoutSeconds);
   const [cameraOk, setCameraOk] = useState(false);
@@ -114,6 +116,8 @@ export function MirrorV4() {
     setGenerationError("");
     setCameraUnavailable(false);
     setProcessing(false);
+    setLoadedBaldUrl("");
+    setLoadedSmileUrl("");
     setCountdown(settings.framingSeconds);
     setPresenceSeconds(settings.idleTimeoutSeconds);
     setScreen("attract");
@@ -267,30 +271,32 @@ export function MirrorV4() {
     return () => window.clearInterval(id);
   }, [screen, settings.framingSeconds, startGeneration]);
 
-  const hasBald = Boolean(baldUrl);
+  const baldReady = Boolean(baldUrl) && !processing && loadedBaldUrl === baldUrl;
+  const smileReady = Boolean(smileUrl) && loadedSmileUrl === smileUrl;
 
   useEffect(() => {
-    if (screen !== "mirror" || !hasBald) return;
+    // Partial previews and processing time never consume the portrait's viewing time.
+    if (screen !== "mirror" || !baldReady) return;
     const id = window.setTimeout(() => setScreen("choice"), settings.mirrorSeconds * 1000);
     return () => window.clearTimeout(id);
-  }, [screen, hasBald, settings.mirrorSeconds]);
+  }, [screen, baldReady, settings.mirrorSeconds]);
 
   useEffect(() => {
     if (screen !== "framing" && screen !== "mirror") loopStopRef.current = true;
   }, [screen]);
 
   useEffect(() => {
-    if (screen !== "mirror" || baldUrl) return;
+    if (screen !== "mirror" || baldReady) return;
     const waitMs = generationError ? 7000 : 45000;
     const id = window.setTimeout(() => {
       generationRef.current?.abort();
       setScreen("choice");
     }, waitMs);
     return () => window.clearTimeout(id);
-  }, [screen, baldUrl, generationError]);
+  }, [screen, baldReady, generationError]);
 
   useEffect(() => {
-    if (screen === "choice") {
+    if (screen === "choice" && (smileReady || smileFailed)) {
       const id = window.setTimeout(() => setScreen("final"), (settings.captureSeconds + settings.thanksSeconds) * 1000);
       return () => window.clearTimeout(id);
     }
@@ -299,7 +305,14 @@ export function MirrorV4() {
       return () => window.clearTimeout(id);
     }
     return undefined;
-  }, [screen, settings.captureSeconds, settings.thanksSeconds]);
+  }, [screen, smileReady, smileFailed, settings.captureSeconds, settings.thanksSeconds]);
+
+  useEffect(() => {
+    if (screen !== "choice" || smileReady || smileFailed) return;
+    // A failed or stalled bonus portrait must still leave a usable camera fallback.
+    const id = window.setTimeout(() => setSmileFailed(true), 45_000);
+    return () => window.clearTimeout(id);
+  }, [screen, smileReady, smileFailed]);
 
 
   useEffect(() => {
@@ -345,7 +358,7 @@ export function MirrorV4() {
     if (screen === "attract" || screen === "consent") return;
     const activity = () => { idleRef.current = Date.now(); };
     const id = window.setInterval(() => {
-      if (Date.now() - idleRef.current > 45_000 && screen !== "mirror") reset();
+      if (Date.now() - idleRef.current > 45_000 && screen !== "mirror" && screen !== "choice") reset();
     }, 1000);
     window.addEventListener("pointerdown", activity, { passive: true });
     return () => {
@@ -400,10 +413,10 @@ export function MirrorV4() {
         <img src={prevBaldUrl} alt="" aria-hidden className="v2-generated-portrait absolute inset-0 z-[3] h-full w-full" />
       )}
       {baldUrl && screen === "mirror" && (
-        <img key={baldUrl} src={baldUrl} alt="Portret procesat artistic" className="v2-generated-portrait v2-bald-in absolute inset-0 z-[3] h-full w-full" />
+        <img key={baldUrl} src={baldUrl} onLoad={() => setLoadedBaldUrl(baldUrl)} alt="Portret procesat artistic" className="v2-generated-portrait v2-bald-in absolute inset-0 z-[3] h-full w-full" />
       )}
       {smileUrl && screen === "choice" && (
-        <img src={smileUrl} alt="Portret procesat zâmbind" className="v2-generated-portrait v2-smile-in absolute inset-0 z-[4] h-full w-full" />
+        <img src={smileUrl} onLoad={() => setLoadedSmileUrl(smileUrl)} onError={() => setSmileFailed(true)} alt="Portret procesat zâmbind" className="v2-generated-portrait v2-smile-in absolute inset-0 z-[4] h-full w-full" />
       )}
       {cameraVisible && <div className="v4-bottom-shade" aria-hidden />}
 
@@ -428,7 +441,7 @@ export function MirrorV4() {
           <h1 className="v4-enter v4-display v4-te-vezi">TE VEZI?</h1>
           <PillButton label="ÎNCEPE AICI" className="v4-attract-pill" />
           <div className="v4-qr-block" onClick={(e) => e.stopPropagation()}>
-            <div className="v4-qr-card"><QrCode value={donationQr} size={480} /></div>
+            <div className="v4-qr-card"><div className="v4-qr-backing"><QrCode value={donationQr} size={480} /></div></div>
             <p className="v4-qr-caption">Scanează-mă{"\n"}pentru mai multe{"\n"}informații.</p>
           </div>
         </section>
@@ -518,7 +531,7 @@ export function MirrorV4() {
           <h2 className="v4-enter v4-serif-title v4-final-title">TRĂIEȘTE-ȚI{"\n"}VIAȚA ACUM.</h2>
           <p className="v4-enter v4-final-sub">Prevenția începe{"\n"}înainte să doară.</p>
           <div className="v4-final-qr">
-            <div className="v4-qr-card is-glow"><QrCode value={donationQr} size={640} /></div>
+            <div className="v4-qr-card is-glow"><div className="v4-qr-backing"><QrCode value={donationQr} size={640} /></div></div>
             <p className="v4-qr-caption is-ink">Scanează și află{"\n"}ce poți face pentru tine.</p>
           </div>
           <span className="v4-divider is-wide" aria-hidden />
@@ -549,7 +562,7 @@ export function MirrorV4() {
           <NeonButterfly className="v4-butterfly-small" />
           <h2 className="v4-enter v4-serif-title">DONEAZĂ ACUM.</h2>
           <p className="v4-final-sub">Scanează codul și alege suma{"\n"}direct pe telefonul tău.</p>
-          <div className="v4-qr-card is-glow v4-donate-qr"><QrCode value={donationQr} size={900} /></div>
+          <div className="v4-qr-card is-glow v4-donate-qr"><div className="v4-qr-backing"><QrCode value={donationQr} size={900} /></div></div>
           <div className="flex items-center gap-[4vw]">
             <button type="button" className="v4-text-link" onClick={() => setScreen("final")}>← Înapoi</button>
             <p className="v4-reset is-inline">Revenire în {presenceSeconds}s</p>
