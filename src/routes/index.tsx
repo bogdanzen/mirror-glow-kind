@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MirrorV3 } from "@/components/MirrorV3";
+import { MirrorV4 } from "@/components/MirrorV4";
 
 export const Route = createFileRoute("/")({
   head: () => ({
+    links: [{ rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Afacad:wght@400&family=Bebas+Neue&family=Bodoni+Moda:wght@700&family=Roboto+Condensed:wght@400&family=Tinos:wght@400;700&display=swap" }],
     meta: [
       { title: "Oglinda — Vertical Freedom" },
       {
@@ -18,5 +19,5 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: MirrorV3,
+  component: MirrorV4,
 });
