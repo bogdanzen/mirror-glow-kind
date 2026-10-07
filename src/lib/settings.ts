@@ -96,6 +96,12 @@ export type MirrorSettings = {
   faceTracking: boolean;
   demoMode: boolean;
   storageEnabled: boolean;
+  /** Per-screen spoken voiceovers. */
+  voiceoverEnabled: boolean;
+  /** Background music: off, built-in healing tones, or a YouTube playlist. */
+  musicMode: "off" | "healing" | "youtube";
+  musicVolume: number;
+  youtubeUrl: string;
   pin: string;
   /** Duration of the opening camera countdown. */
   framingSeconds: number;
@@ -220,6 +226,10 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   faceTracking: true,
   demoMode: false,
   storageEnabled: false,
+  voiceoverEnabled: true,
+  musicMode: "healing",
+  musicVolume: 25,
+  youtubeUrl: "",
   pin: "0000",
   framingSeconds: 5,
   mirrorSeconds: 5,

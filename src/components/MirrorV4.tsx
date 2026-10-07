@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
+import { KioskAudio } from "@/components/KioskAudio";
 import { CampaignLines, NeonButterfly, PreventionIcon } from "@/components/v4-decor";
 import sunriseAsset from "@/assets/v4-sunrise.png.asset.json";
 import { QrCode } from "@/components/QrCode";
@@ -576,6 +577,7 @@ export function MirrorV4() {
         className="absolute left-0 top-0 z-[60] h-24 w-24 opacity-0"
         onClick={(e) => { e.stopPropagation(); cornerTap(); }}
       />
+      <KioskAudio screen={screen} settings={settings} muted={admin} />
       {admin && (
         <div className="fixed inset-0 z-[70]">
           <AdminPanel settings={settings} onChange={setSettings} onClose={() => setAdmin(false)} />
