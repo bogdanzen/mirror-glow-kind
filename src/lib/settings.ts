@@ -312,6 +312,7 @@ export function sanitizeSettings(input: Partial<MirrorSettings>): MirrorSettings
   merged.scopeDenoiseSteps = steps.length ? steps : DEFAULT_SETTINGS.scopeDenoiseSteps;
   merged.prompt = String(merged.prompt || DEFAULT_PROMPT);
   merged.fallbackPrompt = String(merged.fallbackPrompt || FALLBACK_PROMPT);
+  if (!String(merged.youtubeUrl || "").trim()) merged.youtubeUrl = DEFAULT_SETTINGS.youtubeUrl;
   merged.fallbackMode = Boolean(merged.fallbackMode);
   merged.fallbackRefresh = (["off", "normal", "fast"] as const).includes(
     merged.fallbackRefresh as "off",
