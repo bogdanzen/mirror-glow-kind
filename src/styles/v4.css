@@ -90,12 +90,13 @@
 .v4-text-link.is-dark { color: var(--v4-cream-text); }
 
 /* QR */
-.v4-qr-card { box-sizing: border-box; aspect-ratio: 1; padding: calc(34.168116 * var(--v4-text-unit)); border-radius: calc(40.144928 * var(--v4-text-unit)); background: transparent; border: calc(8.831884 * var(--v4-text-unit)) solid var(--v4-lines-start); box-shadow: 0 0 3vw color-mix(in oklab, var(--v4-pill-a) 40%, transparent); }
-.v4-qr-backing { width: 100%; height: 100%; padding: calc(32.5 * var(--v4-text-unit)); border-radius: calc(32.115944 * var(--v4-text-unit)); background: var(--qr-light); }
-.v4-final-qr .v4-qr-card { border-color: var(--qr-light); padding: calc(21.678261 * var(--v4-text-unit)); }
+.v4-qr-card { position: relative; box-sizing: border-box; aspect-ratio: 1; border-radius: calc(40.144928 * var(--v4-text-unit)); background: transparent; box-shadow: inset 0 0 0 calc(8.831884 * var(--v4-text-unit)) var(--v4-lines-start), 0 0 3vw color-mix(in oklab, var(--v4-pill-a) 40%, transparent); }
+.v4-qr-backing { position: absolute; inset: calc(43 * var(--v4-text-unit)); padding: calc(32.5 * var(--v4-text-unit)); border-radius: calc(32.115944 * var(--v4-text-unit)); background: var(--qr-light); }
+.v4-final-qr .v4-qr-card { --v4-lines-start: var(--qr-light); }
+.v4-final-qr .v4-qr-backing { inset: calc(30.510145 * var(--v4-text-unit)); }
 .v4-final-qr .v4-qr-backing { padding: calc(23.49 * var(--v4-text-unit)) calc(19.49 * var(--v4-text-unit)) calc(19.49 * var(--v4-text-unit)) calc(23.49 * var(--v4-text-unit)); }
 .v4-qr-card canvas { display: block; width: 100% !important; height: auto !important; }
-.v4-qr-card.is-glow { box-shadow: 0 0 5vw color-mix(in oklab, var(--v4-pill-a) 34%, transparent), 0 1vw 3vw color-mix(in oklab, var(--v4-burgundy) 12%, transparent); }
+.v4-qr-card.is-glow { box-shadow: inset 0 0 0 calc(8.831884 * var(--v4-text-unit)) var(--v4-lines-start), 0 0 5vw color-mix(in oklab, var(--v4-pill-a) 34%, transparent), 0 1vw 3vw color-mix(in oklab, var(--v4-burgundy) 12%, transparent); }
 .v4-qr-caption { font-family: var(--v4-font-copy); font-size: calc(86 * var(--v4-text-unit)); line-height: 1.15; margin-top: 2vw; font-weight: 400; }
 .v4-qr-caption.is-ink { color: var(--v4-text-final); font-size: calc(86 * var(--v4-text-unit)); line-height: 1.13; font-weight: 700; }
 

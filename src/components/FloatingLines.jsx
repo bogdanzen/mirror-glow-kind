@@ -216,6 +216,9 @@ void main() {
 `;
 
 const MAX_GRADIENT_STOPS = 8;
+const DEFAULT_ENABLED_WAVES = ['top', 'middle', 'bottom'];
+const DEFAULT_LINE_COUNT = [6];
+const DEFAULT_LINE_DISTANCE = [5];
 const DEFAULT_BOTTOM_WAVE_POSITION = { x: 2.0, y: -0.7, rotate: -1 };
 
 function hexToVec3(hex) {
@@ -244,9 +247,9 @@ function hexToVec3(hex) {
 
 export default function FloatingLines({
   linesGradient,
-  enabledWaves = ['top', 'middle', 'bottom'],
-  lineCount = [6],
-  lineDistance = [5],
+  enabledWaves = DEFAULT_ENABLED_WAVES,
+  lineCount = DEFAULT_LINE_COUNT,
+  lineDistance = DEFAULT_LINE_DISTANCE,
   topWavePosition,
   middleWavePosition,
   bottomWavePosition = DEFAULT_BOTTOM_WAVE_POSITION,

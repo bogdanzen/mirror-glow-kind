@@ -286,14 +286,14 @@ export function MirrorV4() {
   }, [screen]);
 
   useEffect(() => {
-    if (screen !== "mirror" || baldUrl) return;
+    if (screen !== "mirror" || baldReady) return;
     const waitMs = generationError ? 7000 : 45000;
     const id = window.setTimeout(() => {
       generationRef.current?.abort();
       setScreen("choice");
     }, waitMs);
     return () => window.clearTimeout(id);
-  }, [screen, baldUrl, generationError]);
+  }, [screen, baldReady, generationError]);
 
   useEffect(() => {
     if (screen === "choice" && (smileReady || smileFailed)) {

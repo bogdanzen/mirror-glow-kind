@@ -1,7 +1,6 @@
 # Roadmap — Oglinda kiosk
 
 ## Open
-- [ ] V4: start portrait timers after completed images load; keep lines continuous; reproduce QR frames and inset screen outline.
 - [ ] Exact V4 display typeface: awaiting the user's licensed Bodoni 72 Bold webfont; Bodoni Moda is a temporary fallback.
 
 - [x] V3 review: centered opening composition, reliable camera retry, and optional subtle butterfly-loop layer ready for the supplied video.
@@ -14,6 +13,7 @@
 - [ ] Verification of first-frame ≤5 s over 5 warm sessions must be run on the kiosk/user machine: this sandbox browser produces no ICE candidates, so WebRTC media cannot be validated here.
 
 ## Done
+- [x] V4 display polish: full viewing timers after completed portrait loads, continuous FloatingLines through timer ticks, measured Figma QR frames/backing/padding, equal inset taupe screen outline.
 - [x] V4 Figma text settings: Tinos, Afacad, Roboto Condensed, Bebas Neue; measured sizes, line heights, text colors, tracking, explicit line breaks and mixed bold fund copy.
 
 - [x] /v4 Figma redesign: 6 screens, transparent neon butterfly (start, terms, final footer), React Bits FloatingLines (no lines on transformation), countdown numbers appearing one by one, supplied prevention icons, live campaign QR.
