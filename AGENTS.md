@@ -17,5 +17,6 @@
 - Record final-screen donation-button taps with the existing anonymous donate_click event before opening the donation screen; this measures intent, not completed payments.
 
 - Keep V4 FloatingLines lazily loaded after hydration in a scoped non-interactive layer, capped at 30 fps and paused in hidden tabs; this preserves SSR and tablet resources.
+- Keep FloatingLines default position objects referentially stable and start V4 viewing timers only after completed portraits load; parent timer updates must not recreate renderers or shorten portrait viewing.
 
 - Load V4 typography fonts in the V4 route head and scope its measured text settings to the campaign; this keeps the promoted main experience and admin pages unchanged.

@@ -1,6 +1,7 @@
 # Roadmap — Oglinda kiosk
 
 ## Open
+- [ ] V4: start portrait timers after completed images load; keep lines continuous; reproduce QR frames and inset screen outline.
 - [ ] Exact V4 display typeface: awaiting the user's licensed Bodoni 72 Bold webfont; Bodoni Moda is a temporary fallback.
 
 - [x] V3 review: centered opening composition, reliable camera retry, and optional subtle butterfly-loop layer ready for the supplied video.

@@ -216,6 +216,7 @@ void main() {
 `;
 
 const MAX_GRADIENT_STOPS = 8;
+const DEFAULT_BOTTOM_WAVE_POSITION = { x: 2.0, y: -0.7, rotate: -1 };
 
 function hexToVec3(hex) {
   let value = hex.trim();
@@ -248,7 +249,7 @@ export default function FloatingLines({
   lineDistance = [5],
   topWavePosition,
   middleWavePosition,
-  bottomWavePosition = { x: 2.0, y: -0.7, rotate: -1 },
+  bottomWavePosition = DEFAULT_BOTTOM_WAVE_POSITION,
   animationSpeed = 1,
   interactive = true,
   bendRadius = 5.0,
