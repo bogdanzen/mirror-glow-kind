@@ -62,8 +62,6 @@ function DebugPage() {
 
   useEffect(() => {
     void refresh();
-    const id = window.setInterval(() => void refresh(), 4000);
-    return () => window.clearInterval(id);
   }, [refresh]);
 
   const ping = async () => {
