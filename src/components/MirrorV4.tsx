@@ -13,7 +13,7 @@ import { currentSession, startSession, track } from "@/lib/metrics";
 import { cameraStyle, viewToFile } from "@/lib/cameraView";
 import { syncKiosk } from "@/lib/kiosk-remote";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
-import { CAPTURE_SETTLE_MS } from "@/lib/capture-timing";
+import { CAPTURE_SETTLE_MS, CONSENT_CAPTURE_MS } from "@/lib/capture-timing";
 
 type Screen = "attract" | "consent" | "framing" | "mirror" | "choice" | "healthy" | "final" | "donate";
 
@@ -324,7 +324,7 @@ export function MirrorV4() {
   // Leaving (Renunț / timeout) calls reset(), which aborts and discards the frame.
   useEffect(() => {
     if (screen !== "consent") return;
-    const id = window.setTimeout(() => { void startGeneration(); }, 3000);
+    const id = window.setTimeout(() => { void startGeneration(); }, CONSENT_CAPTURE_MS - CAPTURE_SETTLE_MS);
     return () => window.clearTimeout(id);
   }, [screen, startGeneration]);
 
