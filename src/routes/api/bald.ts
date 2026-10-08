@@ -26,6 +26,8 @@ export const Route = createFileRoute("/api/bald")({
         // Low quality is the fastest tier; the kiosk only needs a screen-sized portrait.
         form.set("quality", "low");
         form.set("output_format", "jpeg");
+        // Smaller JPEG = much faster download to the kiosk on a high-ping line.
+        form.set("output_compression", "70");
         if (streaming) {
           form.set("stream", "true");
           form.set("partial_images", "0");
