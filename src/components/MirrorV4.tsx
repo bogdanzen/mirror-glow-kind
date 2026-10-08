@@ -485,7 +485,7 @@ export function MirrorV4() {
           </div>
           <PillButton label="ACCEPTĂ" className="v4-consent-pill" onClick={() => { setConsent(true); void startGeneration(); setScreen("framing"); }} />
           <button type="button" className="v4-text-link" onClick={reset}>Renunț</button>
-          <div className="v4-consent-qr"><div className="v4-qr-backing"><QrCode value={`${origin}/gdpr`} size={320} /></div><span>Termenii compleți</span></div>
+          <div className="v4-consent-qr"><div className="v4-consent-qr-box"><QrCode value={`${origin}/gdpr`} size={320} /></div><span>Termenii compleți</span></div>
         </section>
       )}
 
