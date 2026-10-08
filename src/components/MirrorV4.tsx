@@ -155,7 +155,8 @@ export function MirrorV4() {
       });
       if (controller.signal.aborted) return;
 
-      const baldFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 768);
+      // 640px is plenty for a face edit and uploads ~30% faster on a slow line.
+      const baldFrame = viewToFile(video, settingsRef.current, window.innerWidth, window.innerHeight, 640);
       if (!baldFrame) throw new Error("Nu am putut prelua imaginea camerei");
       // Run both portraits in parallel from the same frame so the smile is
       // ready by the time the bald one has been shown.
