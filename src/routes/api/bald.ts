@@ -9,7 +9,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/bald")({
   server: {
     handlers: {
-      GET: async () => Response.json({
+      GET: async () => Response.json({ // also used as a keep-alive ping
         ok: Boolean(process.env["LOVABLE_API_KEY"]),
         model: "openai/gpt-image-2.5-flare",
       }),
@@ -22,11 +22,13 @@ export const Route = createFileRoute("/api/bald")({
         const allowed = ["openai/gpt-image-2.5-flare", "openai/gpt-image-2.5-sunburst"];
         const asked = String(form.get("model") ?? "");
         form.set("model", allowed.includes(asked) ? asked : "openai/gpt-image-2.5-flare");
-        form.set("size", "auto");
-        if (!form.get("quality")) form.set("quality", "medium");
+        form.set("size", "1024x1536");
+        // Low quality is the fastest tier; the kiosk only needs a screen-sized portrait.
+        form.set("quality", "low");
+        form.set("output_format", "jpeg");
         if (streaming) {
           form.set("stream", "true");
-          form.set("partial_images", "2");
+          form.set("partial_images", "0");
         } else {
           form.delete("stream");
           form.delete("partial_images");

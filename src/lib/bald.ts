@@ -4,7 +4,7 @@
  */
 
 export const FALLBACK_PROMPT =
-  "Photorealistically edit this exact camera photograph. It may contain one person, two people, a couple, a family, or a small group. Detect every clearly visible person and preserve every person's identity exactly. For EACH visible person independently, create complete medical alopecia: a naturally shaped, completely bald smooth scalp with no scalp hair, hairline, wisps or stubble; remove both eyebrows, all eyelashes, beard, moustache, sideburns and every trace of facial hair. Reconstruct the real head and scalp anatomy behind the removed hair, including a plausible full skull silhouette, ears and natural skin texture; never paste a bald sticker or mask over a face. Keep each person's exact face shape, eyes, nose, mouth, ears, skin tone, age, body, expression, gaze, pose, proportions and position. Do not merge faces, swap identities, duplicate people, remove people, add people, or change the spacing between them. Keep the full camera framing, crop, perspective, clothing, accessories, hands, background and lighting exactly unchanged. Skin may look subtly paler and tired while remaining natural, dignified and realistic. Serious clinical documentary portrait, sharp focus, high detail, natural colour, realistic pores, no filter, no stylisation, no cartoon, no beauty retouch, no plastic skin, no distortion, no warped anatomy, no text.";
+  "Photorealistically edit this exact camera photograph. It may contain one person, two people, a couple, a family, or a small group. Detect every clearly visible person and preserve every person's identity exactly. For EACH visible person independently, create complete medical alopecia: a naturally shaped, completely bald smooth scalp with no scalp hair, hairline, wisps or stubble; remove both eyebrows, all eyelashes, beard, moustache, sideburns and every trace of facial hair. Reconstruct the real head and scalp anatomy behind the removed hair, including a plausible full skull silhouette, ears and natural skin texture; never paste a bald sticker or mask over a face. Keep each person's exact face shape, eyes, nose, mouth, ears, skin tone, age, body, expression, gaze, pose, proportions and position. Do not merge faces, swap identities, duplicate people, remove people, add people, or change the spacing between them. Keep the full camera framing, crop, perspective, clothing, accessories, hands, background and lighting exactly unchanged. Skin may look subtly paler and tired while remaining natural, dignified and realistic. Serious clinical documentary portrait, sharp focus, high detail, natural colour, realistic pores, no filter, no stylisation, no cartoon, no beauty retouch, no plastic skin, no distortion, no warped anatomy, no text."+" Anatomy must stay exactly correct: each person has exactly two eyes, one nose, one mouth and two ears in their original positions; never double, ghost, blend or repeat eyes or any facial feature, never overlay two faces.";
 
 /** Fast, latency-first model; the other one trades speed for fidelity. */
 export const FALLBACK_MODELS = [
@@ -13,7 +13,7 @@ export const FALLBACK_MODELS = [
 ] as const;
 
 function dataUrl(b64: string) {
-  return `data:image/png;base64,${b64}`;
+  return `data:image/jpeg;base64,${b64}`;
 }
 
 class BaldError extends Error {
