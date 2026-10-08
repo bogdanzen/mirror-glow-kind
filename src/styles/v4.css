@@ -106,7 +106,7 @@
 .v4-home-logo-vf { object-fit: contain; }
 .v4-home-logo-lions { object-fit: contain; }
 .v4-ambient-butterflies { position: absolute; inset: 0; z-index: 8; pointer-events: none; opacity: 0; overflow: hidden; }
-.v4-ambient-butterflies video { width: 100%; height: 100%; object-fit: fill; }
+.v4-ambient-butterflies video { width: 100%; height: 100%; object-fit: fill; will-change: transform; backface-visibility: hidden; transform: translateZ(0); }
 .v4-ambient-butterflies.is-flying { opacity: 0.55; }
 .v4-ambient-butterflies.path-0 { --v4-flight-y: -10%; }
 .v4-ambient-butterflies.path-1 { --v4-flight-y: 0%; }
@@ -211,10 +211,14 @@
 .v4-terms p { position: absolute; left: 9.027778%; width: 81.944444%; }
 .v4-terms p:nth-child(1) { top: 25.989583%; }
 .v4-terms p:nth-child(2) { top: 39.53125%; }
-.v4-terms p:nth-child(3) { top: 55.833333%; }
+.v4-terms p:nth-child(3) { top: 64.2%; }
 .v4-consent .v4-divider { position: absolute; top: 52.916667%; margin: 0; }
-.v4-consent-pill { position: absolute; top: 68.307292%; width: 63.888889%; height: 6.510417%; min-height: 0; margin: 0; }
-.v4-consent > .v4-text-link { position: absolute; top: 76%; }
+.v4-consent-pill { position: absolute; top: 56%; width: 63.888889%; height: 6.510417%; min-height: 0; margin: 0; }
+.v4-consent > .v4-text-link { position: absolute; top: 72.5%; }
+.v4-consent-qr { position: absolute; right: 6%; bottom: 4.5%; display: flex; flex-direction: column; align-items: center; gap: 0.8vw; z-index: 2; }
+.v4-consent-qr-box { background: #fff; padding: 1vw; border-radius: 1.2vw; width: 13vw; height: 13vw; }
+.v4-consent-qr canvas { width: 100% !important; height: 100% !important; display: block; }
+.v4-consent-qr span { font-family: var(--v4-font-terms); font-size: calc(36 * var(--v4-text-unit)); color: var(--v4-taupe); }
 .v4-count-copy .v4-accent { color: var(--v4-text-count-accent); }
 .v4-actions { position: absolute; top: 57.473958%; bottom: 20%; left: 16.666667%; right: 16.666667%; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 0; padding: 0; margin: 0; }
 .v4-back-pill { position: absolute; top: 82.8125%; width: 71.759259%; height: 10.989583%; }
@@ -230,3 +234,5 @@
 .v4-cause-body { position: absolute; top: 73.567708%; width: 78.240741%; }
 .v4-final-footer { position: absolute; top: 84.817708%; left: 0; right: 0; margin: 0; gap: calc(13 * var(--v4-text-unit)); }
 .v4-final-footer .v4-butterfly-footer { height: calc(214 * var(--v4-text-unit)); margin: 0; }
+
+.v4-lines-layer canvas, .v4-floating-lines canvas { transform: translateZ(0); }

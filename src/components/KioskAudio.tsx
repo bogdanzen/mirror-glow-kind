@@ -75,6 +75,12 @@ export function KioskAudio({ screen, settings, muted }: { screen: string; settin
     return () => window.removeEventListener("pointerdown", unlock);
   }, []);
 
+  // Preload every voiceover once so playback starts instantly.
+  useEffect(() => {
+    const cached = Object.values(VOICE).map((src) => { const a = new Audio(); a.preload = "auto"; a.src = src; return a; });
+    return () => cached.forEach((a) => { a.src = ""; });
+  }, []);
+
   // Voiceover for the current screen; on the opening screen it repeats every 3 minutes.
   useEffect(() => {
     if (!unlocked || muted || !settings.voiceoverEnabled) return;
@@ -84,6 +90,7 @@ export function KioskAudio({ screen, settings, muted }: { screen: string; settin
     const play = () => {
       audio?.pause();
       audio = new Audio(src);
+      audio.volume = 1;
       voiceRef.current = audio;
       audio.play().catch(() => {});
     };

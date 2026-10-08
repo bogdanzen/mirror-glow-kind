@@ -227,7 +227,7 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
   demoMode: false,
   storageEnabled: false,
   voiceoverEnabled: true,
-  musicMode: "healing",
+  musicMode: "youtube",
   musicVolume: 25,
   youtubeUrl: "https://www.youtube.com/watch?v=dzRT9vqg9xs&list=RD1ZYbU82GVz4&index=2",
   pin: "0000",
@@ -287,8 +287,8 @@ export const DEFAULT_SETTINGS: MirrorSettings = {
 };
 
 
-const KEY = "mirror.settings.v15";
-const LEGACY_KEY = "mirror.settings.v14";
+const KEY = "mirror.settings.v16";
+const LEGACY_KEY = "mirror.settings.v15";
 const COUNTER_KEY = "mirror.sessions.v1";
 
 /**
@@ -412,7 +412,9 @@ export function loadSettings(): MirrorSettings {
       const migrated = sanitizeSettings({
         ...legacy,
         mirrorSeconds: DEFAULT_SETTINGS.mirrorSeconds,
-        captureSeconds: DEFAULT_SETTINGS.captureSeconds,
+        // v16: YouTube playlist and voiceovers become the default audio setup.
+        musicMode: "youtube",
+        voiceoverEnabled: true,
       });
       window.localStorage.setItem(KEY, JSON.stringify(migrated));
       return migrated;

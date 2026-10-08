@@ -319,6 +319,23 @@ export function MirrorV4() {
   }, [screen, smileReady, smileFailed]);
 
 
+  // Start processing 3s into the consent screen so the portrait is ready sooner.
+  // Leaving (Renunț / timeout) calls reset(), which aborts and discards the frame.
+  useEffect(() => {
+    if (screen !== "consent") return;
+    const id = window.setTimeout(() => { void startGeneration(); }, 3000);
+    return () => window.clearTimeout(id);
+  }, [screen, startGeneration]);
+
+  // Warm the browser cache with local media so screens never wait on the network.
+  useEffect(() => {
+    const urls = [sunriseAsset.url, verticalFreedomLogo.url, lionsClujLogo.url];
+    const id = window.setTimeout(() => {
+      urls.forEach((u) => { const img = new Image(); img.decoding = "async"; img.src = u; });
+    }, 500);
+    return () => window.clearTimeout(id);
+  }, []);
+
   useEffect(() => {
     if (screen !== "consent") return;
     const id = window.setTimeout(reset, 20_000);
@@ -468,6 +485,7 @@ export function MirrorV4() {
           </div>
           <PillButton label="ACCEPTĂ" className="v4-consent-pill" onClick={() => { setConsent(true); void startGeneration(); setScreen("framing"); }} />
           <button type="button" className="v4-text-link" onClick={reset}>Renunț</button>
+          <div className="v4-consent-qr"><div className="v4-consent-qr-box"><QrCode value={`${origin}/gdpr`} size={320} /></div><span>Termenii compleți</span></div>
         </section>
       )}
 
