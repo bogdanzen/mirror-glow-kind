@@ -8,6 +8,13 @@
       "when": 1791028095739,
       "tag": "0000_kiosk_remote_control",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791473180030,
+      "tag": "0001_debug_timings",
+      "breakpoints": true
     }
   ]
 }
