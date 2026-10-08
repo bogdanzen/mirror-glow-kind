@@ -61,7 +61,7 @@ export function viewToFile(video: HTMLVideoElement, v: CameraView, screenW: numb
   ctx.rect(-boxW / 2, -boxH / 2, boxW, boxH);
   ctx.clip();
   ctx.drawImage(video, (-vw * s) / 2, (-vh * s) / 2, vw * s, vh * s);
-  const b64 = canvas.toDataURL("image/jpeg", 0.95).split(",")[1] ?? "";
+  const b64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1] ?? "";
   const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   return new File([bytes], "frame.jpg", { type: "image/jpeg" });
 }
