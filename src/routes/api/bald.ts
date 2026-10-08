@@ -6,6 +6,16 @@ import { createFileRoute } from "@tanstack/react-router";
  * chemotherapy portrait (no hair, no eyebrows) by the Lovable AI image model.
  * The upload is never stored — it is forwarded and discarded.
  */
+/** Records how long the AI provider took, so slowness can be split from the network. */
+async function logServer(label: string, ms: number, meta: Record<string, unknown>) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("debug_timings").insert({ source: "server", kind: "server_ai", label, ms, meta: meta as never });
+  } catch {
+    /* logging is best-effort */
+  }
+}
+
 export const Route = createFileRoute("/api/bald")({
   server: {
     handlers: {
@@ -36,6 +46,7 @@ export const Route = createFileRoute("/api/bald")({
           form.delete("partial_images");
         }
 
+        const t0 = Date.now();
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/images/edits", {
           method: "POST",
           headers: { Authorization: `Bearer ${key}` },
@@ -43,11 +54,17 @@ export const Route = createFileRoute("/api/bald")({
         });
         if (!upstream.ok || !upstream.body) {
           const detail = await upstream.text();
+          await logServer("AI server — eroare", Date.now() - t0, { status: upstream.status });
           console.error(`[bald] upstream ${upstream.status}: ${detail.slice(0, 500)}`);
           return new Response(detail, { status: upstream.status });
         }
         if (!streaming) {
-          return new Response(upstream.body, { headers: { "Content-Type": "application/json" } });
+          const body = await upstream.arrayBuffer();
+          const upstreamMs = Date.now() - t0;
+          await logServer("AI server — generare", upstreamMs, { model: form.get("model"), kb: Math.round(body.byteLength / 1024) });
+          return new Response(body, {
+            headers: { "Content-Type": "application/json", "X-Mirror-Upstream-Ms": String(upstreamMs) },
+          });
         }
         return new Response(upstream.body, {
           headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },

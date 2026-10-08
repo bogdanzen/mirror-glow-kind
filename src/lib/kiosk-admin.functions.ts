@@ -48,7 +48,7 @@ export const sendKioskCommand = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({
     kioskId: z.string().uuid(),
-    command: z.enum(["refresh", "reset_experience", "test_ai"]),
+    command: z.enum(["refresh", "reset_experience", "test_ai", "ping"]),
   }).parse(input))
   .handler(async ({ context, data }) => {
     await requireAdmin(context);
@@ -59,4 +59,25 @@ export const sendKioskCommand = createServerFn({ method: "POST" })
       .single();
     if (error) throw error;
     return command;
+  });
+export const getDebugTimings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+    const { data, error } = await context.supabase
+      .from("debug_timings")
+      .select("id,created_at,source,kind,label,ms,session_id,kiosk,meta")
+      .order("created_at", { ascending: false })
+      .limit(400);
+    if (error) throw error;
+    return (data ?? []).map((r) => ({ ...r, meta: JSON.stringify(r.meta ?? {}) }));
+  });
+
+export const clearDebugTimings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+    const { error } = await context.supabase.from("debug_timings").delete().gte("created_at", "1970-01-01");
+    if (error) throw error;
+    return { ok: true };
   });

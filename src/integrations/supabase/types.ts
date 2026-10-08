@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      debug_timings: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          kiosk: string | null
+          label: string
+          meta: Json
+          ms: number | null
+          session_id: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          kiosk?: string | null
+          label: string
+          meta?: Json
+          ms?: number | null
+          session_id?: string | null
+          source: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          kiosk?: string | null
+          label?: string
+          meta?: Json
+          ms?: number | null
+          session_id?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       kiosk_commands: {
         Row: {
           acknowledged_at: string | null
