@@ -62,7 +62,7 @@ export async function baldifyFrame(
 ): Promise<void> {
   const form = buildForm(file, prompt, model);
   if (!partials) form.append("stream", "false");
-  const kind = prompt.startsWith("Photorealistically edit this exact camera photograph. It may contain one person, two people, a couple, a family, or a small group. Detect every clearly visible person and preserve every person's identity exactly. For EACH visible person independently, change") ? "zâmbet" : "chelie";
+  const kind = /smile/.test(prompt) ? "zâmbet" : "chelie";
   const t0 = performance.now();
   const logDone = (ok: boolean, extra: Record<string, unknown> = {}) =>
     void import("@/lib/debug-log").then(({ logTiming }) =>
