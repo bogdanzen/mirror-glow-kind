@@ -22,7 +22,7 @@ export function logTiming(kind: DebugKind, label: string, ms: number | null, met
     ms: ms == null ? null : Math.max(0, Math.round(ms)),
     session_id: currentSession().slice(0, 80),
     kiosk: kioskName || null,
-    meta,
+    meta: meta as never,
   };
   void Promise.resolve(supabase.from("debug_timings").insert(row)).catch(() => {});
 }
@@ -41,7 +41,7 @@ export async function runPing(count = 5): Promise<number[]> {
     await new Promise((r) => setTimeout(r, 300));
   }
   const ok = results.filter((v) => v >= 0).sort((a, b) => a - b);
-  const median = ok.length ? ok[Math.floor(ok.length / 2)] : null;
+  const median = ok.length ? (ok[Math.floor(ok.length / 2)] ?? null) : null;
   const conn = (navigator as Navigator & { connection?: { effectiveType?: string; rtt?: number; downlink?: number } }).connection;
   logTiming("ping", "Ping tabletă → server", median, {
     samples: results,
