@@ -12,6 +12,7 @@ import { enterFullscreen, installKioskHardening } from "@/lib/kiosk";
 import { currentSession, startSession, track } from "@/lib/metrics";
 import { cameraStyle, viewToFile } from "@/lib/cameraView";
 import { syncKiosk } from "@/lib/kiosk-remote";
+import { logTiming, setDebugKiosk } from "@/lib/debug-log";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
 import { CAPTURE_SETTLE_MS, CONSENT_CAPTURE_MS } from "@/lib/capture-timing";
 
@@ -207,6 +208,7 @@ export function MirrorV4() {
             setProcessing(false);
             setAiOk(true);
             setAiLatencyMs(Date.now() - startedAt);
+            logTiming("step", "Portret chelie afișabil (de la start)", Date.now() - startedAt, { screen: screenSinceRef.current.screen });
             setLastAiSuccessAt(new Date().toISOString());
           }
         },
@@ -235,6 +237,18 @@ export function MirrorV4() {
       stopCamera();
     };
   }, [stopCamera]);
+
+  // Timing log for /debug: how long each screen stayed visible.
+  const screenSinceRef = useRef<{ screen: Screen; at: number }>({ screen: "attract", at: 0 });
+  useEffect(() => {
+    setDebugKiosk(settingsRef.current.kioskName);
+    const now = performance.now();
+    const prev = screenSinceRef.current;
+    if (prev.at && prev.screen !== screen) {
+      logTiming("step", `Ecran ${prev.screen} → ${screen}`, now - prev.at, { from: prev.screen, to: screen });
+    }
+    screenSinceRef.current = { screen, at: now };
+  }, [screen]);
 
   // Keep the connection to the server permanently warm so a high-ping mall
   // line does not pay connection setup when a visitor starts.
