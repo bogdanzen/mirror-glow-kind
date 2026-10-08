@@ -19,5 +19,7 @@
 
 - Keep V4 FloatingLines lazily loaded after hydration in a scoped non-interactive layer, capped at 30 fps and paused in hidden tabs; this preserves SSR and tablet resources.
 - Keep FloatingLines default position objects referentially stable and start V4 viewing timers only after completed portraits load; parent timer updates must not recreate renderers or shorten portrait viewing.
+- Keep the capture settling delay in the shared capture-timing module with a regression test; both portraits must use the same delayed frame.
+- Use derivative-smoothed high-precision FloatingLines with a bounded drawing buffer; thin lines must remain legible without returning to native 4K rendering.
 
 - Load campaign typography fonts in both `/` and `/v4` route heads and scope measured text settings to the campaign; supporting pages must remain unchanged.
