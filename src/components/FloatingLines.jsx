@@ -16,7 +16,7 @@ import {
 // React Bits FloatingLines, adapted for the V4 kiosk's scoped decoration layer.
 
 const vertexShader = `
-precision highp float;
+precision mediump float;
 
 void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -24,7 +24,7 @@ void main() {
 `;
 
 const fragmentShader = `
-precision highp float;
+precision mediump float;
 
 uniform float iTime;
 uniform vec3  iResolution;
@@ -121,10 +121,7 @@ vec3 getLineColor(float t, vec3 baseColor) {
   }
 
   float m = uv.y - y;
-  // Narrow luminous thread with a small halo, and zero energy away from it.
-  // Integrate the thin core over a pixel footprint to avoid jagged, flickering edges.
-  float coreWidth = max(0.0015, fwidth(m) * 0.65);
-  float core = exp(-pow(m / coreWidth, 2.0)) * (0.0015 / coreWidth);
+  float core = exp(-pow(m / 0.0015, 2.0));
   float halo = exp(-pow(m / 0.006, 2.0)) * 0.12;
   return (core + halo) * 1.75;
 }
@@ -398,7 +395,7 @@ export default function FloatingLines({
       const height = container.clientHeight || 1;
 
       // Sharper on high-DPI tablets, while still bounded below native 4K cost.
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2, 1440 / width));
+      renderer.setPixelRatio(Math.min(1, 1080 / width));
       renderer.setSize(width, height, false);
 
       const canvasWidth = renderer.domElement.width;
