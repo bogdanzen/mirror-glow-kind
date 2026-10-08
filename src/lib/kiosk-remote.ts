@@ -55,7 +55,7 @@ export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
   if (!response.ok) throw new Error(`Monitorizare ${response.status}`);
   const result = (await response.json()) as {
     kioskId?: string;
-    command?: { id: string; command: "refresh" | "reset_experience" | "test_ai" };
+    command?: { id: string; command: "refresh" | "reset_experience" | "test_ai" | "ping" };
   };
   if (result.kioskId && result.kioskId !== identity.kioskId) {
     window.localStorage.setItem(ID_KEY, result.kioskId);
@@ -73,6 +73,11 @@ export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
     }),
   });
 
+  if (result.command.command === "ping") {
+    const { runPing } = await import("@/lib/debug-log");
+    void runPing();
+    return;
+  }
   if (result.command.command === "refresh") window.location.reload();
   if (result.command.command === "reset_experience") window.location.assign("/");
 }

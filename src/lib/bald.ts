@@ -62,12 +62,21 @@ export async function baldifyFrame(
 ): Promise<void> {
   const form = buildForm(file, prompt, model);
   if (!partials) form.append("stream", "false");
-  const res = await fetch("/api/bald", {
+  const kind = prompt.startsWith("Photorealistically edit this exact camera photograph. It may contain one person, two people, a couple, a family, or a small group. Detect every clearly visible person and preserve every person's identity exactly. For EACH visible person independently, change") ? "zâmbet" : "chelie";
+  const t0 = performance.now();
+  const logDone = (ok: boolean, extra: Record<string, unknown> = {}) =>
+    void import("@/lib/debug-log").then(({ logTiming }) =>
+      logTiming("ai", `AI ${kind} — total`, performance.now() - t0, { ok, uploadKb: Math.round(file.size / 1024), ...extra }),
+    ).catch(() => {});
+  let res: Response;
+  try { res = await fetch("/api/bald", {
     method: "POST",
     body: form,
     ...(signal ? { signal } : {}),
-  });
+  }); } catch (e) { logDone(false, { error: signal?.aborted ? "anulat" : "rețea" }); throw e; }
+  const ttfb = performance.now() - t0;
   if (!res.ok || !res.body) {
+    logDone(false, { status: res.status, ttfbMs: Math.round(ttfb) });
     throw new BaldError(
       `Fallback AI ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`,
       res.status,
@@ -78,6 +87,7 @@ export async function baldifyFrame(
     const json = (await res.json()) as { data?: { b64_json?: string }[] };
     const b64 = json.data?.[0]?.b64_json;
     if (!b64) throw new BaldError("Fallback AI nu a returnat imagine");
+    logDone(true, { ttfbMs: Math.round(ttfb), downloadKb: Math.round((b64.length * 3) / 4 / 1024), serverMs: Number(res.headers.get("X-Mirror-Upstream-Ms")) || null });
     onFrame(dataUrl(b64), true);
     return;
   }
