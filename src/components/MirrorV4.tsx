@@ -13,6 +13,7 @@ import { currentSession, startSession, track } from "@/lib/metrics";
 import { cameraStyle, viewToFile } from "@/lib/cameraView";
 import { syncKiosk } from "@/lib/kiosk-remote";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
+import { CAPTURE_SETTLE_MS } from "@/lib/capture-timing";
 
 type Screen = "attract" | "consent" | "framing" | "mirror" | "choice" | "healthy" | "final" | "donate";
 
@@ -146,7 +147,7 @@ export function MirrorV4() {
       }
       // Give visitors a moment to step back into the final framing after consent.
       await new Promise<void>((resolve) => {
-        const id = window.setTimeout(resolve, 1500);
+        const id = window.setTimeout(resolve, CAPTURE_SETTLE_MS);
         controller.signal.addEventListener("abort", () => {
           window.clearTimeout(id);
           resolve();

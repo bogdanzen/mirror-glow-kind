@@ -13,6 +13,7 @@
 - [ ] Verification of first-frame ≤5 s over 5 warm sessions must be run on the kiosk/user machine: this sandbox browser produces no ICE candidates, so WebRTC media cannot be validated here.
 
 ## Done
+- [x] Improve tablet line clarity with derivative smoothing and a bounded higher-resolution canvas; add one second to the capture settling pause.
 - [x] Restore white Vertical Freedom/Lions opening logos and the supplied transparent butterfly video with random left/right crossings, 5–6 appearances per minute, hidden-tab and reduced-motion pauses.
 - [x] Promote V4 to the main page with its typography; keep `/v4` available as an alternate address.
 - [x] V4 display polish: full viewing timers after completed portrait loads, continuous FloatingLines through timer ticks, measured Figma QR frames/backing/padding, equal inset taupe screen outline.
