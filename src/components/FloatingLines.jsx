@@ -16,7 +16,7 @@ import {
 // React Bits FloatingLines, adapted for the V4 kiosk's scoped decoration layer.
 
 const vertexShader = `
-precision highp float;
+precision mediump float;
 
 void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -24,7 +24,7 @@ void main() {
 `;
 
 const fragmentShader = `
-precision highp float;
+precision mediump float;
 
 uniform float iTime;
 uniform vec3  iResolution;
@@ -305,7 +305,7 @@ export default function FloatingLines({
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'low-power' });
     renderer.setClearAlpha(0);
     renderer.setPixelRatio(1);
     renderer.domElement.style.width = '100%';
@@ -395,6 +395,8 @@ export default function FloatingLines({
       const width = container.clientWidth || 1;
       const height = container.clientHeight || 1;
 
+      // Cap the drawing buffer at ~1080px wide; CSS stretches it to fill.
+      renderer.setPixelRatio(Math.min(1, 1080 / width));
       renderer.setSize(width, height, false);
 
       const canvasWidth = renderer.domElement.width;
