@@ -163,7 +163,7 @@ export function MirrorV4() {
         // The smile portrait is a bonus: if the AI refuses it, keep the live
         // camera on the choice screen instead of surfacing an error.
         try {
-          await baldifyFrame(
+          await (async () => { try { await baldifyFrame(
             baldFrame,
             SMILE_PROMPT,
             (url, isFinal) => {
@@ -172,14 +172,31 @@ export function MirrorV4() {
             controller.signal,
             settings.fallbackModel,
             false,
-          );
+          ); } catch (e) {
+            const status = (e as { status?: number }).status ?? 0;
+            if (controller.signal.aborted || (status && status !== 429 && status < 500)) throw e;
+            await baldifyFrame(baldFrame, SMILE_PROMPT, (url, isFinal) => {
+              if (!controller.signal.aborted && isFinal) setSmileUrl(url);
+            }, controller.signal, settings.fallbackModel, false);
+          } })();
         } catch (smileError) {
           if (controller.signal.aborted) return;
           console.warn("[smile]", smileError instanceof Error ? smileError.message : smileError);
           setSmileFailed(true);
         }
       })();
-      await baldifyFrame(
+      // One automatic retry on a dropped connection or server hiccup keeps the
+      // mall kiosk reliable on a high-latency line.
+      const withRetry = async (run: () => Promise<void>) => {
+        try { await run(); } catch (e) {
+          const status = (e as { status?: number }).status ?? 0;
+          if (controller.signal.aborted || (status && status !== 429 && status < 500)) throw e;
+          await new Promise((r) => window.setTimeout(r, 800));
+          if (controller.signal.aborted) return;
+          await run();
+        }
+      };
+      await withRetry(() => baldifyFrame(
         baldFrame,
         FALLBACK_PROMPT,
         (url, isFinal) => {
@@ -194,8 +211,8 @@ export function MirrorV4() {
         },
         controller.signal,
         settings.fallbackModel,
-        true,
-      );
+        false,
+      ));
       await smileJob;
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -217,6 +234,15 @@ export function MirrorV4() {
       stopCamera();
     };
   }, [stopCamera]);
+
+  // Keep the connection to the server permanently warm so a high-ping mall
+  // line does not pay connection setup when a visitor starts.
+  useEffect(() => {
+    const ping = () => { void fetch("/api/bald", { method: "GET", cache: "no-store", keepalive: true }).catch(() => {}); };
+    ping();
+    const id = window.setInterval(ping, 4000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     let active = true;
