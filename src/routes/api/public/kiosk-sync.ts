@@ -13,6 +13,8 @@ const heartbeat = z.object({
   lastAiSuccessAt: z.string().datetime().nullable(),
   lastError: z.string().max(500).nullable(),
   sessionActive: z.boolean(),
+  orientation: z.string().max(60).optional(),
+  flipped: z.boolean().optional(),
 });
 
 const acknowledgement = z.object({
@@ -70,6 +72,8 @@ export const Route = createFileRoute("/api/public/kiosk-sync")({
           user_agent: request.headers.get("user-agent"),
           viewport: request.headers.get("x-kiosk-viewport"),
           session_active: body.sessionActive,
+          orientation: body.orientation ?? null,
+          flipped: body.flipped ?? false,
           updated_at: now,
         }).eq("id", kioskId);
         if (statusError) throw statusError;
@@ -85,7 +89,8 @@ export const Route = createFileRoute("/api/public/kiosk-sync")({
         if (command && !command.delivered_at) {
           await supabaseAdmin.from("kiosk_commands").update({ delivered_at: now }).eq("id", command.id);
         }
-        return Response.json({ kioskId, command: command ?? null });
+        const { data: flip } = await supabaseAdmin.from("kiosk_status").select("flip_mode").eq("id", kioskId).maybeSingle();
+        return Response.json({ kioskId, flipMode: flip?.flip_mode ?? "auto", command: command ?? null });
       },
       PATCH: async ({ request }) => {
         const parsed = acknowledgement.safeParse(await request.json().catch(() => null));

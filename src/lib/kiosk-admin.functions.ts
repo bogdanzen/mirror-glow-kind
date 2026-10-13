@@ -38,7 +38,7 @@ export const getKioskStatuses = createServerFn({ method: "GET" })
     await requireAdmin(context);
     const { data, error } = await context.supabase
       .from("kiosk_status")
-      .select("id,kiosk_name,last_seen,current_screen,camera_ok,ai_ok,ai_latency_ms,last_ai_success_at,last_error,app_version,user_agent,viewport,session_active,updated_at")
+      .select("id,kiosk_name,last_seen,current_screen,camera_ok,ai_ok,ai_latency_ms,last_ai_success_at,last_error,app_version,user_agent,viewport,session_active,updated_at,flip_mode,orientation,flipped")
       .order("last_seen", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -78,6 +78,17 @@ export const clearDebugTimings = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await requireAdmin(context);
     const { error } = await context.supabase.from("debug_timings").delete().gte("created_at", "1970-01-01");
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const setKioskFlip = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input) => z.object({ kioskId: z.string().uuid(), mode: z.enum(["auto", "on", "off"]) }).parse(input))
+  .handler(async ({ context, data }) => {
+    await requireAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("kiosk_status").update({ flip_mode: data.mode }).eq("id", data.kioskId);
     if (error) throw error;
     return { ok: true };
   });

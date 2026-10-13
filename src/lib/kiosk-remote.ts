@@ -44,22 +44,27 @@ function viewportReport() {
 
 export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
   const identity = remoteIdentity();
+  const { osOrientation, isFlipped, applyFlip, watchFlip } = await import("@/lib/kiosk-flip");
+  watchFlip();
+  const o = osOrientation();
   const response = await fetch("/api/public/kiosk-sync", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Kiosk-Viewport": viewportReport(),
     },
-    body: JSON.stringify({ ...identity, ...telemetry }),
+    body: JSON.stringify({ ...identity, ...telemetry, orientation: `${o.type} ${o.angle}°`, flipped: isFlipped() }),
   });
   if (!response.ok) throw new Error(`Monitorizare ${response.status}`);
   const result = (await response.json()) as {
     kioskId?: string;
+    flipMode?: "auto" | "on" | "off";
     command?: { id: string; command: "refresh" | "reset_experience" | "test_ai" | "ping" };
   };
   if (result.kioskId && result.kioskId !== identity.kioskId) {
     window.localStorage.setItem(ID_KEY, result.kioskId);
   }
+  if (result.flipMode) applyFlip(result.flipMode);
   if (!result.command) return;
 
   await fetch("/api/public/kiosk-sync", {
