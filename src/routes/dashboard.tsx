@@ -204,7 +204,7 @@ function Dashboard() {
               <p className="text-xs uppercase tracking-[0.3em] text-primary">Raport campanie · {RANGES.find((r) => r.id === range)?.label}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Generat {new Date().toLocaleString("ro-RO")}
-                {days.length > 0 && ` · ${new Date(`${days[0].day}T12:00:00`).toLocaleDateString("ro-RO")} – ${new Date(`${days[days.length - 1].day}T12:00:00`).toLocaleDateString("ro-RO")}`}
+                {days.length > 0 && ` · ${new Date(`${days[0]?.day}T12:00:00`).toLocaleDateString("ro-RO")} – ${new Date(`${days[days.length - 1]?.day}T12:00:00`).toLocaleDateString("ro-RO")}`}
               </p>
             </div>
             <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
