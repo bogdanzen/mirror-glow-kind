@@ -15,6 +15,13 @@
       "when": 1791473180030,
       "tag": "0001_debug_timings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791891762185,
+      "tag": "0002_kiosk_flip_mode",
+      "breakpoints": true
     }
   ]
 }
