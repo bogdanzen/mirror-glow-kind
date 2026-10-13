@@ -7,6 +7,7 @@ import {
   getKioskStatuses,
   initializeRemoteAdmin,
   sendKioskCommand,
+  setKioskFlip,
 } from "@/lib/kiosk-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/remote")({
@@ -51,6 +52,7 @@ function RemoteControl() {
   const initialize = useServerFn(initializeRemoteAdmin);
   const getStatuses = useServerFn(getKioskStatuses);
   const sendCommand = useServerFn(sendKioskCommand);
+  const flip = useServerFn(setKioskFlip);
   const [rows, setRows] = useState<KioskStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -98,6 +100,17 @@ function RemoteControl() {
     } catch (cause) {
       setMessage("");
       setError(cause instanceof Error ? cause.message : "Comanda nu a putut fi trimisă");
+    }
+  };
+
+  const changeFlip = async (kioskId: string, mode: "auto" | "on" | "off") => {
+    setError("");
+    try {
+      await flip({ data: { kioskId, mode } });
+      setMessage("Orientare trimisă. Tableta o aplică în maximum 10 secunde.");
+      void load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Orientarea nu a putut fi schimbată");
     }
   };
 
@@ -162,6 +175,12 @@ function RemoteControl() {
                   })()}</dd></div>
                   <div><dt className="text-muted-foreground">Ecran tabletă</dt><dd className="mt-1">{row.viewport?.split("|").slice(0, 2).join(" · ") || "—"}</dd></div>
                   <div className="col-span-2"><dt className="text-muted-foreground">Dispozitiv</dt><dd className="mt-1 break-words text-xs">{row.user_agent || "—"}</dd></div>
+                  <div><dt className="text-muted-foreground">Orientare raportată de tabletă</dt><dd className="mt-1 flex items-center gap-2">{(() => {
+                    if (!row.orientation) return "Necunoscută (tableta are versiune veche)";
+                    const upside = /180/.test(row.orientation) || /secondary/.test(row.orientation);
+                    return <><Dot ok={!upside} />{upside ? "Cu capul în jos" : "Normală (în picioare)"} <span className="text-xs text-muted-foreground">{row.orientation}</span></>;
+                  })()}</dd></div>
+                  <div><dt className="text-muted-foreground">Afișaj întors 180°</dt><dd className="mt-1">{row.flipped ? "Da — imaginea și camera sunt întoarse" : "Nu"}</dd></div>
                   <div><dt className="text-muted-foreground">Versiune</dt><dd className="mt-1">{row.app_version}</dd></div>
                 </dl>
 
@@ -169,6 +188,15 @@ function RemoteControl() {
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Button onClick={() => void command(row.id, "refresh")} disabled={!online} className="rounded-none">Forțează refresh</Button>
                   <Button onClick={() => void command(row.id, "reset_experience")} disabled={!online} variant="outline" className="rounded-none">Revino la început</Button>
+                </div>
+                <div className="mt-6">
+                  <p className="text-sm text-muted-foreground">Întoarce ecranul și camera</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {([["auto", "Automat"], ["on", "Întors 180°"], ["off", "Normal"]] as const).map(([mode, label]) => (
+                      <Button key={mode} size="sm" variant={row.flip_mode === mode ? "default" : "outline"} className="rounded-none" onClick={() => void changeFlip(row.id, mode)}>{label}</Button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">Automat întoarce totul când tableta raportează că a pornit cu capul în jos. Dacă tableta nu-și dă seama (fără senzor de mișcare), alege manual „Întors 180°”.</p>
                 </div>
               </article>
             );
