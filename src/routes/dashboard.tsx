@@ -101,7 +101,7 @@ function Dashboard() {
   }));
   const best = days.reduce<typeof days[number] | null>((b, d) => (!b || d.sessions > b.sessions ? d : b), null);
   const activeDays = days.filter((d) => d.sessions > 0).length;
-  const peak = hours.reduce((b, h) => (h.sessions > b.sessions ? h : b), hours[0]);
+  const peak = hours.reduce((b, h) => (!b || h.sessions > b.sessions ? h : b), hours[0]);
 
   const exportPdf = async () => {
     const node = reportRef.current;
