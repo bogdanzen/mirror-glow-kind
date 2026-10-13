@@ -688,3 +688,12 @@ html:has(.v2-shell) { font-size: max(16px, calc(100vw / 67.5)); }
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Upside-down tablet compensation (set by src/lib/kiosk-flip.ts on the kiosk only). */
+html.kiosk-flipped body {
+  transform: rotate(180deg);
+  transform-origin: 50% 50%;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+}

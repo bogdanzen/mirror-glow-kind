@@ -169,3 +169,63 @@ export function summarize(rows: MirrorEventRow[]): Totals {
       .sort((a, b) => b.sessions - a.sessions),
   };
 }
+
+export type DayRow = {
+  day: string; // YYYY-MM-DD local
+  sessions: number;
+  consent: number;
+  mirror: number;
+  final: number;
+  qrScans: number;
+  donations: number;
+};
+
+function localDay(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Per-day counts; a session belongs to the day of its first event. Days without activity are included. */
+export function dailySeries(rows: MirrorEventRow[]): DayRow[] {
+  const firstSeen = new Map<string, string>();
+  for (const r of rows) {
+    const prev = firstSeen.get(r.session_id);
+    if (!prev || r.created_at < prev) firstSeen.set(r.session_id, r.created_at);
+  }
+  const days = new Map<string, DayRow>();
+  const get = (day: string) => {
+    const v = days.get(day) ?? { day, sessions: 0, consent: 0, mirror: 0, final: 0, qrScans: 0, donations: 0 };
+    days.set(day, v);
+    return v;
+  };
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const day = localDay(firstSeen.get(r.session_id) ?? r.created_at);
+    const key = `${r.session_id}|${r.event}`;
+    if (r.event === "qr_scan") { get(day).qrScans += 1; continue; }
+    if (r.event === "donate_click") { get(day).donations += 1; continue; }
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (r.event === "start") get(day).sessions += 1;
+    if (r.event === "consent") get(day).consent += 1;
+    if (r.event === "mirror") get(day).mirror += 1;
+    if (r.event === "final") get(day).final += 1;
+  }
+  const keys = [...days.keys()].sort();
+  if (keys.length === 0) return [];
+  const out: DayRow[] = [];
+  const cur = new Date(`${keys[0]}T12:00:00`);
+  const end = new Date(`${keys[keys.length - 1]}T12:00:00`);
+  while (cur <= end) {
+    out.push(get(localDay(cur.toISOString())));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
+
+/** Sessions started per hour of day (0–23), for peak-time planning. */
+export function hourlyStarts(rows: MirrorEventRow[]): { hour: number; sessions: number }[] {
+  const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, sessions: 0 }));
+  for (const r of rows) if (r.event === "start") { const h = hours[new Date(r.created_at).getHours()]; if (h) h.sessions += 1; }
+  return hours;
+}

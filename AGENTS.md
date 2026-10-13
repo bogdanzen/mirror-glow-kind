@@ -23,3 +23,4 @@
 - Use derivative-smoothed high-precision FloatingLines with a bounded drawing buffer; thin lines must remain legible without returning to native 4K rendering.
 
 - Load campaign typography fonts in both `/` and `/v4` route heads and scope measured text settings to the campaign; supporting pages must remain unchanged.
+- Upside-down kiosk compensation lives in src/lib/kiosk-flip.ts: remote flip_mode (auto/on/off) on kiosk_status rotates the whole page 180° and adds 180° to captured frames; the tablet has no motion sensor, so auto relies on the OS-reported orientation.
