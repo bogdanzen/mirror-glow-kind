@@ -129,7 +129,7 @@ function Dashboard() {
         ctx.fillRect(0, 0, part.width, part.height);
         ctx.drawImage(canvas, 0, y, part.width, part.height, 0, 0, part.width, part.height);
         if (page > 0) pdf.addPage();
-        pdf.setFillColor(fill[0], fill[1], fill[2]);
+        pdf.setFillColor(fill[0] ?? 0, fill[1] ?? 0, fill[2] ?? 0);
         pdf.rect(0, 0, pageW, pageH, "F");
         pdf.addImage(part.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, imgW, part.height / pxPerMm);
       }
