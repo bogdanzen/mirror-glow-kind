@@ -118,6 +118,7 @@ function Dashboard() {
       const imgW = pageW - margin * 2;
       const pxPerMm = canvas.width / imgW;
       const sliceH = Math.floor((pageH - margin * 2) * pxPerMm);
+      const fill = canvas.getContext("2d")?.getImageData(2, 2, 1, 1).data ?? [0, 0, 0];
       for (let y = 0, page = 0; y < canvas.height; y += sliceH, page++) {
         const part = document.createElement("canvas");
         part.width = canvas.width;
@@ -128,8 +129,7 @@ function Dashboard() {
         ctx.fillRect(0, 0, part.width, part.height);
         ctx.drawImage(canvas, 0, y, part.width, part.height, 0, 0, part.width, part.height);
         if (page > 0) pdf.addPage();
-        const px = ctx.getImageData(0, 0, 1, 1).data;
-        pdf.setFillColor(px[0], px[1], px[2]);
+        pdf.setFillColor(fill[0], fill[1], fill[2]);
         pdf.rect(0, 0, pageW, pageH, "F");
         pdf.addImage(part.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, imgW, part.height / pxPerMm);
       }

@@ -226,6 +226,6 @@ export function dailySeries(rows: MirrorEventRow[]): DayRow[] {
 /** Sessions started per hour of day (0–23), for peak-time planning. */
 export function hourlyStarts(rows: MirrorEventRow[]): { hour: number; sessions: number }[] {
   const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, sessions: 0 }));
-  for (const r of rows) if (r.event === "start") hours[new Date(r.created_at).getHours()].sessions += 1;
+  for (const r of rows) if (r.event === "start") { const h = hours[new Date(r.created_at).getHours()]; if (h) h.sessions += 1; }
   return hours;
 }
