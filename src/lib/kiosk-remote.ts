@@ -59,7 +59,7 @@ export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
   const result = (await response.json()) as {
     kioskId?: string;
     flipMode?: "auto" | "on" | "off";
-    command?: { id: string; command: "refresh" | "reset_experience" | "test_ai" | "ping" };
+    command?: { id: string; command: "refresh" | "reset_experience" | "test_ai" | "ping" | "screenshot" };
   };
   if (result.kioskId && result.kioskId !== identity.kioskId) {
     window.localStorage.setItem(ID_KEY, result.kioskId);
@@ -78,6 +78,17 @@ export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
     }),
   });
 
+  if (result.command.command === "screenshot") {
+    try {
+      const shot = await captureScreen(isFlipped());
+      await fetch("/api/public/kiosk-sync", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kioskId: result.kioskId ?? identity.kioskId, token: identity.token, commandId: result.command.id, result: "Captură trimisă", screenshot: shot }),
+      });
+    } catch { /* non-fatal */ }
+    return;
+  }
   if (result.command.command === "ping") {
     const { runPing } = await import("@/lib/debug-log");
     void runPing();
@@ -85,4 +96,23 @@ export async function syncKiosk(telemetry: KioskTelemetry): Promise<void> {
   }
   if (result.command.command === "refresh") window.location.reload();
   if (result.command.command === "reset_experience") window.location.assign("/");
+}
+
+/** Screen capture WITHOUT camera: <video> elements are skipped, so no visitor image leaves the tablet. */
+async function captureScreen(flipped: boolean): Promise<string> {
+  const { default: html2canvas } = await import("html2canvas-pro");
+  const scale = Math.min(1, 480 / window.innerWidth);
+  const src = await html2canvas(document.body, {
+    scale,
+    backgroundColor: "#000",
+    logging: false,
+    ignoreElements: (el) => el.tagName === "VIDEO" || el.hasAttribute("data-camera"),
+  });
+  const out = document.createElement("canvas");
+  out.width = src.width;
+  out.height = src.height;
+  const ctx = out.getContext("2d")!;
+  if (flipped) { ctx.translate(out.width, out.height); ctx.rotate(Math.PI); }
+  ctx.drawImage(src, 0, 0);
+  return out.toDataURL("image/jpeg", 0.6);
 }

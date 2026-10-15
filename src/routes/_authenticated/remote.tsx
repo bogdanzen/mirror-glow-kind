@@ -91,12 +91,12 @@ function RemoteControl() {
     };
   }, [load]);
 
-  const command = async (kioskId: string, value: "refresh" | "reset_experience") => {
+  const command = async (kioskId: string, value: "refresh" | "reset_experience" | "screenshot") => {
     setMessage("Trimit comanda…");
     setError("");
     try {
       await sendCommand({ data: { kioskId, command: value } });
-      setMessage(value === "refresh" ? "Refresh trimis. Tableta îl preia în maximum 10 secunde." : "Reset trimis.");
+      setMessage(value === "refresh" ? "Refresh trimis. Tableta îl preia în maximum 10 secunde." : value === "screenshot" ? "Cerere de captură trimisă. Apare mai jos în ~10–15 secunde." : "Reset trimis.");
     } catch (cause) {
       setMessage("");
       setError(cause instanceof Error ? cause.message : "Comanda nu a putut fi trimisă");
@@ -188,6 +188,16 @@ function RemoteControl() {
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Button onClick={() => void command(row.id, "refresh")} disabled={!online} className="rounded-none">Forțează refresh</Button>
                   <Button onClick={() => void command(row.id, "reset_experience")} disabled={!online} variant="outline" className="rounded-none">Revino la început</Button>
+                </div>
+                <div className="mt-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm text-muted-foreground">Captură ecran {row.screenshot_at ? `· ${ago(row.screenshot_at, now)}` : ""}</p>
+                    <Button size="sm" variant="outline" className="rounded-none" disabled={!online} onClick={() => void command(row.id, "screenshot")}>Fă captură acum</Button>
+                  </div>
+                  {row.screenshot
+                    ? <img src={row.screenshot} alt="Captură a ecranului tabletei" className="mt-3 max-h-[60vh] border border-hairline" />
+                    : <p className="mt-2 text-xs text-muted-foreground">Nicio captură încă.</p>}
+                  <p className="mt-2 text-xs text-muted-foreground">Arată ce desenează tableta, fără imaginea camerei (zona camerei apare neagră). Dacă textul apare întors aici, afișajul este întors față de orientarea tabletei.</p>
                 </div>
                 <div className="mt-6">
                   <p className="text-sm text-muted-foreground">Întoarce ecranul și camera</p>
