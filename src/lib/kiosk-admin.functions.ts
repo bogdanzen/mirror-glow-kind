@@ -38,7 +38,7 @@ export const getKioskStatuses = createServerFn({ method: "GET" })
     await requireAdmin(context);
     const { data, error } = await context.supabase
       .from("kiosk_status")
-      .select("id,kiosk_name,last_seen,current_screen,camera_ok,ai_ok,ai_latency_ms,last_ai_success_at,last_error,app_version,user_agent,viewport,session_active,updated_at,flip_mode,orientation,flipped")
+      .select("id,kiosk_name,last_seen,current_screen,camera_ok,ai_ok,ai_latency_ms,last_ai_success_at,last_error,app_version,user_agent,viewport,session_active,updated_at,flip_mode,orientation,flipped,screenshot,screenshot_at")
       .order("last_seen", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -48,7 +48,7 @@ export const sendKioskCommand = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input) => z.object({
     kioskId: z.string().uuid(),
-    command: z.enum(["refresh", "reset_experience", "test_ai", "ping"]),
+    command: z.enum(["refresh", "reset_experience", "test_ai", "ping", "screenshot"]),
   }).parse(input))
   .handler(async ({ context, data }) => {
     await requireAdmin(context);

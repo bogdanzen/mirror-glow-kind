@@ -22,6 +22,7 @@ const acknowledgement = z.object({
   token: z.string().min(40).max(200),
   commandId: z.string().uuid(),
   result: z.string().max(200),
+  screenshot: z.string().startsWith("data:image/jpeg;base64,").max(600_000).optional(),
 });
 
 function digest(token: string) {
@@ -104,6 +105,9 @@ export const Route = createFileRoute("/api/public/kiosk-sync")({
           result: body.result,
         }).eq("id", body.commandId).eq("kiosk_id", body.kioskId);
         if (error) throw error;
+        if (body.screenshot) {
+          await supabaseAdmin.from("kiosk_status").update({ screenshot: body.screenshot, screenshot_at: new Date().toISOString() }).eq("id", body.kioskId);
+        }
         return Response.json({ ok: true });
       },
     },

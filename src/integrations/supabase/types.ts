@@ -106,6 +106,8 @@ export type Database = {
           last_error: string | null
           last_seen: string
           orientation: string | null
+          screenshot: string | null
+          screenshot_at: string | null
           session_active: boolean
           token_hash: string
           updated_at: string
@@ -126,6 +128,8 @@ export type Database = {
           last_error?: string | null
           last_seen?: string
           orientation?: string | null
+          screenshot?: string | null
+          screenshot_at?: string | null
           session_active?: boolean
           token_hash: string
           updated_at?: string
@@ -146,6 +150,8 @@ export type Database = {
           last_error?: string | null
           last_seen?: string
           orientation?: string | null
+          screenshot?: string | null
+          screenshot_at?: string | null
           session_active?: boolean
           token_hash?: string
           updated_at?: string
