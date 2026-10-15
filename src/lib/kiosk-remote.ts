@@ -106,7 +106,7 @@ async function captureScreen(flipped: boolean): Promise<string> {
     scale,
     backgroundColor: "#000",
     logging: false,
-    ignoreElements: (el) => el.tagName === "VIDEO" || el.hasAttribute("data-camera"),
+    ignoreElements: (el) => el.tagName === "VIDEO" || el.hasAttribute("data-camera") || (el instanceof HTMLImageElement && /^(data|blob):/.test(el.src)),
   });
   const out = document.createElement("canvas");
   out.width = src.width;
