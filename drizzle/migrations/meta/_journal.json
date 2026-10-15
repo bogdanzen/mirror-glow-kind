@@ -29,6 +29,13 @@
       "when": 1792076631315,
       "tag": "0003_office_email_admin_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792077314839,
+      "tag": "0004_kiosk_screenshot",
+      "breakpoints": true
     }
   ]
 }
