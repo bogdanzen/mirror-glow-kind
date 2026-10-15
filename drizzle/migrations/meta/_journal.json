@@ -22,6 +22,13 @@
       "when": 1791891762185,
       "tag": "0002_kiosk_flip_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792076631315,
+      "tag": "0003_office_email_admin_trigger",
+      "breakpoints": true
     }
   ]
 }
