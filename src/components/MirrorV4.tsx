@@ -388,7 +388,8 @@ export function MirrorV4() {
 
   useEffect(() => {
     if (screen !== "final" && screen !== "donate") return;
-    setPresenceSeconds(settings.idleTimeoutSeconds);
+    // Final/donation screens always last 15s on every kiosk, regardless of saved settings.
+    setPresenceSeconds(15);
     const id = window.setInterval(() => {
       setPresenceSeconds((seconds) => {
         if (seconds <= 1) {
