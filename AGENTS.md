@@ -24,3 +24,4 @@
 
 - Load campaign typography fonts in both `/` and `/v4` route heads and scope measured text settings to the campaign; supporting pages must remain unchanged.
 - Upside-down kiosk compensation lives in src/lib/kiosk-flip.ts: remote flip_mode (auto/on/off) on kiosk_status rotates the whole page 180° and adds 180° to captured frames; the tablet has no motion sensor, so auto relies on the OS-reported orientation.
+- Gate the portrait capture on the browser-native FaceDetector (src/lib/face-gate.ts), polled only while waiting and skipped when unsupported; avoids blank captures without adding detection libraries.
