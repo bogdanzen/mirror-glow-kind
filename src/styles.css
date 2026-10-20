@@ -697,3 +697,6 @@ html.kiosk-flipped body {
   height: 100dvh;
   overflow: hidden;
 }
+
+/* Generated portraits come back upright from the AI; undo the page flip for them. */
+html.kiosk-flipped .v2-generated-portrait { rotate: 180deg; }
