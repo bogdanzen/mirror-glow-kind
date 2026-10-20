@@ -211,10 +211,10 @@
 .v4-terms p { position: absolute; left: 9.027778%; width: 81.944444%; }
 /* ACCEPTĂ sits at the exact screen centre so it stays tappable even when the
    page is flipped 180° but the touch layer is not. */
-.v4-terms p:nth-child(1) { top: 21%; }
+.v4-terms p:nth-child(1) { top: 24.5%; }
 .v4-terms p:nth-child(2) { top: 57%; }
 .v4-terms p:nth-child(3) { top: 76%; }
-.v4-consent .v4-divider { position: absolute; top: 41.5%; margin: 0; }
+.v4-consent .v4-divider { position: absolute; top: 43%; margin: 0; }
 .v4-consent-pill { position: absolute; top: 46.744792%; width: 63.888889%; left: 18.055556%; height: 6.510417%; min-height: 0; margin: 0; }
 .v4-consent > .v4-text-link { position: absolute; top: 88%; }
 .v4-consent-qr { position: absolute; right: 6%; bottom: 4.5%; display: flex; flex-direction: column; align-items: center; gap: 0.8vw; z-index: 2; }
