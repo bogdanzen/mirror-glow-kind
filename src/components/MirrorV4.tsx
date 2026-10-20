@@ -158,6 +158,9 @@ export function MirrorV4() {
 
       // 640px is plenty for a face edit and uploads ~30% faster on a slow line.
       const { isFlipped } = await import("@/lib/kiosk-flip");
+      // Only take the photo once a face is actually in front of the camera.
+      const { waitForFace } = await import("@/lib/face-gate");
+      if (!(await waitForFace(video, isFlipped(), controller.signal))) return;
       const flipView = isFlipped() ? { ...settingsRef.current, camRotation: settingsRef.current.camRotation + 180 } : settingsRef.current;
       const baldFrame = viewToFile(video, flipView, window.innerWidth, window.innerHeight, 640);
       if (!baldFrame) throw new Error("Nu am putut prelua imaginea camerei");
