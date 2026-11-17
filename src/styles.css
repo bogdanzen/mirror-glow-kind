@@ -689,4 +689,14 @@ html:has(.v2-shell) { font-size: max(16px, calc(100vw / 67.5)); }
   -webkit-overflow-scrolling: touch;
 }
 
-/* Upside-down camera compensation: only the camera feed turns (src/lib/kiosk-flip.ts + MirrorV4). */
+/* Upside-down tablet compensation (set by src/lib/kiosk-flip.ts on the kiosk only). */
+html.kiosk-flipped body {
+  transform: rotate(180deg);
+  transform-origin: 50% 50%;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Generated portraits come back upright from the AI; undo the page flip for them. */
+html.kiosk-flipped .v2-generated-portrait { rotate: 180deg; }

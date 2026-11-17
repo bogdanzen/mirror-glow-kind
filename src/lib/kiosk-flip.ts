@@ -32,7 +32,7 @@ export function isFlipped(): boolean {
   return typeof document !== "undefined" && document.documentElement.classList.contains("kiosk-flipped");
 }
 
-/** Marks the kiosk flipped; only the camera feed (preview + captured frame) turns 180°. */
+/** Applies the 180° turn to the whole page (camera preview included). */
 export function applyFlip(mode: FlipMode = readFlipMode()) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(MODE_KEY, mode);
