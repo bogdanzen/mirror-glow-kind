@@ -165,11 +165,11 @@ export function MirrorV4() {
       if (controller.signal.aborted) return;
 
       // 640px is plenty for a face edit and uploads ~30% faster on a slow line.
-      const { isFlipped } = await import("@/lib/kiosk-flip");
       // Only take the photo once a face is actually in front of the camera.
       const { waitForFace } = await import("@/lib/face-gate");
-      if (!(await waitForFace(video, isFlipped(), controller.signal))) return;
-      const flipView = isFlipped() ? { ...settingsRef.current, camRotation: settingsRef.current.camRotation + 180 } : settingsRef.current;
+      if (!(await waitForFace(video, false, controller.signal))) return;
+      // The feed is counter-rotated on flipped kiosks, so visitors see the raw camera view; capture it as-is.
+      const flipView = settingsRef.current;
       const baldFrame = viewToFile(video, flipView, window.innerWidth, window.innerHeight, 640);
       if (!baldFrame) throw new Error("Nu am putut prelua imaginea camerei");
       // Run both portraits in parallel from the same frame so the smile is
