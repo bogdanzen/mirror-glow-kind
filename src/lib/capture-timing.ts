@@ -1,4 +1,4 @@
-/** Settling pause before taking the shared frame for both portraits. */
-export const CAPTURE_SETTLE_MS = 1500;
-/** The frame is captured this long after the consent screen appears. */
-export const CONSENT_CAPTURE_MS = 3000;
+/** The shared frame for both portraits is taken this long after ACCEPTĂ is tapped. */
+export const CAPTURE_SETTLE_MS = 2000;
+/** Pause before the 5-4-3-2-1 countdown starts, so visitors can turn back to the screen. */
+export const COUNTDOWN_START_DELAY_MS = 2000;

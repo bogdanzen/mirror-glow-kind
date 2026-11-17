@@ -596,7 +596,7 @@
 }
 
 .v2-generated-portrait {
-  object-fit: fill;
+  object-fit: cover;
   -webkit-mask-image: radial-gradient(ellipse 88% 92% at center, black 62%, rgba(0, 0, 0, 0.9) 74%, transparent 100%);
   mask-image: radial-gradient(ellipse 88% 92% at center, black 62%, rgba(0, 0, 0, 0.9) 74%, transparent 100%);
 }
@@ -698,5 +698,4 @@ html.kiosk-flipped body {
   overflow: hidden;
 }
 
-/* Generated portraits come back upright from the AI; undo the page flip for them. */
-html.kiosk-flipped .v2-generated-portrait { rotate: 180deg; }
+/* Generated portraits are captured exactly like the live feed, so they rotate with the page like it. */

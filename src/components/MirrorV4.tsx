@@ -14,7 +14,7 @@ import { cameraStyle, viewToFile } from "@/lib/cameraView";
 import { syncKiosk } from "@/lib/kiosk-remote";
 import { logTiming, setDebugKiosk } from "@/lib/debug-log";
 import { DEFAULT_SETTINGS, loadSettings, type MirrorSettings } from "@/lib/settings";
-import { CAPTURE_SETTLE_MS, CONSENT_CAPTURE_MS } from "@/lib/capture-timing";
+import { CAPTURE_SETTLE_MS, COUNTDOWN_START_DELAY_MS } from "@/lib/capture-timing";
 
 type Screen = "attract" | "consent" | "framing" | "mirror" | "choice" | "healthy" | "final" | "donate";
 
@@ -167,9 +167,10 @@ export function MirrorV4() {
       // 640px is plenty for a face edit and uploads ~30% faster on a slow line.
       // Only take the photo once a face is actually in front of the camera.
       const { waitForFace } = await import("@/lib/face-gate");
-      if (!(await waitForFace(video, false, controller.signal))) return;
-      // The feed is counter-rotated on flipped kiosks, so visitors see the raw camera view; capture it as-is.
-      const flipView = settingsRef.current;
+      if (!(await waitForFace(video, settingsRef.current.camRotation + (document.documentElement.classList.contains("kiosk-flipped") ? 180 : 0), controller.signal))) return;
+      // Capture exactly what the live feed element shows, so the portrait lands where the visitor appears.
+      const flipped = document.documentElement.classList.contains("kiosk-flipped");
+      const flipView = flipped ? { ...settingsRef.current, camRotation: settingsRef.current.camRotation + 180 } : settingsRef.current;
       const baldFrame = viewToFile(video, flipView, window.innerWidth, window.innerHeight, 640);
       if (!baldFrame) throw new Error("Nu am putut prelua imaginea camerei");
       // Run both portraits in parallel from the same frame so the smile is
@@ -317,7 +318,8 @@ export function MirrorV4() {
     if (screen !== "framing") return;
     setCountdown(settings.framingSeconds);
     void startGeneration();
-    const id = window.setInterval(() => {
+    let id = 0;
+    const startId = window.setTimeout(() => { id = window.setInterval(() => {
       setCountdown((value) => {
         if (value <= 1) {
           window.clearInterval(id);
@@ -326,8 +328,8 @@ export function MirrorV4() {
         }
         return value - 1;
       });
-    }, 1000);
-    return () => window.clearInterval(id);
+    }, 1000); }, COUNTDOWN_START_DELAY_MS);
+    return () => { window.clearTimeout(startId); window.clearInterval(id); };
   }, [screen, settings.framingSeconds, startGeneration]);
 
   const baldReady = Boolean(baldUrl) && !processing && loadedBaldUrl === baldUrl;
@@ -374,13 +376,6 @@ export function MirrorV4() {
   }, [screen, smileReady, smileFailed]);
 
 
-  // Start processing 3s into the consent screen so the portrait is ready sooner.
-  // Leaving (Renunț / timeout) calls reset(), which aborts and discards the frame.
-  useEffect(() => {
-    if (screen !== "consent") return;
-    const id = window.setTimeout(() => { void startGeneration(); }, CONSENT_CAPTURE_MS - CAPTURE_SETTLE_MS);
-    return () => window.clearTimeout(id);
-  }, [screen, startGeneration]);
 
   // Warm the browser cache with local media so screens never wait on the network.
   useEffect(() => {
