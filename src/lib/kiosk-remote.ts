@@ -112,7 +112,7 @@ async function captureScreen(flipped: boolean): Promise<string> {
   out.width = src.width;
   out.height = src.height;
   const ctx = out.getContext("2d")!;
-  if (flipped) { ctx.translate(out.width, out.height); ctx.rotate(Math.PI); }
+  void flipped;
   ctx.drawImage(src, 0, 0);
   return out.toDataURL("image/jpeg", 0.6);
 }

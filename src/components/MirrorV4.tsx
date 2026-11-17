@@ -24,6 +24,14 @@ const CAMERA_SCREENS: Screen[] = ["attract", "framing", "mirror", "choice"];
 export function MirrorV4() {
   const [settings, setSettings] = useState<MirrorSettings>(DEFAULT_SETTINGS);
   const [screen, setScreen] = useState<Screen>("attract");
+  const [camFlipped, setCamFlipped] = useState(false);
+  useEffect(() => {
+    const read = () => setCamFlipped(document.documentElement.classList.contains("kiosk-flipped"));
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => mo.disconnect();
+  }, []);
   const [consent, setConsent] = useState(false);
   const [countdown, setCountdown] = useState(DEFAULT_SETTINGS.framingSeconds);
   const [baldUrl, setBaldUrlRaw] = useState("");
@@ -473,7 +481,7 @@ export function MirrorV4() {
         ref={videoRef}
         muted
         playsInline
-        style={cameraStyle(settings, vp.w, vp.h)}
+        style={cameraStyle(camFlipped ? { ...settings, camRotation: settings.camRotation + 180 } : settings, vp.w, vp.h)}
         className={`transition-opacity duration-1000 ${cameraVisible ? "opacity-100" : "opacity-0"}`}
       />
       {cameraVisible && <div className={`v4-veil v4-veil-${screen}`} aria-hidden />}
